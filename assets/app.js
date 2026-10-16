@@ -1,7 +1,7 @@
 
 const POA_RUNTIME_CONFIG = window.POA_CONFIG || {};
-const SUPABASE_URL = POA_RUNTIME_CONFIG.SUPABASE_URL || "";
-const SUPABASE_KEY = POA_RUNTIME_CONFIG.SUPABASE_PUBLISHABLE_KEY || "";
+const SUPABASE_URL = POA_RUNTIME_CONFIG.SUPABASE_URL || "https://nbwqoknkpkqgorxtyjnm.supabase.co";
+const SUPABASE_KEY = POA_RUNTIME_CONFIG.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_ncPKXMFDGB6HI1lHs1kYmg_dB3hgaer";
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.warn("POACustomers is not connected yet. Add the new Supabase URL and publishable key in assets/config.js.");
