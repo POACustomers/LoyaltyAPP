@@ -6,7 +6,7 @@ const SUPABASE_KEY = POA_RUNTIME_CONFIG.SUPABASE_PUBLISHABLE_KEY || "sb_publisha
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.warn("POACustomers is not connected yet. Add the new Supabase URL and publishable key in assets/config.js.");
 }
-const sb = supabase.createClient(SUPABASE_URL || "https://YOUR-PROJECT-REF.supabase.co", SUPABASE_KEY || "YOUR_NEW_SUPABASE_PUBLISHABLE_KEY", {
+const sb = supabase.createClient(SUPABASE_URL || "https://nbwqoknkpkqgorxtyjnm.supabase.co", SUPABASE_KEY || "sb_publishable_ncPKXMFDGB6HI1lHs1kYmg_dB3hgaer", {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
