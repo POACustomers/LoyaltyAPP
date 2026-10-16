@@ -10,7 +10,7 @@ Independent loyalty-system starter based on the uploaded project files.
 ## Before uploading/launching
 1. Confirm this repository is under the new GitHub account.
 2. Create a new Supabase project; do not reuse the AL NOOR project.
-3. Add the new Supabase URL and publishable key to `assets/config.js`.
+3. Add the new Supabase Project URL and Publishable Key to `assets/config.js`. Until configured, login/register and role pages intentionally show a setup warning and do not attempt to connect to a placeholder URL.
 4. Review/create the database schema and Row Level Security policies for this project.
 5. Test Customer, Staff, GM, and Admin portals before real customer use.
 
