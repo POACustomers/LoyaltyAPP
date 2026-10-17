@@ -198,3 +198,24 @@ button.reward-choice-card:hover{transform:translateY(-1px)}
 @media(max-width:560px){.staff-profile-mini .profile-head{align-items:center;}.staff-photo-btn{font-size:10px;padding:9px 10px;}.report-chart{gap:7px;padding-left:2px;padding-right:2px;}.report-bar-label{font-size:9px;}.report-bar{width:42px;}}
 
 .gm-profile-head{display:flex;align-items:center;gap:12px;margin-bottom:4px}.gm-avatar-frame{width:58px;height:58px;border-radius:50%;overflow:hidden;border:3px solid var(--green);background:#e9eee5;flex:0 0 auto}.gm-avatar-frame img{width:100%;height:100%;object-fit:cover;display:block}.gm-photo-btn{font-size:11px;padding:10px 12px;white-space:nowrap}@media(max-width:560px){.gm-photo-btn{font-size:10px;padding:9px 10px}}
+
+
+/* System Admin: customer registrations, counted from profiles.created_at (not points). */
+.admin-registration-card{margin-top:18px;margin-bottom:96px;}
+.admin-chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.admin-chart-head h3{margin:0 0 5px;}
+.admin-chart-head .sub{margin:0;}
+.admin-chart-refresh{flex:0 0 auto;padding:9px 12px;font-size:11px;}
+.registration-chart-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0 12px;}
+.registration-stat{background:#f4f0e6;border:1px solid var(--line);border-radius:14px;padding:12px;min-width:0;}
+.registration-stat span,.registration-stat small{display:block;color:var(--muted);font-size:11px;}
+.registration-stat strong{display:block;color:var(--green);font-size:25px;line-height:1.4;}
+.registration-minute-chart{height:168px;display:grid;grid-template-columns:repeat(60,minmax(0,1fr));align-items:end;gap:3px;padding:14px 4px 0;border-top:1px solid var(--line);overflow:hidden;}
+.registration-minute{height:100%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;position:relative;}
+.registration-minute-value{font-size:9px;font-weight:800;color:var(--green);height:12px;line-height:12px;}
+.registration-minute-bar{display:block;width:100%;max-width:10px;min-height:3px;border-radius:4px 4px 2px 2px;background:#d9dfd4;transition:height .2s ease;}
+.registration-minute-bar.has-registrations{background:var(--green);}
+.registration-minute-tick{height:14px;margin-top:5px;font-size:8px;line-height:14px;color:var(--muted);white-space:nowrap;}
+.registration-chart-axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:5px;}
+.registration-chart-message{margin:12px 0 0;line-height:1.5;}
+@media(max-width:560px){.admin-registration-card{padding:15px;margin-bottom:90px;}.registration-chart-summary{gap:6px}.registration-stat{padding:9px}.registration-stat strong{font-size:21px}.registration-minute-chart{gap:1px;padding-left:0;padding-right:0}.registration-minute-value{font-size:7px}.registration-minute-tick{font-size:7px}.admin-chart-head{align-items:center}}

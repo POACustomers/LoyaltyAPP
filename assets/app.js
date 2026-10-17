@@ -184,36 +184,41 @@ function routeForRole(role) {
   return "customer-home.html";
 }
 
+function customerAuthEmail(username) {
+  // Supabase Auth still uses an internal email identifier; customers never enter or see it.
+  return `${String(username || "").trim().toLowerCase()}@poacustomers.invalid`;
+}
+
 async function login(role) {
-  const email = $("email")?.value.trim().toLowerCase();
+  const username = role === "customer" ? $("username")?.value.trim().toLowerCase() : "";
+  const email = role === "customer" ? customerAuthEmail(username) : $("email")?.value.trim().toLowerCase();
   const password = $("password")?.value;
   const msg = $("msg");
 
-  if (!email || !password) {
-    if (msg) msg.textContent = "Enter your email and password.";
+  if (!(role === "customer" ? username : email) || !password) {
+    if (msg) msg.textContent = role === "customer" ? "Enter your username and password." : "Enter your email and password.";
+    return;
+  }
+  if (role === "customer" && !/^[a-z0-9._-]{3,24}$/.test(username)) {
+    if (msg) msg.textContent = "Use 3–24 characters: English letters, numbers, dot, underscore or hyphen.";
     return;
   }
 
   if (msg) msg.textContent = "Signing in…";
-
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-
+  const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) {
-    if (msg) msg.textContent = error.message;
+    if (msg) msg.textContent = role === "customer" ? "Username or password is incorrect." : error.message;
     else toast(error.message, false);
     return;
   }
 
   try {
     const profile = await getProfile();
-
     if (!profile) throw new Error("Your profile is not ready yet. Please try again.");
-
     if (profile.role !== role) {
       await sb.auth.signOut();
       throw new Error(`This account is not registered as ${role}.`);
     }
-
     location.href = routeForRole(profile.role);
   } catch (e) {
     if (msg) msg.textContent = e.message || "Login failed.";
@@ -221,51 +226,50 @@ async function login(role) {
 }
 
 async function registerCustomer() {
-  const name = $("name")?.value.trim();
-  const phone = $("phone")?.value.trim();
-  const email = $("email")?.value.trim().toLowerCase();
+  const username = $("username")?.value.trim().toLowerCase();
+  const phone = $("phone")?.value.trim() || null;
   const password = $("password")?.value;
-  const confirm = $("confirm")?.value;
-  const birthday = $("birthday")?.value;
+  const birthday = $("birthday")?.value || null;
   const msg = $("msg");
 
-  if (!name || !phone || !email || !birthday || !password) {
-    msg.textContent = "Please complete all required fields.";
+  if (!username || !password) {
+    msg.textContent = "Username and password are required.";
     return;
   }
-
+  if (!/^[a-z0-9._-]{3,24}$/.test(username)) {
+    msg.textContent = "Username must be 3–24 characters and use English letters, numbers, dot, underscore or hyphen only.";
+    return;
+  }
   if (password.length < 6) {
     msg.textContent = "Password must be at least 6 characters.";
     return;
   }
 
-  if (password !== confirm) {
-    msg.textContent = "Passwords do not match.";
-    return;
-  }
-
   msg.textContent = "Creating your POA Customers account…";
-
   const { data, error } = await sb.auth.signUp({
-    email,
+    email: customerAuthEmail(username),
     password,
     options: {
       data: {
-        full_name: name,
-        phone: phone,
-        birthday: birthday,
+        username,
+        full_name: username,
+        phone,
+        birthday,
         birthday_contact: false
       }
     }
   });
 
   if (error) {
-    msg.textContent = error.message;
+    const message = String(error.message || "");
+    msg.textContent = /already registered|already exists|unique/i.test(message)
+      ? "That username is already taken. Please choose another."
+      : message;
     return;
   }
 
   if (!data.session) {
-    msg.textContent = "Account created. Email confirmation is enabled in the current Supabase project; confirm the email, then sign in.";
+    msg.textContent = "Supabase email confirmation is enabled. To use username-only accounts, turn OFF Confirm email in Supabase Authentication settings, then register again.";
     return;
   }
 
@@ -365,7 +369,7 @@ async function loadCustomerProfile() {
   const meta = userData?.user?.user_metadata || {};
   const birthday = profile.birthday || meta.birthday || "—";
   document.querySelectorAll("[data-name]").forEach(e => e.textContent = profile.full_name || meta.full_name || "Customer");
-  document.querySelectorAll("[data-email]").forEach(e => e.textContent = profile.email || userData?.user?.email || "—");
+  document.querySelectorAll("[data-username]").forEach(e => e.textContent = profile.username || meta.username || profile.full_name || "—");
   document.querySelectorAll("[data-phone]").forEach(e => e.textContent = profile.phone || meta.phone || "—");
   document.querySelectorAll("[data-birthday]").forEach(e => e.textContent = birthday === "—" ? "—" : new Date(birthday + "T00:00:00").toLocaleDateString());
   document.querySelectorAll("[data-id]").forEach(e => e.textContent = profile.member_id || "—");
@@ -1131,24 +1135,76 @@ async function loadAdminDashboard() {
   const profile = await guardRole(["admin"]);
   if (!profile) return;
 
-  try {
-    const profiles = await getAdminProfiles();
-    const roleCount = role => profiles.filter(p => String(p.role || "").toLowerCase() === role).length;
-    const values = {
-      adminCustomers: roleCount("customer"),
-      adminStaff: roleCount("staff")
-    };
-    Object.entries(values).forEach(([id, value]) => {
-      const el = $(id);
-      if (el) el.textContent = moneyPoints(value);
-    });
-  } catch (e) {
-    ["adminCustomers","adminStaff"].forEach(id => { const el=$(id); if(el) el.textContent="—"; });
-    toast(e.message || "Could not load account counts.", false);
-  }
+  const chart = $("registrationMinuteChart");
+  const message = $("registrationChartMessage");
+  const refresh = $("refreshRegistrations");
+  const todayEl = $("registrationsToday");
+  const weekEl = $("registrationsWeek");
+  const monthEl = $("registrationsMonth");
 
+  const renderRegistrations = async () => {
+    if (chart) chart.innerHTML = '<div class="sub">Loading registration data…</div>';
+    if (message) message.textContent = "";
+    try {
+      // Read actual customer profile creation timestamps. Point transactions are intentionally not used.
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfWeek = new Date(startOfToday);
+      const day = (startOfWeek.getDay() + 6) % 7; // Monday is the first day of the week.
+      startOfWeek.setDate(startOfWeek.getDate() - day);
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startMinute = new Date(now);
+      startMinute.setSeconds(0, 0);
+      startMinute.setMinutes(startMinute.getMinutes() - 59);
+
+      const { data, error } = await sb.from("profiles")
+        .select("created_at")
+        .eq("role", "customer")
+        .gte("created_at", startOfMonth.toISOString())
+        .lte("created_at", now.toISOString())
+        .order("created_at", { ascending: true })
+        .limit(10000);
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      const dates = rows.map(row => new Date(row.created_at)).filter(date => !Number.isNaN(date.getTime()));
+      const countFrom = (start) => dates.filter(date => date >= start && date <= now).length;
+
+      if (todayEl) todayEl.textContent = moneyPoints(countFrom(startOfToday));
+      if (weekEl) weekEl.textContent = moneyPoints(countFrom(startOfWeek));
+      if (monthEl) monthEl.textContent = moneyPoints(countFrom(startOfMonth));
+
+      if (chart) {
+        const buckets = Array.from({ length: 60 }, (_, i) => {
+          const minute = new Date(startMinute.getTime() + i * 60000);
+          return { minute, label: minute.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), value: 0 };
+        });
+        dates.forEach(date => {
+          const rounded = new Date(date);
+          rounded.setSeconds(0, 0);
+          const index = Math.floor((rounded.getTime() - startMinute.getTime()) / 60000);
+          if (index >= 0 && index < buckets.length) buckets[index].value += 1;
+        });
+        const max = Math.max(1, ...buckets.map(bucket => bucket.value));
+        chart.innerHTML = buckets.map((bucket, index) => {
+          const height = bucket.value === 0 ? 3 : Math.max(7, Math.round((bucket.value / max) * 104));
+          const fullLabel = `${bucket.label}: ${bucket.value} new customer${bucket.value === 1 ? "" : "s"}`;
+          const tick = index % 10 === 0 || index === 59;
+          return `<div class="registration-minute" title="${esc(fullLabel)}"><span class="registration-minute-value">${bucket.value ? esc(bucket.value) : ""}</span><span class="registration-minute-bar${bucket.value ? " has-registrations" : ""}" style="height:${height}px" aria-hidden="true"></span><span class="registration-minute-tick">${tick ? esc(bucket.label) : ""}</span></div>`;
+        }).join("");
+        const totalLastHour = buckets.reduce((sum, bucket) => sum + bucket.value, 0);
+        if (message) message.textContent = `${totalLastHour} new customer${totalLastHour === 1 ? "" : "s"} registered in the last 60 minutes. This chart counts account registrations, not loyalty points.`;
+      }
+    } catch (e) {
+      if (chart) chart.innerHTML = '<div class="alert">Could not load customer registration data.</div>';
+      if (message) message.textContent = e?.message || "Check the profiles table read permissions for the admin account.";
+      [todayEl, weekEl, monthEl].forEach(el => { if (el) el.textContent = "—"; });
+      toast(e.message || "Could not load customer registration data.", false);
+    }
+  };
+
+  if (refresh) refresh.onclick = renderRegistrations;
+  await renderRegistrations();
 }
-
 async function loadAdminUsers() {
   const profile = await guardRole(["admin"]); if (!profile) return;
   const box = $("adminUsers"), search = $("adminSearch");
