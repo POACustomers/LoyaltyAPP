@@ -1,4 +1,4 @@
-const CACHE = "poa-customers-v1";
+const CACHE = "poa-customers-v2-username";
 const SHELL = [
   "./",
   "./index.html",
