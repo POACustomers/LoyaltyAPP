@@ -52,11 +52,21 @@ async function getOwnAvatarUrl() {
 
 function renderAvatar(el, name, url) {
   if (!el) return;
-  if (url) {
-    el.innerHTML = `<img src="${esc(url)}" alt="Profile avatar" loading="eager">`;
+  const fallback = () => {
+    el.classList.remove("avatar-photo");
+    el.textContent = initials(name);
+  };
+  if (url && typeof url === "string" && /^(https?:|data:image\/)/i.test(url.trim())) {
+    const img = document.createElement("img");
+    img.alt = "Profile avatar";
+    img.loading = "eager";
+    img.referrerPolicy = "no-referrer";
+    img.onerror = fallback;
+    img.src = url.trim();
+    el.replaceChildren(img);
     el.classList.add("avatar-photo");
   } else {
-    el.textContent = initials(name);
+    fallback();
   }
 }
 
@@ -430,11 +440,32 @@ async function loadCustomerProfile() {
 async function loadCustomerLocations() {
   const profile = await guardRole(["customer"]);
   if (!profile) return;
-  const box=$("customerLocations"); if(!box)return;
-  const {data,error}=await sb.from("locations").select("id,name,city,address,phone,is_active").eq("is_active",true).order("name");
-  if(error){box.innerHTML=`<div class="alert">${esc(error.message)}</div>`;return;}
-  box.innerHTML=data?.length ? data.map(l=>`<div class="card"><strong>${esc(l.name)}</strong><small>${esc(l.city||"")}
-${esc(l.address||"")}</small></div>`).join("") : `<div class="empty">No active locations found.</div>`;
+  const box = $("customerLocations");
+  if (!box) return;
+  const { data, error } = await sb
+    .from("locations")
+    .select("id,name,city,address,phone,maps_url,is_active")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
+  if (error) {
+    box.innerHTML = `<div class="alert"><strong>Could not load branch locations.</strong><br>${esc(error.message)}</div>`;
+    return;
+  }
+  const rows = Array.isArray(data) ? data : [];
+  if (!rows.length) {
+    box.innerHTML = `<div class="locations-empty">No branch locations have been added yet.</div>`;
+    return;
+  }
+  box.innerHTML = rows.map(location => {
+    const address = [location.address, location.city].filter(Boolean).join(", ");
+    const search = [location.name, address].filter(Boolean).join(" ");
+    let mapsUrl = String(location.maps_url || "").trim();
+    if (!/^https?:\/\//i.test(mapsUrl)) {
+      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(search)}`;
+    }
+    const details = [address, location.phone ? `Phone: ${location.phone}` : ""].filter(Boolean).join(" · ");
+    return `<a class="customer-branch" href="${esc(mapsUrl)}" target="_blank" rel="noopener noreferrer"><span class="customer-branch-copy"><strong class="customer-branch-name">${esc(location.name || "Branch")}</strong>${details ? `<small class="customer-branch-meta">${esc(details)}</small>` : ""}</span><span class="customer-branch-map">OPEN MAP →</span></a>`;
+  }).join("");
 }
 
 async function loadCustomerRewards() {
@@ -879,17 +910,6 @@ async function startScanner() {
   }
 }
 
-function normalizeGmReport(data) {
-  const raw = Array.isArray(data) ? (data[0] || {}) : (data || {});
-  return {
-    total_members: Number(raw.total_members ?? raw.members ?? raw.member_count ?? 0),
-    total_points: raw.total_points == null && raw.points == null && raw.points_balance == null ? null : Number(raw.total_points ?? raw.points ?? raw.points_balance),
-    points_issued: raw.points_issued == null && raw.issued == null && raw.issued_points == null ? null : Number(raw.points_issued ?? raw.issued ?? raw.issued_points),
-    points_redeemed: raw.points_redeemed == null && raw.redeemed == null && raw.redeemed_points == null ? null : Number(raw.points_redeemed ?? raw.redeemed ?? raw.redeemed_points),
-    active_locations: Number(raw.active_locations ?? raw.locations ?? raw.location_count ?? 0)
-  };
-}
-
 async function getAdminProfiles() {
   const { data, error } = await sb.from("profiles")
     .select("id,full_name,email,phone,member_id,role,points,is_active,created_at,avatar_url")
@@ -899,136 +919,11 @@ async function getAdminProfiles() {
   return Array.isArray(data) ? data : [];
 }
 
-async function calculateGmPointsFromTransactions(customers) {
-  if (!customers?.length) return { points_issued: 0, points_redeemed: 0, total_points: 0 };
-  let issued = 0;
-  let redeemed = 0;
-  let total = 0;
-  const batchSize = 8;
-  for (let i = 0; i < customers.length; i += batchSize) {
-    const batch = customers.slice(i, i + batchSize);
-    const results = await Promise.all(batch.map(async customer => {
-      try {
-        const { data, error } = await sb.rpc("get_customer_transactions", { p_customer_id: customer.id });
-        if (error || !Array.isArray(data)) return [];
-        return data;
-      } catch { return []; }
-    }));
-    results.flat().forEach(t => {
-      const n = Math.abs(Number(t?.points || 0));
-      if (!n) return;
-      const type = String(t?.type || t?.transaction_type || "").toLowerCase();
-      if (type.includes("redeem") || type.includes("coupon") || type.includes("reward")) redeemed += n;
-      else issued += n;
-    });
-  }
-  total = Math.max(0, issued - redeemed);
-  return { points_issued: issued, points_redeemed: redeemed, total_points: total };
-}
-
-async function getGmReport() {
-  let rpcData = null;
-  let rpcError = null;
-  try {
-    const result = await sb.rpc("get_gm_report");
-    rpcData = result.data;
-    rpcError = result.error;
-  } catch (e) {
-    rpcError = e;
-  }
-
-  const result = normalizeGmReport(rpcData);
-
-  // Always verify the customer total directly from the live profiles table.
-  // Do not depend on the report RPC for this card: a stale/missing RPC must not
-  // leave the Dashboard showing a dash when the customer count is available.
-  let customers = [];
-  try {
-    const { count, error } = await sb.from("profiles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "customer");
-    if (!error && Number.isFinite(count)) result.total_members = count;
-  } catch {}
-
-  try {
-    // Reuse the profile rows only when point totals need a transaction fallback.
-    if (!Number.isFinite(result.points_issued) || !Number.isFinite(result.points_redeemed)) {
-      customers = await getAdminProfiles();
-      customers = customers.filter(p => String(p.role || "").toLowerCase() === "customer");
-      const totals = await calculateGmPointsFromTransactions(customers);
-      if (!Number.isFinite(result.points_issued)) result.points_issued = totals.points_issued;
-      if (!Number.isFinite(result.points_redeemed)) result.points_redeemed = totals.points_redeemed;
-      if (!Number.isFinite(result.total_points)) result.total_points = totals.total_points;
-    }
-  } catch {}
-
-  try {
-    const { count } = await sb.from("locations").select("id", { count: "exact", head: true }).eq("is_active", true);
-    if (Number.isFinite(count)) result.active_locations = count;
-  } catch {}
-
-  // If the report RPC supplies valid point totals, keep them. Otherwise do not
-  // invent values; show an unavailable marker instead of a fake zero.
-  if (!Number.isFinite(result.points_issued)) result.points_issued = null;
-  if (!Number.isFinite(result.points_redeemed)) result.points_redeemed = null;
-  if (!Number.isFinite(result.total_points)) result.total_points = null;
-
-  if (rpcError && result.total_members === 0 && result.active_locations === 0) {
-    throw rpcError;
-  }
-  return result;
-}
-
-async function getCustomerPeriodCounts() {
-  const now = new Date();
-  const weekStart = new Date(now);
-  const day = weekStart.getDay();
-  const diff = day === 0 ? 6 : day - 1;
-  weekStart.setDate(weekStart.getDate() - diff);
-  weekStart.setHours(0, 0, 0, 0);
-
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const [{ count: weekCount }, { count: monthCount }] = await Promise.all([
-    sb.from("profiles").select("id", { count: "exact", head: true }).eq("role", "customer").gte("created_at", weekStart.toISOString()),
-    sb.from("profiles").select("id", { count: "exact", head: true }).eq("role", "customer").gte("created_at", monthStart.toISOString())
-  ]);
-
-  return {
-    week: Number.isFinite(weekCount) ? weekCount : 0,
-    month: Number.isFinite(monthCount) ? monthCount : 0
-  };
-}
-
 async function loadGmDashboard() {
   const profile = await guardRole(["gm"]);
   if (!profile) return;
-
-  try {
-    const [r, periods] = await Promise.all([getGmReport(), getCustomerPeriodCounts()]);
-
-    const map = {
-      total_members: "members",
-      points_issued: "issued",
-      points_redeemed: "redeemed"
-    };
-    Object.entries(map).forEach(([key,id]) => {
-      const el = $(id);
-      if (el) el.textContent = moneyPoints(r[key]);
-    });
-
-    const weekEl = $("weekCustomers");
-    const monthEl = $("monthCustomers");
-    if (weekEl) weekEl.textContent = moneyPoints(periods.week);
-    if (monthEl) monthEl.textContent = moneyPoints(periods.month);
-
-    renderGmReportChart({
-      ...r,
-      customers_week: periods.week,
-      customers_month: periods.month
-    });
-  } catch (e) {
-    toast(e.message || "Could not load dashboard data.", false);
-  }
+  const name = $("gmWelcomeName");
+  if (name) name.textContent = (profile.full_name || profile.username || "GM").split(/\s+/)[0];
 }
 
 async function loadGmMembers() {
@@ -1080,55 +975,141 @@ async function loadGmLocations() {
   const profile = await guardRole(["gm"]);
   if (!profile) return;
 
-  const box = $("locations");
-  if (!box) return;
-  const { data, error } = await sb
-    .from("locations")
-    .select("id,name,city,address,phone,is_active,created_at")
-    .order("name");
+  const box = $("gmLocationsList");
+  const formTitle = $("gmLocationFormTitle");
+  const idInput = $("gmLocationId");
+  const nameInput = $("gmLocationName");
+  const cityInput = $("gmLocationCity");
+  const addressInput = $("gmLocationAddress");
+  const phoneInput = $("gmLocationPhone");
+  const mapsInput = $("gmLocationMapsUrl");
+  const activeInput = $("gmLocationActive");
+  const saveButton = $("gmLocationSaveBtn");
+  const cancelButton = $("gmLocationCancelBtn");
+  const message = $("gmLocationMessage");
+  const refreshButton = $("gmLocationRefreshBtn");
+  if (!box || !saveButton || !nameInput) return;
 
-  if (error) {
-    box.innerHTML = `<div class="alert">${esc(error.message)}</div>`;
-    return;
-  }
+  let locations = [];
+  const setMessage = (text, bad = false) => {
+    if (!message) return;
+    message.textContent = text;
+    message.style.color = bad ? "#a33" : "";
+  };
+  const clearForm = () => {
+    idInput.value = "";
+    nameInput.value = "";
+    cityInput.value = "";
+    addressInput.value = "";
+    phoneInput.value = "";
+    mapsInput.value = "";
+    activeInput.checked = true;
+    if (formTitle) formTitle.textContent = "Add Branch Location";
+    saveButton.textContent = "SAVE BRANCH";
+    if (cancelButton) cancelButton.hidden = true;
+    setMessage("");
+  };
+  const mapLinkFor = location => {
+    const explicit = String(location.maps_url || "").trim();
+    if (/^https?:\/\//i.test(explicit)) return explicit;
+    const query = [location.name, location.address, location.city].filter(Boolean).join(" ");
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  };
+  const render = () => {
+    if (!locations.length) {
+      box.innerHTML = '<div class="branch-empty">No branches yet. Add your first real branch above.</div>';
+      return;
+    }
+    box.innerHTML = locations.map(location => {
+      const address = [location.address, location.city].filter(Boolean).join(", ");
+      const detail = [address, location.phone ? `Phone: ${location.phone}` : ""].filter(Boolean).join(" · ");
+      return `<article class="branch-manage-card"><div class="branch-card-top"><div class="branch-card-icon" aria-hidden="true">⌖</div><div class="grow"><h4 class="branch-card-title">${esc(location.name || "Branch")}</h4>${detail ? `<small class="branch-card-meta">${esc(detail)}</small>` : ""}<small class="branch-card-meta">${location.is_active ? "Active · visible to customers" : "Inactive · hidden from customers"}</small></div></div><div class="branch-card-actions"><a class="btn soft" href="${esc(mapLinkFor(location))}" target="_blank" rel="noopener noreferrer">OPEN MAP</a><button class="btn" type="button" data-location-edit="${esc(location.id)}">EDIT</button><button class="btn danger" type="button" data-location-delete="${esc(location.id)}">DELETE</button></div></article>`;
+    }).join("");
+    box.querySelectorAll("[data-location-edit]").forEach(button => button.addEventListener("click", () => {
+      const location = locations.find(row => row.id === button.dataset.locationEdit);
+      if (!location) return;
+      idInput.value = location.id;
+      nameInput.value = location.name || "";
+      cityInput.value = location.city || "";
+      addressInput.value = location.address || "";
+      phoneInput.value = location.phone || "";
+      mapsInput.value = location.maps_url || "";
+      activeInput.checked = location.is_active !== false;
+      if (formTitle) formTitle.textContent = "Edit Branch Location";
+      saveButton.textContent = "SAVE CHANGES";
+      if (cancelButton) cancelButton.hidden = false;
+      setMessage("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }));
+    box.querySelectorAll("[data-location-delete]").forEach(button => button.addEventListener("click", async () => {
+      const location = locations.find(row => row.id === button.dataset.locationDelete);
+      if (!location || !confirm(`Delete branch “${location.name}”? It will no longer appear to customers.`)) return;
+      button.disabled = true;
+      const { error } = await sb.from("locations").delete().eq("id", location.id);
+      if (error) {
+        setMessage(`Could not delete branch: ${error.message}`, true);
+        button.disabled = false;
+        return;
+      }
+      if (idInput.value === location.id) clearForm();
+      setMessage("Branch deleted.");
+      await load();
+    }));
+  };
+  const load = async () => {
+    box.innerHTML = '<div class="branch-empty">Loading branches…</div>';
+    const { data, error } = await sb.from("locations")
+      .select("id,name,city,address,phone,maps_url,is_active,created_at,updated_at")
+      .order("name", { ascending: true });
+    if (error) {
+      box.innerHTML = `<div class="alert">Could not load branches. Run the latest POACustomers menu/location setup SQL, then refresh. Details: ${esc(error.message)}</div>`;
+      return;
+    }
+    locations = Array.isArray(data) ? data : [];
+    render();
+  };
 
-  box.innerHTML = data?.length ? data.map(l => `
-    <div class="card" style="margin-bottom:12px">
-      <div class="row">
-        <div class="avatar">AN</div>
-        <div class="grow">
-          <strong>${esc(l.name)}</strong>
-          <small>${esc(l.city || "")} • ${esc(l.address || "Address not set")}</small>
-        </div>
-        <span class="badge">${l.is_active ? "Active" : "Inactive"}</span>
-      </div>
-      ${l.phone ? `<p class="sub" style="margin:12px 0 0">☎ ${esc(l.phone)}</p>` : ""}
-    </div>
-  `).join("") : `<div class="empty">No locations found.</div>`;
-}
-
-function renderGmReportChart(r) {
-  const chart = $("reportChart");
-  if (!chart) return;
-  const items = [
-    { label: "Points Issued", value: Number.isFinite(r.points_issued) ? Number(r.points_issued) : null },
-    { label: "Points Redeemed", value: Number.isFinite(r.points_redeemed) ? Number(r.points_redeemed) : null },
-    { label: "Customers This Week", value: Number.isFinite(r.customers_week) ? Number(r.customers_week) : 0 },
-    { label: "Customers This Month", value: Number.isFinite(r.customers_month) ? Number(r.customers_month) : 0 }
-  ];
-  if (items[0].value === null && items[1].value === null) {
-    chart.innerHTML = '<div class="empty" style="width:100%;text-align:center">Point activity is unavailable from the current report source.</div>';
-    return;
-  }
-  const max = Math.max(1, ...items.map(x => x.value));
-  chart.innerHTML = items.map(item => {
-    const height = item.value === null ? 4 : (item.value === 0 ? 4 : Math.max(8, Math.round((item.value / max) * 150)));
-    return `<div class="report-bar-wrap" title="${esc(item.label)}: ${moneyPoints(item.value)}">
-      <div class="report-bar-value">${esc(moneyPoints(item.value))}</div>
-      <div class="report-bar" style="height:${height}px" aria-label="${esc(item.label)} ${esc(moneyPoints(item.value))}"></div>
-      <div class="report-bar-label">${esc(item.label)}</div>
-    </div>`;
-  }).join("");
+  saveButton.onclick = async () => {
+    const name = nameInput.value.trim();
+    const mapsUrl = mapsInput.value.trim();
+    if (!name) { setMessage("Branch name is required.", true); nameInput.focus(); return; }
+    if (mapsUrl) {
+      try {
+        const parsed = new URL(mapsUrl);
+        if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
+      } catch { setMessage("Enter a valid Google Maps URL beginning with https:// or leave it blank.", true); mapsInput.focus(); return; }
+    }
+    saveButton.disabled = true;
+    const originalText = saveButton.textContent;
+    saveButton.textContent = "SAVING…";
+    try {
+      const payload = {
+        name,
+        city: cityInput.value.trim() || null,
+        address: addressInput.value.trim() || null,
+        phone: phoneInput.value.trim() || null,
+        maps_url: mapsUrl || null,
+        is_active: Boolean(activeInput.checked)
+      };
+      const id = idInput.value.trim();
+      const result = id
+        ? await sb.from("locations").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", id)
+        : await sb.from("locations").insert(payload);
+      if (result.error) throw result.error;
+      clearForm();
+      setMessage(id ? "Branch updated successfully." : "Branch added successfully.");
+      await load();
+    } catch (error) {
+      setMessage(error?.message || "Could not save branch. Check branch table permissions in Supabase.", true);
+    } finally {
+      saveButton.disabled = false;
+      saveButton.textContent = originalText === "SAVE CHANGES" ? "SAVE BRANCH" : originalText;
+      if (idInput.value) saveButton.textContent = "SAVE CHANGES";
+    }
+  };
+  if (cancelButton) cancelButton.onclick = clearForm;
+  if (refreshButton) refreshButton.onclick = load;
+  await load();
 }
 
 async function loadAdminDashboard() {
@@ -1157,10 +1138,11 @@ async function loadAdminDashboard() {
       startMinute.setSeconds(0, 0);
       startMinute.setMinutes(startMinute.getMinutes() - 59);
 
+      const queryStart = new Date(Math.min(startOfMonth.getTime(), startMinute.getTime()));
       const { data, error } = await sb.from("profiles")
         .select("created_at")
         .eq("role", "customer")
-        .gte("created_at", startOfMonth.toISOString())
+        .gte("created_at", queryStart.toISOString())
         .lte("created_at", now.toISOString())
         .order("created_at", { ascending: true })
         .limit(10000);
@@ -1345,6 +1327,8 @@ async function init() {
       await loadGmLocations();
     } else if (page === "gm-settings") {
       await bindGmSettingsProfile();
+    } else if (page === "gm-categories") {
+      await guardRole(["gm"]);
     } else if (page === "gm-menu") {
       await guardRole(["gm"]);
     } else if (page === "gm-offers") {
