@@ -7,7 +7,7 @@
 <meta name="description" content="POA CUSTOMERS Bakery & Cafe customer menu">
 <link rel="manifest" href="../manifest.webmanifest">
 <title>POA Customers Menu</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261017-images-categories">
+<link rel="stylesheet" href="../assets/style.css?v=20261017-final-batch">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 </head>
 <body data-page="customer-menu">
@@ -45,8 +45,7 @@
 </nav>
 
 <script src="../assets/config.js?v=20261017-images-categories"></script>
-<script src="../assets/app.js?v=20261017-images-categories"></script>
-<script src="../assets/menu-data.js?v=20261017-images-categories"></script>
+<script src="../assets/app.js?v=20261017-final-batch"></script>
 
 <style>
 :root{--menu-cream:#f7f1e7;--menu-gold:#c9ae70;--menu-green:#073a2b}
@@ -54,12 +53,15 @@
 .menu-hero{margin-bottom:18px}
 .eyebrow{margin:0 0 5px;color:var(--gold,#a78a52);font-size:10px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase}
 .menu-panel{padding:18px}
-.menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.menu-category{appearance:none;width:100%;border:1px solid rgba(7,58,43,.10);background:var(--menu-cream);border-radius:22px;padding:17px 11px 15px;text-align:center;color:var(--menu-green);cursor:pointer;min-height:142px;box-shadow:0 8px 22px rgba(19,48,37,.05);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+.menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.menu-category{appearance:none;width:100%;border:1px solid rgba(7,58,43,.10);background:var(--menu-cream);border-radius:18px;padding:11px 10px 10px;text-align:center;color:var(--menu-green);cursor:pointer;min-height:108px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;box-shadow:0 8px 22px rgba(19,48,37,.05);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
 .menu-category:hover,.menu-category:focus-visible{transform:translateY(-2px);box-shadow:0 12px 28px rgba(19,48,37,.09);border-color:rgba(167,138,82,.55);outline:none}
-.menu-category-image{display:block;width:100%;max-width:150px;height:76px;object-fit:cover;border-radius:15px;margin:0 auto 10px;background:#efe4d1}.menu-icon{width:62px;height:62px;margin:0 auto 10px;border-radius:18px;display:grid;place-items:center;background:#efe4d1;font-size:30px;line-height:1}
-.menu-name{display:block;font-size:13px;font-weight:900;line-height:1.25}
-.menu-count{display:block;margin-top:6px;color:var(--muted);font-size:10px;font-weight:800}
+.menu-category-media{width:min(100%,116px);height:58px;flex:0 0 58px;display:grid;place-items:center;overflow:hidden;border-radius:12px;margin:0 auto 7px;background:#efe4d1}
+.menu-category-image{display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:12px;background:#efe4d1}
+.menu-icon{width:100%;height:100%;display:grid;place-items:center;background:#efe4d1;font-size:26px;line-height:1}
+.menu-icon[hidden]{display:none}
+.menu-name{display:block;font-size:12px;font-weight:900;line-height:1.25;overflow-wrap:anywhere}
+.menu-count{display:block;margin-top:4px;color:var(--muted);font-size:9px;font-weight:800}
 .menu-head{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:4px}
 .menu-back{width:42px;height:42px;flex:0 0 42px;border:1px solid var(--line);background:#edf2eb;border-radius:13px;color:var(--menu-green);font-size:23px;font-weight:900;cursor:pointer}
 .menu-head-icon{width:42px;height:42px;border-radius:13px;background:#efe4d1;display:grid;place-items:center;font-size:21px;flex:0 0 42px}
@@ -78,7 +80,7 @@
 .menu-empty,.menu-loading{padding:28px 10px;text-align:center;color:var(--muted);font-weight:700}
 .menu-error{padding:22px 14px;border-radius:16px;background:#fff7f5;border:1px solid #ead2cc;color:#8b3a31;font-size:12px;line-height:1.5}
 .menu-small-note{margin:0 0 10px;color:var(--muted);font-size:10px;font-weight:700}
-@media(max-width:420px){.menu-panel{padding:14px}.menu-grid{gap:10px}.menu-category{min-height:130px;padding:14px 8px}.menu-icon{width:56px;height:56px;font-size:27px}.menu-name{font-size:12px}.menu-item-image,.menu-placeholder{width:64px;height:64px;flex-basis:64px}.menu-item-name{font-size:14px}.menu-item-price{font-size:10px}}
+@media(max-width:420px){.menu-panel{padding:12px}.menu-grid{gap:9px}.menu-category{min-height:102px;padding:10px 7px 9px;border-radius:15px}.menu-category-media{width:min(100%,108px);height:54px;flex-basis:54px;margin-bottom:6px}.menu-name{font-size:11px}.menu-item-image,.menu-placeholder{width:64px;height:64px;flex-basis:64px}.menu-item-name{font-size:14px}.menu-item-price{font-size:10px}}
 </style>
 
 <script>
@@ -86,50 +88,26 @@
   const categoriesView=document.getElementById('menuCategoriesView');
   const itemsView=document.getElementById('menuItemsView');
 
-  const FALLBACK_CATEGORIES=[
-    {key:'classic-coffee',name:'Classic Coffee',icon:'☕',order:1},
-    {key:'craft-pour-over-v60',name:'Craft Pour-Over (V60)',icon:'☕',order:2},
-    {key:'iced-coffee',name:'Iced Coffee',icon:'🧊',order:3},
-    {key:'matcha',name:'Matcha',icon:'🍵',order:4},
-    {key:'breakfast',name:'Breakfast',icon:'🍳',order:5},
-    {key:'paninis-wraps-toast',name:'Paninis, Wraps & Toast',icon:'🥪',order:6},
-    {key:'fresh-salads',name:'Fresh Salads',icon:'🥗',order:7},
-    {key:'artisanal-pizzas',name:'Artisanal Pizzas',icon:'🍕',order:8},
-    {key:'traditional-oven-manakish',name:'Traditional Oven Manakish',icon:'🫓',order:9},
-    {key:'bakery-croissants',name:'Bakery & Croissants',icon:'🥐',order:10},
-    {key:'cakes-pastries',name:'Cakes & Pastries',icon:'🍰',order:11},
-    {key:'fresh-juices-wellness',name:'Fresh Juices & Wellness',icon:'🧃',order:12},
-    {key:'acai',name:'Acai',icon:'🥭',order:13},
-    {key:'mojitos-iced-teas',name:'Mojitos & Iced Teas',icon:'🍹',order:14}
-  ];
-
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
   const slug=v=>String(v??'').trim().toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 
   let categories=[];
   let items=[];
 
+  // Only display categories that are actually saved in this POACustomers database.
+  // There is deliberately no demo/fallback catalog; the owner creates their own menu.
   function normalizeCategoryRows(rows){
-    const result=[];
-    const byName={};
-    FALLBACK_CATEGORIES.forEach(c=>byName[slug(c.name)]=c);
-    (rows||[]).forEach((r,i)=>{
-      const base=byName[slug(r.name)]||FALLBACK_CATEGORIES.find(c=>c.key===slug(r.name))||null;
-      result.push({
+    return (Array.isArray(rows)?rows:[])
+      .filter(r=>r && String(r.name||'').trim() && r.is_active!==false && String(r.status||'active').toLowerCase()!=='inactive')
+      .map((r,i)=>({
         id:r.id,
-        name:r.name||base?.name||'Menu',
-        icon:r.icon||base?.icon||'☕',
-        order:Number(r.sort_order??base?.order??(100+i)),
-        active:r.is_active!==false,
+        name:String(r.name).trim(),
+        icon:r.icon||'☕',
+        order:Number(r.sort_order??i),
+        active:true,
         image_url:r.image_url||null
-      });
-    });
-    if(!result.length) return FALLBACK_CATEGORIES.map(c=>({id:null,name:c.name,icon:c.icon,order:c.order,active:true,fallback:true}));
-    const existing=new Set(result.map(c=>slug(c.name)));
-    FALLBACK_CATEGORIES.forEach(c=>{
-      if(!existing.has(slug(c.name))) result.push({id:null,name:c.name,icon:c.icon,order:c.order,active:true,fallback:true});
-    });
-    return result.filter(c=>c.active).sort((a,b)=>a.order-b.order);
+      }))
+      .sort((a,b)=>a.order-b.order || a.name.localeCompare(b.name));
   }
 
   function isActiveItem(item){
@@ -147,7 +125,7 @@
     }
     const n=slug(item.category_name||item.category);
     if(n){
-      return categories.find(c=>slug(c.name)===n) || FALLBACK_CATEGORIES.find(c=>slug(c.name)===n) || null;
+      return categories.find(c=>slug(c.name)===n) || null;
     }
     return null;
   }
@@ -159,11 +137,17 @@
   function renderCategories(){
     itemsView.hidden=true;
     categoriesView.hidden=false;
+    if(!categories.length){
+      categoriesView.innerHTML='<div class="menu-empty">No menu categories have been added yet.</div>';
+      return;
+    }
     categoriesView.innerHTML='<div class="menu-grid">'+categories.map(cat=>{
       const count=countForCategory(cat);
       return '<button class="menu-category" type="button" data-category="'+esc(cat.name)+'">'
+        +'<div class="menu-category-media">'
         +(cat.image_url ? '<img class="menu-category-image" src="'+esc(cat.image_url)+'" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">' : '')
-        +'<div class="menu-icon" aria-hidden="true"'+(cat.image_url?' hidden':'')+'>'+esc(cat.icon)+'</div>'
+        +'<div class="menu-icon" aria-hidden="true"'+(cat.image_url?' hidden':'')+'>'+esc(cat.icon||'☕')+'</div>'
+        +'</div>'
         +'<span class="menu-name">'+esc(cat.name)+'</span>'
         +'<span class="menu-count">'+count+' item'+(count===1?'':'s')+'</span>'
         +'</button>';
@@ -172,7 +156,7 @@
   }
 
   function renderItems(name){
-    const cat=categories.find(c=>c.name===name) || FALLBACK_CATEGORIES.find(c=>c.name===name);
+    const cat=categories.find(c=>c.name===name);
     const filtered=items.filter(item=>isActiveItem(item) && categoryForItem(item)?.name===name);
     itemsView.hidden=false;
     categoriesView.hidden=true;
@@ -208,29 +192,15 @@
 
     categories=normalizeCategoryRows(Array.isArray(categoryResult.data)?categoryResult.data:[]);
     items=Array.isArray(itemResult.data)?itemResult.data:[];
-    // If the database is empty, show the official POA CUSTOMERS menu catalog immediately.
-    // Once GM imports/saves the catalog into Supabase, the live database becomes the source of truth.
-    if(items.length===0 && Array.isArray(window.POA_MENU_CATALOG)){
-      items=window.POA_MENU_CATALOG.map((item,i)=>({
-        id:'catalog-'+i,
-        name:item.name,
-        category_name:item.category,
-        description:item.description||'',
-        price:item.price,
-        image_url:null,
-        status:'active',
-        created_at:null
-      }));
-    }
     renderCategories();
   }
 
   loadMenu().catch(err=>{
-    categories=FALLBACK_CATEGORIES.map(c=>({id:null,name:c.name,icon:c.icon,order:c.order,active:true,fallback:true}));
+    categories=[];
     items=[];
     categoriesView.hidden=false;
     itemsView.hidden=true;
-    categoriesView.innerHTML='<div class="menu-error"><strong>Menu could not be loaded from the database.</strong><br>'+esc(err?.message||'Please try again later.')+'</div>';
+    categoriesView.innerHTML='<div class="menu-error"><strong>Menu could not be loaded from the database.</strong><br>'+esc(err?.message||'Please try again later.')+'<br><small>Ask the administrator to verify the POACustomers menu setup SQL.</small></div>';
   });
 })();
 </script>
