@@ -1,11 +1,23 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#073a2b"><meta name="description" content="POA CUSTOMERS GM Menu Management"><link rel="manifest" href="../manifest.webmanifest"><title>POA CUSTOMERS — Menu Management</title><link rel="stylesheet" href="../assets/style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script></head><body data-page="gm-menu"><header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/poa-logo.svg" alt="POA CUSTOMERS"></a><button class="icon" onclick="logout()">↪</button></header><main class="container"><h1 class="title">Menu Management</h1><p class="sub">Manage menu categories, items, images, and availability.</p>
-<div class="card"><h3>Add / Edit Category</h3><div class="field"><label>Existing category (select to edit)</label><select class="input" id="gmMenuCategory"><option value="">New category…</option></select></div><div class="field"><label>Category Name</label><input class="input" id="gmCategoryName" maxlength="80" placeholder="e.g. Hot Drinks"></div><div class="field"><label>Category Image URL (optional)</label><input class="input" id="gmCategoryImage" placeholder="Paste an image URL"></div><div style="display:flex;gap:8px"><button class="btn primary" style="flex:1" id="saveCategoryBtn">SAVE CATEGORY</button><button class="btn danger" id="deleteCategoryBtn" type="button" disabled>DELETE</button></div><div id="categoryMsg" class="note"></div></div>
-<div class="card"><h3>Add / Edit Menu Item</h3><input type="hidden" id="gmMenuId"><div class="field"><label>Category</label><select class="input" id="gmItemCategory"><option value="">Loading categories…</option></select></div><div class="field"><label>Item Name</label><input class="input" id="gmMenuName" placeholder="e.g. Spanish Latte"></div><div class="field"><label>Description</label><input class="input" id="gmMenuDescription" placeholder="Short product description"></div><div class="field"><label>Image URL (optional)</label><input class="input" id="gmMenuImage" placeholder="https://..."></div><div class="field"><label>Status</label><select class="input" id="gmMenuStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div><button class="btn primary block" id="saveMenuBtn">SAVE MENU ITEM</button><button class="btn block" id="cancelEditBtn" style="display:none;margin-top:8px">CANCEL EDIT</button><div id="menuMsg" class="note"></div></div>
+<div class="card"><h3>Add / Edit Category</h3><div class="field"><label>Existing category (select to edit)</label><select class="input" id="gmMenuCategory"><option value="">New category…</option></select></div><div class="field"><label>Category Name</label><input class="input" id="gmCategoryName" maxlength="80" placeholder="e.g. Hot Drinks"></div><div class="field"><label for="gmCategoryImage">Category Image (optional)</label><input class="input" id="gmCategoryImage" type="file" accept="image/*"><small class="sub">Choose an image from your device (max 5 MB).</small><div id="gmCategoryPreviewWrap" hidden style="margin-top:8px"><img id="gmCategoryPreview" alt="Category preview" style="width:100%;max-width:220px;height:120px;object-fit:cover;border-radius:12px"></div></div><div style="display:flex;gap:8px"><button class="btn primary" style="flex:1" id="saveCategoryBtn">SAVE CATEGORY</button><button class="btn danger" id="deleteCategoryBtn" type="button" disabled>DELETE</button></div><div id="categoryMsg" class="note"></div></div>
+<div class="card"><h3>Add / Edit Menu Item</h3><input type="hidden" id="gmMenuId"><div class="field"><label>Category</label><select class="input" id="gmItemCategory"><option value="">Loading categories…</option></select></div><div class="field"><label>Item Name</label><input class="input" id="gmMenuName" placeholder="e.g. Spanish Latte"></div><div class="field"><label>Description</label><input class="input" id="gmMenuDescription" placeholder="Short product description"></div><div class="field"><label for="gmMenuImage">Item Image (optional)</label><input class="input" id="gmMenuImage" type="file" accept="image/*"><small class="sub">Choose an image from your device (max 5 MB).</small><div id="gmItemPreviewWrap" hidden style="margin-top:8px"><img id="gmItemPreview" alt="Item preview" style="width:100%;max-width:220px;height:120px;object-fit:cover;border-radius:12px"></div></div><div class="field"><label>Status</label><select class="input" id="gmMenuStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div><button class="btn primary block" id="saveMenuBtn">SAVE MENU ITEM</button><button class="btn block" id="cancelEditBtn" style="display:none;margin-top:8px">CANCEL EDIT</button><div id="menuMsg" class="note"></div></div>
 <div class="card"><h3>Current Menu</h3><div id="gmMenuList"><div class="empty">Loading menu…</div></div></div></main><nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>⌂</b>Dashboard</a><a href="gm-members.html"><b>●</b>Customers</a><a href="gm-menu.html" class="active"><b>✦</b>Menu</a><a href="gm-settings.html"><b>⚙</b>More</a></div></nav>
-<script src="../assets/config.js"></script><script src="../assets/app.js?v=20261017-username"></script><script>
+<script src="../assets/config.js"></script><script src="../assets/app.js?v=20261017-device-image-upload"></script><script>
 (function(){
  const $=id=>document.getElementById(id), esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
  let categories=[], items=[];
+ async function uploadMenuImage(file, folder){
+   if(!file) return null;
+   if(!file.type || !file.type.startsWith("image/")) throw new Error("Choose an image file.");
+   if(file.size>5*1024*1024) throw new Error("Image must be 5 MB or smaller.");
+   const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+   const uid=(await sb.auth.getUser()).data?.user?.id; if(!uid) throw new Error("Please sign in again.");
+   const path=uid+"/"+folder+"/"+Date.now()+"-"+Math.random().toString(36).slice(2)+"."+ext;
+   const {error}=await sb.storage.from("poac-menu-images").upload(path,file,{upsert:false,contentType:file.type,cacheControl:"3600"});
+   if(error) throw new Error(error.message+". If the bucket is not configured, run POACustomers-menu-categories-setup.sql in Supabase.");
+   return sb.storage.from("poac-menu-images").getPublicUrl(path).data.publicUrl;
+ }
+ function previewFile(inputId,wrapId,imgId){const file=$(inputId).files?.[0];if(!file){$(wrapId).hidden=true;return;}if(!file.type.startsWith("image/")){showCategoryError("Choose an image file.");$(inputId).value="";$(wrapId).hidden=true;return;}if(file.size>5*1024*1024){showCategoryError("Image must be 5 MB or smaller.");$(inputId).value="";$(wrapId).hidden=true;return;}$(imgId).src=URL.createObjectURL(file);$(wrapId).hidden=false;}
  function showCategoryError(message){$("categoryMsg").textContent=message;$("menuMsg").textContent=message;}
  function fillCategories(){
    const selected=$("gmMenuCategory").value;
@@ -29,21 +41,23 @@
    $("gmMenuList").querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editItem(b.dataset.edit));
    $("gmMenuList").querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteItem(b.dataset.delete));
  }
- function editItem(id){const r=items.find(x=>x.id===id);if(!r)return;$("gmMenuId").value=r.id;$("gmItemCategory").value=r.category_id||"";$("gmMenuName").value=r.name||"";$("gmMenuDescription").value=r.description||"";$("gmMenuImage").value=r.image_url||"";$("gmMenuStatus").value=r.status||"active";$("cancelEditBtn").style.display="block";window.scrollTo({top:0,behavior:"smooth"});}
- function clearForm(){$("gmMenuId").value="";["gmMenuName","gmMenuDescription","gmMenuImage"].forEach(id=>$(id).value="");$("gmItemCategory").value="";$("gmMenuStatus").value="active";$("cancelEditBtn").style.display="none";}
- function resetCategoryForm(){$("gmMenuCategory").value="";$("gmCategoryName").value="";$("gmCategoryImage").value="";$("deleteCategoryBtn").disabled=true;$("categoryMsg").textContent="";}
+ function editItem(id){const r=items.find(x=>x.id===id);if(!r)return;$("gmMenuId").value=r.id;$("gmItemCategory").value=r.category_id||"";$("gmMenuName").value=r.name||"";$("gmMenuDescription").value=r.description||"";$("gmMenuImage").value="";$("gmItemPreviewWrap").hidden=!r.image_url;if(r.image_url)$("gmItemPreview").src=r.image_url;$("gmMenuStatus").value=r.status||"active";$("cancelEditBtn").style.display="block";window.scrollTo({top:0,behavior:"smooth"});}
+ function clearForm(){$("gmMenuId").value="";["gmMenuName","gmMenuDescription","gmMenuImage"].forEach(id=>$(id).value="");$("gmItemPreviewWrap").hidden=true;$("gmItemCategory").value="";$("gmMenuStatus").value="active";$("cancelEditBtn").style.display="none";}
+ function resetCategoryForm(){$("gmMenuCategory").value="";$("gmCategoryName").value="";$("gmCategoryImage").value="";$("gmCategoryPreviewWrap").hidden=true;$("deleteCategoryBtn").disabled=true;$("categoryMsg").textContent="";}
  async function deleteItem(id){if(!confirm("Delete this menu item?"))return;const {error}=await sb.from("menu_items").delete().eq("id",id);if(error){$("menuMsg").textContent=error.message;return;}$("menuMsg").textContent="Menu item deleted successfully.";await loadItems();}
- $("gmMenuCategory").onchange=()=>{const c=categories.find(x=>x.id===$("gmMenuCategory").value);$("gmCategoryName").value=c?.name||"";$("gmCategoryImage").value=c?.image_url||"";$("deleteCategoryBtn").disabled=!c;$("categoryMsg").textContent="";};
+ $("gmMenuCategory").onchange=()=>{const c=categories.find(x=>x.id===$("gmMenuCategory").value);$("gmCategoryName").value=c?.name||"";$("gmCategoryImage").value="";$("gmCategoryPreviewWrap").hidden=!c?.image_url;if(c?.image_url)$("gmCategoryPreview").src=c.image_url;$("deleteCategoryBtn").disabled=!c;$("categoryMsg").textContent="";};
  $("saveCategoryBtn").onclick=async()=>{
-   const id=$("gmMenuCategory").value.trim(),name=$("gmCategoryName").value.trim(),image_url=$("gmCategoryImage").value.trim()||null;
+   const id=$("gmMenuCategory").value.trim(),name=$("gmCategoryName").value.trim();
    if(!name){showCategoryError("Enter a category name.");return;}
    const profile=await getProfile();if(!profile||!['gm','admin'].includes(profile.role)){showCategoryError("GM access is required.");return;}
+   let image_url=categories.find(c=>c.id===id)?.image_url||null;
+   try{const file=$("gmCategoryImage").files?.[0];if(file)image_url=await uploadMenuImage(file,"categories");}catch(e){showCategoryError(e.message);return;}
    const payload={name,image_url,status:"active",is_active:true};
    const result=id?await sb.from("menu_categories").update(payload).eq("id",id):await sb.from("menu_categories").insert(payload);
    if(result.error){showCategoryError(result.error.message);return;}
    $("categoryMsg").textContent=id?"Category updated successfully.":"Category added successfully.";
    await loadCategories();
-   const saved=categories.find(c=>c.name.toLowerCase()===name.toLowerCase());if(saved){$("gmMenuCategory").value=saved.id;$("gmCategoryName").value=saved.name;$("gmCategoryImage").value=saved.image_url||"";$("deleteCategoryBtn").disabled=false;}
+   const saved=categories.find(c=>c.name.toLowerCase()===name.toLowerCase());if(saved){$("gmMenuCategory").value=saved.id;$("gmCategoryName").value=saved.name;$("gmCategoryImage").value="";$("gmCategoryPreviewWrap").hidden=!saved.image_url;if(saved.image_url)$("gmCategoryPreview").src=saved.image_url;$("deleteCategoryBtn").disabled=false;}
  };
  $("deleteCategoryBtn").onclick=async()=>{
    const id=$("gmMenuCategory").value,c=categories.find(x=>x.id===id);if(!id||!c)return;
@@ -53,15 +67,17 @@
    resetCategoryForm();await loadCategories();await loadItems();$("categoryMsg").textContent="Category deleted.";
  };
  $("saveMenuBtn").onclick=async()=>{
-   const id=$("gmMenuId").value.trim(),category_id=$("gmItemCategory").value,name=$("gmMenuName").value.trim(),description=$("gmMenuDescription").value.trim(),image_url=$("gmMenuImage").value.trim(),status=$("gmMenuStatus").value;
+   const id=$("gmMenuId").value.trim(),category_id=$("gmItemCategory").value,name=$("gmMenuName").value.trim(),description=$("gmMenuDescription").value.trim(),status=$("gmMenuStatus").value;
    if(!category_id){$("menuMsg").textContent="Select a category.";return;}if(!name){$("menuMsg").textContent="Item name is required.";return;}
    const profile=await getProfile();if(!profile||!['gm','admin'].includes(profile.role)){$("menuMsg").textContent="GM access is required.";return;}
    // The database keeps price for compatibility with existing schema; the UI no longer asks for or displays it.
-   const existing=items.find(x=>x.id===id);const payload={category_id,name,description:description||null,image_url:image_url||null,status};
+   const existing=items.find(x=>x.id===id);let image_url=existing?.image_url||null;try{const file=$("gmMenuImage").files?.[0];if(file)image_url=await uploadMenuImage(file,"items");}catch(e){$("menuMsg").textContent=e.message;return;}const payload={category_id,name,description:description||null,image_url,status};
    let result;if(id)result=await sb.from("menu_items").update(payload).eq("id",id);else result=await sb.from("menu_items").insert({...payload,price:0,created_by:profile.id});
    if(result.error){$("menuMsg").textContent=result.error.message;return;}
    $("menuMsg").textContent=id?"Menu item updated successfully.":"Menu item saved successfully.";clearForm();await loadItems();
  };
+ $("gmCategoryImage").addEventListener("change",()=>previewFile("gmCategoryImage","gmCategoryPreviewWrap","gmCategoryPreview"));
+ $("gmMenuImage").addEventListener("change",()=>previewFile("gmMenuImage","gmItemPreviewWrap","gmItemPreview"));
  $("cancelEditBtn").onclick=clearForm;
  (async()=>{const profile=await guardRole(["gm"]);if(!profile)return;const ok=await loadCategories();if(ok)await loadItems();})();
 })();
