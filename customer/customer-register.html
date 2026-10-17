@@ -13,20 +13,18 @@
 
 <div class="auth"><div class="authbox">
 <div class="logo"><img class="official-logo" src="../assets/poa-logo.svg" alt="POA CUSTOMERS"></div>
-<h2>Create Account</h2><p class="sub">Create your POA Customers Loyalty account with your email, phone, date of birth and password.</p>
-<div class="field"><label>Full Name</label><input id="name" class="input" autocomplete="name" placeholder="Full name"></div>
-<div class="field"><label>Mobile Number</label><input id="phone" class="input" type="tel" autocomplete="tel" placeholder="+971 ..."></div>
-<div class="field"><label>Date of Birth</label><input id="birthday" class="input" type="date" autocomplete="bday"></div>
-<div class="field"><label>Email</label><input id="email" class="input" type="email" autocomplete="email" placeholder="you@example.com"></div>
-<div class="field"><label>Password</label><input id="password" class="input" type="password" autocomplete="new-password" placeholder="At least 6 characters"></div>
-<div class="field"><label>Confirm Password</label><input id="confirm" class="input" type="password" autocomplete="new-password" placeholder="Repeat password"></div>
+<h2>Create Account</h2><p class="sub">Create your POA Customers Loyalty account using a username and password. Phone and date of birth are optional.</p>
+<div class="field"><label>Username</label><input id="username" class="input" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="24" placeholder="Choose a username (3–24 characters)"></div>
+<div class="field"><label>Mobile Number (Optional)</label><input id="phone" class="input" type="tel" autocomplete="tel" placeholder="+971 ... (optional)"></div>
+<div class="field"><label>Date of Birth (Optional)</label><input id="birthday" class="input" type="date" autocomplete="bday"></div>
+<div class="field"><label>Password</label><input id="password" class="input" type="password" autocomplete="new-password" minlength="6" placeholder="At least 6 characters"></div>
 <button id="registerBtn" class="btn primary block">Create My Loyalty Account →</button>
 <div id="msg" class="note"></div>
 <div class="center" style="margin-top:14px"><a href="customer-login.html" class="sub">Already have an account? Sign in</a></div>
 </div></div>
 
 <script src="../assets/config.js?v=20260925-final"></script>
-<script src="../assets/app.js?v=20260930-final"></script>
+<script src="../assets/app.js?v=20261017-username"></script>
 
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("../sw.js").catch(()=>{}));}</script>
 </body>
