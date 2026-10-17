@@ -1,4 +1,4 @@
-const CACHE = "poa-customers-v2-username";
+const CACHE = "poa-customers-v4-final-batch";
 const SHELL = [
   "./",
   "./index.html",
@@ -8,7 +8,14 @@ const SHELL = [
   "./manifest.webmanifest",
   "./assets/poa-logo.svg",
   "./assets/icons/icon-192.png",
-  "./assets/icons/icon-512.png"
+  "./assets/icons/icon-512.png",
+  "./customer/customer-menu.html",
+  "./customer/customer-locations.html",
+  "./gm/gm-dashboard.html",
+  "./gm/gm-categories.html",
+  "./gm/gm-menu.html",
+  "./gm/gm-locations.html",
+  "./admin/admin-dashboard.html"
 ];
 
 self.addEventListener("install", event => {
