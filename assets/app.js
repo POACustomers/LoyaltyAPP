@@ -294,9 +294,79 @@ async function logout() {
   location.href = "../index.html";
 }
 
+function escapeOfferHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#039;"}[ch]));
+}
+
+function getLocalDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function safeOfferImageSource(value) {
+  const source = String(value || "").trim();
+  if (/^data:image\/(png|jpe?g|webp|gif|avif);base64,/i.test(source)) return source;
+  if (/^https?:\/\//i.test(source)) return source;
+  return "";
+}
+
+async function loadCustomerHomeOffers() {
+  const content = $("homeOffersContent");
+  if (!content) return;
+
+  const today = getLocalDateString();
+  try {
+    const { data, error } = await sb
+      .from("offers")
+      .select("id,title,product_name,description,production_date,expiry_date,image_url,status,created_at")
+      .eq("status", "active")
+      .lte("production_date", today)
+      .gte("expiry_date", today)
+      .order("created_at", { ascending: false })
+      .limit(3);
+
+    // If offers are not configured yet, preserve the approved fallback message.
+    if (error) throw error;
+    const offers = Array.isArray(data) ? data : [];
+    if (!offers.length) return;
+
+    const cards = offers.map(offer => {
+      const title = offer.product_name || offer.title || "Special Offer";
+      const description = offer.description || "A special offer is available for customers.";
+      const image = safeOfferImageSource(offer.image_url);
+      const expiry = offer.expiry_date
+        ? `<span class="home-offer-expiry">Valid through ${escapeOfferHtml(offer.expiry_date)}</span>`
+        : "";
+      return `
+        <article class="home-offer-item">
+          ${image
+            ? `<div class="home-offer-image-wrap"><img class="home-offer-image" src="${escapeOfferHtml(image)}" alt="${escapeOfferHtml(title)}" loading="lazy"></div>`
+            : `<div class="home-offer-no-image" role="img" aria-label="Offer image unavailable"><span>★</span><small>Special Offer</small></div>`}
+          <div class="home-offer-body">
+            <strong class="home-offer-title">${escapeOfferHtml(title)}</strong>
+            <p class="home-offer-description">${escapeOfferHtml(description)}</p>
+            ${expiry}
+          </div>
+        </article>`;
+    }).join("");
+
+    content.className = "home-offers-content";
+    content.innerHTML = `
+      <div class="home-offers-head"><div><h3>Special Offers</h3><p class="sub">Current offers from POA Customers.</p></div></div>
+      <div class="home-offers-list">${cards}</div>`;
+  } catch (error) {
+    // Keep the page usable if offer read policies have not been applied yet.
+    console.warn("Could not load customer home offers:", error?.message || error);
+  }
+}
+
 async function loadCustomerHome() {
   const profile = await guardRole(["customer"]);
   if (!profile) return;
+
+  await loadCustomerHomeOffers();
 
   document.querySelectorAll("[data-name]").forEach(e => e.textContent = profile.full_name || "Customer");
   document.querySelectorAll("[data-points]").forEach(e => e.textContent = Math.min(50, Number(profile.points || 0)));

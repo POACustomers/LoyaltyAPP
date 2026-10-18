@@ -219,3 +219,27 @@ button.reward-choice-card:hover{transform:translateY(-1px)}
 .registration-chart-axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:5px;}
 .registration-chart-message{margin:12px 0 0;line-height:1.5;}
 @media(max-width:560px){.admin-registration-card{padding:15px;margin-bottom:90px;}.registration-chart-summary{gap:6px}.registration-stat{padding:9px}.registration-stat strong{font-size:21px}.registration-minute-chart{gap:1px;padding-left:0;padding-right:0}.registration-minute-value{font-size:7px}.registration-minute-tick{font-size:7px}.admin-chart-head{align-items:center}}
+
+
+/* Customer home: show current GM-managed offer images inside the existing promo panel. */
+.home-offers-card{padding:0;overflow:hidden}
+.home-offers-fallback{padding:20px}
+.home-offers-fallback h3{margin:0 0 10px;font-size:18px;color:var(--ink)}
+.home-offers-fallback p{margin:0}
+.home-offers-content{padding:18px}
+.home-offers-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.home-offers-head h3{margin:0 0 5px;color:var(--green);font-size:18px}
+.home-offers-head .sub{margin:0;font-size:12px}
+.home-offers-link{flex:0 0 auto;color:var(--green);font-weight:800;font-size:12px;padding:8px 10px;border-radius:10px;background:#edf2eb}
+.home-offers-list{display:grid;gap:12px}
+.home-offer-item{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:16px;background:#fff}
+.home-offer-image-wrap{display:flex;align-items:center;justify-content:center;width:100%;min-height:90px;max-height:240px;padding:8px;background:#f5f1e8}
+.home-offer-image{display:block;width:100%;height:auto;max-height:224px;object-fit:contain;object-position:center}
+.home-offer-no-image{min-height:105px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;background:linear-gradient(135deg,#071d49,#123f78);color:#fff}
+.home-offer-no-image span{font-size:32px;color:#d7a535;line-height:1}
+.home-offer-no-image small{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:800}
+.home-offer-body{padding:12px 14px}
+.home-offer-title{display:block;color:var(--green);font-size:15px;margin-bottom:5px}
+.home-offer-description{margin:0;color:var(--muted);font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.home-offer-expiry{display:inline-block;margin-top:8px;color:#8b6a2f;font-size:10px;font-weight:800}
+@media(max-width:560px){.home-offers-content{padding:14px}.home-offer-image-wrap{max-height:190px}.home-offer-image{max-height:180px}.home-offers-head h3{font-size:16px}}
