@@ -1,1 +1,40 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=customer/customer-menu.html"><title>POA Customers Menu</title></head><body><p>The menu has moved. <a href="customer/customer-menu.html">Open the current POA Customers menu</a>.</p></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071D49">
+<meta name="description" content="POAC Software Solutions — public menu">
+<link rel="manifest" href="manifest.webmanifest">
+<title>POAC — Our Menu</title>
+<link rel="stylesheet" href="assets/style.css?v=20261018-category-fit-logo">
+<link rel="stylesheet" href="assets/menu-display.css?v=20261018-category-fit-logo">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+</head>
+<body data-menu-standalone>
+<header class="topbar">
+  <a class="brand brand-image" href="index.html" aria-label="POAC Software Solutions home">
+    <img class="brand-logo" src="assets/poac-logo-icon.png" alt="POAC Software Solutions">
+  </a>
+  <a class="btn soft" href="index.html" style="text-decoration:none">Home</a>
+</header>
+<main class="container menu-page">
+  <div class="menu-hero">
+    <p class="eyebrow">POAC SOFTWARE SOLUTIONS</p>
+    <h1 class="title">Our Menu</h1>
+    <p class="sub">Choose a category to view the available items.</p>
+  </div>
+  <section class="menu-panel card" aria-label="Menu">
+    <div id="menuCategoriesView"><div class="menu-loading">Loading menu…</div></div>
+    <div id="menuItemsView" hidden></div>
+  </section>
+</main>
+<script src="assets/config.js?v=20261018-category-fit-logo"></script>
+<script src="assets/menu-display.js?v=20261018-category-fit-logo"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>

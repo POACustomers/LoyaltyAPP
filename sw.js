@@ -1,12 +1,14 @@
-const CACHE = "poa-customers-v5-blue-gold-brand";
+const CACHE = "poa-customers-v7-logo-category-fit";
 const SHELL = [
   "./",
   "./index.html",
+  "./menu.html",
   "./assets/style.css",
   "./assets/app.js",
   "./assets/config.js",
+  "./assets/menu-display.css",
+  "./assets/menu-display.js",
   "./manifest.webmanifest",
-  "./assets/poa-logo.svg",
   "./assets/poac-logo-full.png",
   "./assets/poac-logo-icon.png",
   "./assets/icons/icon-192.png",
