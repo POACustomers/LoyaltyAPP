@@ -1,4 +1,4 @@
-const CACHE = "poa-customers-v7-logo-category-fit";
+const CACHE = "poa-customers-v8-customer-home-offers";
 const SHELL = [
   "./",
   "./index.html",
@@ -13,6 +13,7 @@ const SHELL = [
   "./assets/poac-logo-icon.png",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
+  "./customer/customer-home.html",
   "./customer/customer-menu.html",
   "./customer/customer-locations.html",
   "./gm/gm-dashboard.html",
