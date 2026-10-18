@@ -1,4 +1,4 @@
-const CACHE = "poa-customers-v8-customer-home-offers";
+const CACHE = "poa-customers-v9-category-form-cleanup";
 const SHELL = [
   "./",
   "./index.html",
