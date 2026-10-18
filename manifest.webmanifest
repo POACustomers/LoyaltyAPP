@@ -5,7 +5,7 @@
   "scope": "./",
   "display": "standalone",
   "background_color": "#f5efe2",
-  "theme_color": "#0b4a36",
+  "theme_color": "#071D49",
   "description": "POACustomers customer, staff, GM and admin loyalty system.",
   "icons": [
     {
