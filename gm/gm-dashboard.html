@@ -1,37 +1,8 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#073a2b">
-<link rel="manifest" href="../manifest.webmanifest">
-<title>GM Dashboard</title>
-<link rel="stylesheet" href="../assets/style.css?v=20260930-final">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-</head>
-<body data-page="gm-dashboard">
-
-<header class="topbar">
-<a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/poa-logo.svg" alt="POA CUSTOMERS"></a>
-<button class="icon" onclick="logout()" title="Sign out">↪</button>
-</header>
-<main class="container">
-<h1 class="title">Dashboard</h1><p class="sub">Live loyalty activity and performance.</p>
-<div class="grid g2">
-<div class="card stat"><i>♙</i><div><strong id="members">—</strong><span>Total Customers</span></div></div>
-<div class="card stat"><i>★</i><div><strong id="issued">—</strong><span>Points Issued</span></div></div>
-<div class="card stat"><i>♔</i><div><strong id="redeemed">—</strong><span>Points Redeemed</span></div></div>
-<div class="card stat"><i>♙</i><div><strong id="weekCustomers">—</strong><span>New Customers This Week</span></div></div>
-<div class="card stat"><i>♙</i><div><strong id="monthCustomers">—</strong><span>New Customers This Month</span></div></div>
-</div>
-<div class="card report-chart-card" style="margin-top:18px"><div class="row"><div class="grow"><h3 style="margin:0">Performance Overview</h3><p class="sub" style="margin:5px 0 0">Live figures from the loyalty database.</p></div></div><div id="reportChart" class="report-chart" aria-label="Live performance chart"></div></div>
-</main>
-<nav class="nav"><div class="navin"><a href="gm-dashboard.html" class="active"><b>▦</b>Dashboard</a>
-<a href="gm-members.html"><b>♙</b>Customers</a>
-<a href="gm-locations.html"><b>⌖</b>Locations</a>
-<a href="gm-settings.html"><b>⚙</b>Settings</a></div></nav>
-<script src="../assets/config.js"></script>
-<script src="../assets/app.js?v=20261017-username"></script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("../sw.js").catch(()=>{}));}</script>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#073a2b"><link rel="manifest" href="../manifest.webmanifest"><title>GM Dashboard — POA Customers</title><link rel="stylesheet" href="../assets/style.css?v=20261017-final-batch"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<style>.gm-dashboard-main{padding-bottom:110px}.gm-welcome{margin-top:16px;padding:24px;background:linear-gradient(135deg,#fffdf8 0%,#f1eee3 100%);border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 24px rgba(35,50,35,.05)}.gm-welcome-kicker{font-size:10px;font-weight:900;letter-spacing:1.4px;text-transform:uppercase;color:var(--gold);margin:0 0 8px}.gm-welcome h2{font-family:Georgia,"Times New Roman",serif;color:var(--green);font-size:28px;line-height:1.15;margin:0}.gm-welcome p{color:var(--muted);font-size:13px;line-height:1.55;margin:9px 0 0}.gm-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}.gm-shortcut{display:flex;align-items:center;gap:12px;min-height:76px;padding:15px;border-radius:16px;background:var(--surface,#fffdf8);border:1px solid var(--line);color:var(--text);text-decoration:none;box-shadow:0 5px 16px rgba(35,50,35,.04)}.gm-shortcut-icon{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;background:#edf1e8;border-radius:12px;color:var(--green);font-size:20px}.gm-shortcut strong{display:block;font-size:13px;color:var(--green)}.gm-shortcut small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.gm-shortcut:hover{border-color:var(--gold)}@media(max-width:460px){.gm-welcome{padding:20px}.gm-welcome h2{font-size:25px}.gm-shortcuts{gap:9px}.gm-shortcut{padding:11px;gap:8px}.gm-shortcut-icon{width:34px;height:34px;flex-basis:34px;font-size:17px}.gm-shortcut strong{font-size:12px}}</style>
+</head><body data-page="gm-dashboard"><header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/poa-logo.svg" alt="POA CUSTOMERS"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
+<main class="container gm-dashboard-main"><p class="eyebrow">POA CUSTOMERS</p><h1 class="title">Dashboard</h1><p class="sub">General management workspace.</p><section class="gm-welcome"><p class="gm-welcome-kicker">Management Portal</p><h2>Welcome, <span id="gmWelcomeName">GM</span></h2><p>Manage your menu, customers, rewards, offers, and real branch locations from one place.</p></section>
+<section class="gm-shortcuts" aria-label="Management shortcuts"><a class="gm-shortcut" href="gm-members.html"><span class="gm-shortcut-icon">♙</span><span><strong>Customers</strong><small>View loyalty members</small></span></a><a class="gm-shortcut" href="gm-menu.html"><span class="gm-shortcut-icon">☰</span><span><strong>Menu</strong><small>Categories and items</small></span></a><a class="gm-shortcut" href="gm-locations.html"><span class="gm-shortcut-icon">⌖</span><span><strong>Branch Locations</strong><small>Add or update branches</small></span></a><a class="gm-shortcut" href="gm-settings.html"><span class="gm-shortcut-icon">⚙</span><span><strong>Settings</strong><small>Account and profile</small></span></a></section></main>
+<nav class="nav"><div class="navin"><a href="gm-dashboard.html" class="active"><b>▦</b>Dashboard</a><a href="gm-members.html"><b>♙</b>Customers</a><a href="gm-locations.html"><b>⌖</b>Locations</a><a href="gm-settings.html"><b>⚙</b>Settings</a></div></nav>
+<script src="../assets/config.js?v=20261017-final-batch"></script><script src="../assets/app.js?v=20261017-final-batch"></script><script>if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script></body></html>
