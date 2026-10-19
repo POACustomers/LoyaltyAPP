@@ -1,9 +1,16 @@
-const CACHE = "poa-customers-v11-currency-egp";
+const CACHE = "dina-corner-v12-floral-theme";
 const SHELL = [
   "./",
   "./index.html",
   "./menu.html",
   "./assets/style.css",
+  "./assets/dina-theme.css",
+  "./assets/dina-corner-logo.png",
+  "./assets/dina-corner-icon.png",
+  "./assets/dina-floral-tl.png",
+  "./assets/dina-floral-tr.png",
+  "./assets/dina-floral-bl.png",
+  "./assets/dina-floral-br.png",
   "./assets/app.js",
   "./assets/config.js",
   "./assets/menu-display.css",
@@ -11,8 +18,6 @@ const SHELL = [
   "./assets/pickup-orders.css",
   "./assets/pickup-orders.js",
   "./manifest.webmanifest",
-  "./assets/poac-logo-full.png",
-  "./assets/poac-logo-icon.png",
   "./assets/reward-hot-cold.jpg",
   "./assets/reward-breakfast.jpg",
   "./assets/reward-breakfast-drink.jpg",
@@ -21,14 +26,16 @@ const SHELL = [
   "./customer/customer-home.html",
   "./customer/customer-menu.html",
   "./customer/customer-orders.html",
-  "./gm/gm-orders.html",
-  "./staff/staff-orders.html",
+  "./customer/customer-rewards.html",
   "./customer/customer-locations.html",
+  "./customer/customer-profile.html",
   "./gm/gm-dashboard.html",
+  "./gm/gm-orders.html",
   "./gm/gm-categories.html",
   "./gm/gm-menu.html",
   "./gm/gm-locations.html",
-  "./admin/admin-dashboard.html"
+  "./admin/admin-dashboard.html",
+  "./staff/staff-orders.html"
 ];
 
 self.addEventListener("install", event => {

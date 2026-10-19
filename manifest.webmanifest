@@ -1,12 +1,12 @@
 {
-  "name": "POACustomers Loyalty System",
-  "short_name": "POACustomers",
+  "name": "Dina's Corner Loyalty & Orders",
+  "short_name": "Dina's Corner",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f5efe2",
-  "theme_color": "#071D49",
-  "description": "POACustomers customer, staff, GM and admin loyalty system.",
+  "background_color": "#FFF4ED",
+  "theme_color": "#C65F78",
+  "description": "Dina's Corner customer loyalty, branch pickup orders, menu and rewards.",
   "icons": [
     {
       "src": "assets/icons/icon-192.png",
