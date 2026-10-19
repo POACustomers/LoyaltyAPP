@@ -1,7 +1,7 @@
 
 const POA_RUNTIME_CONFIG = window.POA_CONFIG || {};
-const SUPABASE_URL = String(POA_RUNTIME_CONFIG.SUPABASE_URL || "").trim();
-const SUPABASE_KEY = String(POA_RUNTIME_CONFIG.SUPABASE_PUBLISHABLE_KEY || "").trim();
+const SUPABASE_URL = String(POA_RUNTIME_CONFIG.SUPABASE_URL || "https://nbwqoknkpkqgorxtyjnm.supabase.co").trim();
+const SUPABASE_KEY = String(POA_RUNTIME_CONFIG.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_ncPKXMFDGB6HI1lHs1kYmg_dB3hgaer").trim();
 const SUPABASE_CONFIGURED = /^https:\/\/[^/]+\.supabase\.co\/?$/i.test(SUPABASE_URL) && !!SUPABASE_KEY && !/YOUR[_-]|PLACEHOLDER|REPLACE_ME/i.test(SUPABASE_KEY + SUPABASE_URL);
 
 if (!SUPABASE_CONFIGURED) {
