@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#071D49"><meta name="description" content="POA CUSTOMERS GM Menu Management"><link rel="manifest" href="../manifest.webmanifest"><title>POA Customers — Menu Management</title><link rel="stylesheet" href="../assets/style.css?v=20261017-final-batch"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#071D49"><meta name="description" content="POA CUSTOMERS GM Menu Management"><link rel="manifest" href="../manifest.webmanifest"><title>POA Customers — Menu Management</title><link rel="stylesheet" href="../assets/style.css?v=20261019-price-optional"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <style>
 .menu-management-main{padding-bottom:116px}.menu-management-heading{margin-bottom:18px}.menu-form-grid{display:grid;grid-template-columns:1fr;gap:0}.menu-management-preview{margin-top:8px}.menu-management-preview img{display:block;width:100%;max-width:220px;height:130px;object-fit:cover;border-radius:12px;border:1px solid var(--line);background:#f4eee3}.menu-management-list{display:grid;gap:12px}.menu-management-item{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid var(--line);border-radius:15px;background:var(--surface,#fffdf8)}.menu-management-item .reward-product-image,.menu-management-item .menu-item-fallback{width:76px;height:76px;flex:0 0 76px;border-radius:14px;object-fit:cover;background:#f2ebdf;display:grid;place-items:center;font-size:27px}.menu-management-item .menu-item-details{flex:1;min-width:0}.menu-management-item .menu-item-details strong{display:block;color:var(--green)}.menu-management-item .menu-item-details small{display:block;margin-top:4px;color:var(--muted);font-size:11px;line-height:1.45}.menu-management-item .menu-item-price{display:block;margin-top:5px;color:var(--green);font-weight:900;font-size:13px}.menu-management-actions{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}.menu-management-actions .btn{padding:8px 10px;font-size:10px}.menu-management-note{white-space:pre-wrap;line-height:1.5;margin-top:10px}.menu-management-empty{padding:22px;border:1px dashed var(--line);border-radius:14px;text-align:center;color:var(--muted)}@media(max-width:540px){.menu-management-item{align-items:flex-start;flex-wrap:wrap}.menu-management-item .menu-item-details{flex:1 1 calc(100% - 100px)}.menu-management-actions{margin-left:88px}}
 </style></head>
@@ -9,13 +9,13 @@
 <div class="field"><label for="gmItemCategory">Category *</label><select class="input" id="gmItemCategory" required><option value="">Loading categories…</option></select></div>
 <div class="field"><label for="gmMenuName">Item Name *</label><input class="input" id="gmMenuName" maxlength="160" placeholder="e.g. Spanish Latte" required></div>
 <div class="field"><label for="gmMenuDescription">Description</label><input class="input" id="gmMenuDescription" maxlength="500" placeholder="Short product description"></div>
-<div class="field"><label for="gmMenuPrice">Price (AED) *</label><input class="input" id="gmMenuPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 18.00" required></div>
+<div class="field"><label for="gmMenuPrice">Price (AED) (optional)</label><input class="input" id="gmMenuPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Leave blank if price is not set"></div>
 <div class="field"><label for="gmMenuImage">Item Image (optional)</label><input class="input" id="gmMenuImage" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/svg+xml"><small class="sub">Choose an image from your device (max 5 MB). No image URL is required.</small><div class="menu-management-preview" id="gmItemPreviewWrap" hidden><img id="gmItemPreview" alt="Selected menu item image preview"></div></div>
 <div class="field"><label for="gmMenuStatus">Status</label><select class="input" id="gmMenuStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
 </div><div class="g2"><button class="btn primary" id="saveMenuBtn" type="button">SAVE MENU ITEM</button><button class="btn" id="cancelEditBtn" type="button" hidden>CANCEL EDIT</button></div><div id="menuMsg" class="note menu-management-note" role="status" aria-live="polite"></div></section>
 <section class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h3 style="margin:0">Current Menu</h3><button class="btn soft" id="refreshMenuBtn" type="button">REFRESH</button></div><div class="menu-management-list" id="gmMenuList" style="margin-top:14px"><div class="menu-management-empty">Loading menu items…</div></div></section></main>
-<nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html" class="active"><b>☰</b>Menu</a><a href="gm-settings.html"><b>⚙</b>Settings</a></div></nav>
-<script src="../assets/config.js?v=20261017-final-batch"></script><script src="../assets/app.js?v=20261017-final-batch"></script>
+<nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-orders.html"><b>▣</b>Orders</a><a href="gm-menu.html" class="active"><b>☰</b>Menu</a><a href="gm-settings.html"><b>⚙</b>Settings</a></div></nav>
+<script src="../assets/config.js?v=20261017-final-batch"></script><script src="../assets/app.js?v=20261019-reward-image-fallback"></script>
 <script>
 (function(){
  const $=id=>document.getElementById(id);
@@ -58,9 +58,10 @@
    box.innerHTML=items.map(r=>{
      const category=categories.find(c=>c.id===r.category_id)?.name||'Category unavailable';
      const img=r.image_url?'<img class="reward-product-image" src="'+esc(r.image_url)+'" alt="'+esc(r.name)+'" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="menu-item-fallback" hidden aria-hidden="true">☕</div>':'<div class="menu-item-fallback" aria-hidden="true">☕</div>';
-     const price=Number.isFinite(Number(r.price))?'AED '+Number(r.price).toFixed(2):'Price not set';
+     const hasPrice=r.price!==null&&r.price!==undefined&&String(r.price).trim()!==''&&Number.isFinite(Number(r.price))&&Number(r.price)>=0;
+     const price=hasPrice?'AED '+Number(r.price).toFixed(2):'';
      const status=String(r.status||'active').toLowerCase()==='active'&&r.is_active!==false?'Active':'Inactive';
-     return '<article class="menu-management-item">'+img+'<div class="menu-item-details"><strong>'+esc(r.name||'Menu item')+'</strong><small>'+esc(category)+(r.description?'<br>'+esc(r.description):'')+'</small><span class="menu-item-price">'+esc(price)+'</span></div><span class="badge">'+status+'</span><div class="menu-management-actions"><button class="btn" type="button" data-item-edit="'+esc(r.id)+'">EDIT</button><button class="btn danger" type="button" data-item-delete="'+esc(r.id)+'">DELETE</button></div></article>';
+     return '<article class="menu-management-item">'+img+'<div class="menu-item-details"><strong>'+esc(r.name||'Menu item')+'</strong><small>'+esc(category)+(r.description?'<br>'+esc(r.description):'')+'</small>'+(price?'<span class="menu-item-price">'+esc(price)+'</span>':'')+'</div><span class="badge">'+status+'</span><div class="menu-management-actions"><button class="btn" type="button" data-item-edit="'+esc(r.id)+'">EDIT</button><button class="btn danger" type="button" data-item-delete="'+esc(r.id)+'">DELETE</button></div></article>';
    }).join('');
    box.querySelectorAll('[data-item-edit]').forEach(button=>button.addEventListener('click',()=>edit(button.dataset.itemEdit)));
    box.querySelectorAll('[data-item-delete]').forEach(button=>button.addEventListener('click',()=>remove(button.dataset.itemDelete)));
@@ -85,10 +86,10 @@
    message('Menu item deleted.');await loadItems();
  }
  async function save(){
-   const id=$('gmMenuId').value.trim(),category_id=$('gmItemCategory').value,name=$('gmMenuName').value.trim(),description=$('gmMenuDescription').value.trim(),priceRaw=$('gmMenuPrice').value.trim(),price=Number(priceRaw),status=$('gmMenuStatus').value;
+   const id=$('gmMenuId').value.trim(),category_id=$('gmItemCategory').value,name=$('gmMenuName').value.trim(),description=$('gmMenuDescription').value.trim(),priceRaw=$('gmMenuPrice').value.trim(),price=priceRaw===''?null:Number(priceRaw),status=$('gmMenuStatus').value;
    if(!category_id){message('Select a category. Create one from Settings → Categories if the list is empty.',true);return;}
    if(!name){message('Item name is required.',true);$('gmMenuName').focus();return;}
-   if(priceRaw===''||!Number.isFinite(price)||price<0){message('Enter a valid price (AED 0 or more).',true);$('gmMenuPrice').focus();return;}
+   if(priceRaw!==''&&(!Number.isFinite(price)||price<0)){message('Enter a valid price (AED 0 or more), or leave it blank.',true);$('gmMenuPrice').focus();return;}
    const profile=await getProfile();if(!profile||!['gm','admin'].includes(profile.role)){message('GM access is required.',true);return;}
    const existing=items.find(row=>row.id===id);let image_url=existing?.image_url||null;
    const button=$('saveMenuBtn');button.disabled=true;const oldText=button.textContent;button.textContent='SAVING…';

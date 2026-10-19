@@ -67,10 +67,10 @@
     <a href="gm-members.html"><b>♙</b>Customers</a>
     <a href="gm-locations.html"><b>⌖</b>Locations</a>
     <a href="gm-settings.html"><b>⚙</b>Settings</a>
-  </div></nav>
+  <a href="gm-orders.html"><b>▣</b>Orders</a></div></nav>
 
   <script src="../assets/config.js?v=20261018-reward-edit-delete"></script>
-  <script src="../assets/app.js?v=20261018-reward-edit-delete"></script>
+  <script src="../assets/app.js?v=20261019-reward-image-fallback"></script>
   <script>
   (() => {
     const $ = id => document.getElementById(id);
@@ -109,12 +109,27 @@
     }
 
     function showPreview(src, label = 'Current reward image') {
+      const preview = $('rewardImagePreview');
       if (!src) {
         $('rewardImagePreviewWrap').hidden = true;
-        $('rewardImagePreview').removeAttribute('src');
+        preview.onerror = null;
+        preview.removeAttribute('src');
+        preview.dataset.fallbackAttempted = '';
         return;
       }
-      $('rewardImagePreview').src = src;
+      preview.dataset.fallbackAttempted = '';
+      preview.onerror = function () {
+        if (preview.dataset.fallbackAttempted !== 'true') {
+          preview.dataset.fallbackAttempted = 'true';
+          preview.src = rewardImageFallback({ title: $('rewardName').value });
+          return;
+        }
+        preview.onerror = null;
+        preview.hidden = true;
+        $('rewardImagePreviewLabel').textContent = 'Image unavailable; choose a new image to replace it.';
+      };
+      preview.hidden = false;
+      preview.src = src;
       $('rewardImagePreviewLabel').textContent = label;
       $('rewardImagePreviewWrap').hidden = false;
     }
@@ -163,9 +178,7 @@
       }
       box.innerHTML = rewards.map(reward => `
         <article class="reward" style="align-items:center;flex-wrap:wrap;gap:12px">
-          ${reward.image_url
-            ? `<img class="reward-product-image" src="${escReward(reward.image_url)}" alt="${escReward(reward.title || reward.name || 'Reward')}" onerror="this.hidden=true">`
-            : '<div class="food">★</div>'}
+          <img class="reward-product-image" src="${escReward(rewardImageFor(reward))}" data-fallback-src="${escReward(rewardImageFallback(reward))}" alt="${escReward(reward.title || reward.name || 'Reward')}" onerror="handleRewardImageError(this)">
           <div class="grow" style="min-width:120px">
             <strong>${escReward(reward.title || reward.name || 'Reward')}</strong>
             <small>${escReward(reward.description || '')}${reward.description ? ' · ' : ''}${Number(reward.points_cost || 10)} points</small>
