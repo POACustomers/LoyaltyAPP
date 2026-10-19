@@ -106,7 +106,7 @@ function bindAvatarChoices(currentUrl, profileName) {
 function bindCustomerNav(page) {
   const map = {
     "customer-home":"home", "customer-card":"card", "customer-rewards":"rewards",
-    "customer-offers":"offers", "customer-menu":"menu", "customer-locations":"locations"
+    "customer-offers":"offers", "customer-menu":"menu", "customer-locations":"locations", "customer-orders":"orders", "customer-profile":"profile"
   };
   document.querySelectorAll("[data-nav]").forEach(a => a.classList.toggle("active", a.dataset.nav === map[page]));
 }
@@ -538,6 +538,44 @@ async function loadCustomerLocations() {
   }).join("");
 }
 
+function rewardImageFallback(reward) {
+  const labels = [reward?.title, reward?.name].filter(Boolean).join(" ").toLowerCase();
+  const normalized = labels.replace(/[^a-z0-9]+/g, " ").trim();
+  if (normalized.includes("breakfast") && (normalized.includes("drink") || normalized.includes("beverage"))) {
+    return "../assets/reward-breakfast-drink.jpg";
+  }
+  if (normalized.includes("breakfast")) {
+    return "../assets/reward-breakfast.jpg";
+  }
+  if ((normalized.includes("hot") || normalized.includes("cold")) && normalized.includes("drink")) {
+    return "../assets/reward-hot-cold.jpg";
+  }
+  return "../assets/reward-hot-cold.jpg";
+}
+
+function rewardImageFor(reward) {
+  const saved = String(reward?.image_url || "").trim();
+  return saved || rewardImageFallback(reward);
+}
+
+// Supabase may still contain an outdated image URL. Fall back to the matching
+// local asset bundled with the site, without requiring a database update.
+function handleRewardImageError(img) {
+  if (!img) return;
+  const fallback = String(img.dataset.fallbackSrc || "").trim();
+  if (fallback && img.dataset.fallbackAttempted !== "true") {
+    img.dataset.fallbackAttempted = "true";
+    const absoluteFallback = new URL(fallback, document.baseURI).href;
+    if (img.src !== absoluteFallback) {
+      img.src = fallback;
+      return;
+    }
+  }
+  img.onerror = null;
+  img.alt = "";
+  img.classList.add("reward-image-unavailable");
+}
+
 async function loadCustomerRewards() {
   const profile = await guardRole(["customer"]);
   if (!profile) return;
@@ -562,10 +600,10 @@ async function loadCustomerRewards() {
     const cost = Number(r.points_cost || 0);
     const canUse = customerPoints >= cost;
     const status = canUse ? "Available with your points" : `Need ${moneyPoints(cost - customerPoints)} more points`;
-    const img = r.image_url || "../assets/free-drink.svg";
+    const img = rewardImageFor(r);
     return `
       <div class="card reward-choice-card">
-        <img class="reward-large-image" src="${esc(img)}" alt="${esc(r.title || r.name || "Reward")}">
+        <img class="reward-large-image" src="${esc(img)}" data-fallback-src="${esc(rewardImageFallback(r))}" alt="${esc(r.title || r.name || "Reward")}" onerror="handleRewardImageError(this)">
         <div class="reward-choice-body">
           <strong>${esc(r.title || r.name || "Reward")}</strong>
           <p>${esc(r.description || "Reward available")}</p>
@@ -722,10 +760,10 @@ async function loadStaffRedeem() {
   box.innerHTML = data?.length ? data.map(r => {
     const cost = Number(r.points_cost || 0);
     const canRedeem = customerPoints >= cost;
-    const img = r.image_url || "../assets/free-drink.svg";
+    const img = rewardImageFor(r);
     return `
       <button type="button" class="card reward-choice-card staff-reward-select" data-reward-id="${esc(r.id)}" data-cost="${cost}">
-        <img class="reward-large-image" src="${esc(img)}" alt="${esc(r.title || r.name || "Reward")}">
+        <img class="reward-large-image" src="${esc(img)}" data-fallback-src="${esc(rewardImageFallback(r))}" alt="${esc(r.title || r.name || "Reward")}" onerror="handleRewardImageError(this)">
         <span class="reward-choice-body">
           <strong>${esc(r.title || r.name || "Reward")}</strong>
           <span>${esc(r.description || "Reward available")}</span>

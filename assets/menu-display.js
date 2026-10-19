@@ -74,9 +74,13 @@
         ? '<img class="menu-item-image" src="'+esc(item.image_url)+'" alt="'+esc(item.name||'Menu item')+'" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="menu-placeholder" aria-hidden="true" hidden>'+esc(cat?.icon||'☕')+'</div>'
         : '<div class="menu-placeholder" aria-hidden="true">'+esc(cat?.icon||'☕')+'</div>';
       const desc=item.description?'<small class="menu-item-description">'+esc(item.description)+'</small>':'';
-      const rawPrice=Number(item.price);
-      const price=Number.isFinite(rawPrice)?'AED '+rawPrice.toFixed(2):'';
-      return '<article class="menu-item">'+image+'<div class="menu-item-copy"><strong class="menu-item-name">'+esc(item.name||'Menu item')+'</strong>'+desc+(price?'<span class="menu-item-price">'+price+'</span>':'')+'</div></article>';
+      const priceMissing=item.price===null||item.price===undefined||String(item.price).trim()==='';
+      const rawPrice=priceMissing?null:Number(item.price);
+      const price=rawPrice!==null&&Number.isFinite(rawPrice)&&rawPrice>=0?'AED '+rawPrice.toFixed(2):'';
+      const pickupAction=document.body.dataset.page==='customer-menu'
+        ? '<button type="button" class="menu-add-order" data-add-to-order="'+esc(item.id)+'">Add to order</button>'
+        : '';
+      return '<article class="menu-item">'+image+'<div class="menu-item-copy"><strong class="menu-item-name">'+esc(item.name||'Menu item')+'</strong>'+desc+(price?'<span class="menu-item-price">'+price+'</span>':'')+pickupAction+'</div></article>';
     }).join(''):'<div class="menu-empty">No items in this category yet.</div>';
 
     itemsView.innerHTML='<div class="menu-head">'
@@ -87,6 +91,15 @@
       +'<p class="menu-small-note">Tap the back arrow to return to all categories.</p>'
       +'<div class="menu-list">'+rows+'</div>';
     itemsView.querySelector('.menu-back').addEventListener('click',renderCategories);
+    itemsView.querySelectorAll('[data-add-to-order]').forEach(btn=>btn.addEventListener('click',()=>{
+      const item=items.find(row=>String(row.id)===String(btn.dataset.addToOrder));
+      if(!item)return;
+      if(typeof window.POAAddItemToCart==='function'){
+        window.POAAddItemToCart(item);
+      }else{
+        alert('Order cart is not ready. Refresh the page and try again.');
+      }
+    }));
   }
 
   async function loadMenu(){
@@ -100,6 +113,7 @@
 
     categories=normalizeCategoryRows(Array.isArray(categoryResult.data)?categoryResult.data:[]);
     items=Array.isArray(itemResult.data)?itemResult.data:[];
+    window.POACurrentMenuItems=items;
     renderCategories();
   }
 
