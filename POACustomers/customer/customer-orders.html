@@ -8,7 +8,7 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <title>My Orders</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261019-delivery-staff-orders">
-<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261019-delivery-staff-orders">
+<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261019-saved-addresses"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261019-saved-addresses">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script src="../assets/tenant-config.js?v=20261019-tenant-config"></script>
 <script src="../assets/tenant-branding.js?v=20261019-tenant-branding"></script>
@@ -46,6 +46,10 @@
 
       <section id="deliveryDetails" class="delivery-details" hidden aria-labelledby="deliveryDetailsTitle">
         <h3 id="deliveryDetailsTitle">Delivery location</h3>
+        <label class="pickup-field" for="deliverySavedAddress">Choose a saved address
+          <select id="deliverySavedAddress" class="input"><option value="">Loading your saved addresses…</option></select>
+        </label>
+        <p class="pickup-note" style="margin-top:-4px"><a href="customer-profile.html">Manage or add delivery addresses in My Profile</a>. Your default address is selected automatically.</p>
         <label class="pickup-field" for="deliveryAddress">Full delivery address <span class="required-mark">*</span>
           <textarea id="deliveryAddress" class="input" maxlength="500" placeholder="Building, street, area, floor or apartment"></textarea>
         </label>
@@ -79,8 +83,8 @@
 <a href="customer-home.html" data-nav="home"><b>⌂</b>Home</a><a href="customer-rewards.html" data-nav="rewards"><b>★</b>Rewards</a><a href="customer-locations.html" data-nav="locations"><b>⌖</b>Locations</a><a href="customer-offers.html" data-nav="offers"><b>◇</b>Offers</a><a href="customer-menu.html" data-nav="menu"><b>☰</b>Menu</a><a href="customer-orders.html" data-nav="orders" class="active"><b>▣</b>Orders</a><a href="customer-profile.html" data-nav="profile"><b>●</b>My Profile</a>
 </div></nav>
 <script src="../assets/config.js?v=20261019-currency-egp"></script>
-<script src="../assets/app.js?v=20261019-delivery-staff-orders"></script>
-<script src="../assets/pickup-orders.js?v=20261019-delivery-staff-orders"></script>
+<script src="../assets/app.js?v=20261019-saved-addresses"></script>
+<script src="../assets/pickup-orders.js?v=20261019-saved-addresses"></script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script>
 </body>
 </html>
