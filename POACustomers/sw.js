@@ -1,4 +1,4 @@
-const CACHE = "dina-corner-v17-saved-customer-addresses";
+const CACHE = "dina-corner-v17-bilingual-language-switcher";
 const SHELL = [
   "./",
   "./index.html",
@@ -21,8 +21,6 @@ const SHELL = [
   "./assets/menu-display.js",
   "./assets/pickup-orders.css",
   "./assets/pickup-orders.js",
-  "./assets/customer-addresses.css",
-  "./assets/customer-addresses.js",
   "./manifest.webmanifest",
   "./assets/reward-hot-cold.jpg",
   "./assets/reward-breakfast.jpg",
@@ -35,12 +33,11 @@ const SHELL = [
   "./customer/customer-rewards.html",
   "./customer/customer-locations.html",
   "./customer/customer-profile.html",
-  "./customer/customer-register.html",
-  "./GM/gm-dashboard.html",
+  "./gm/gm-dashboard.html",
 
-  "./GM/gm-categories.html",
-  "./GM/gm-menu.html",
-  "./GM/gm-locations.html",
+  "./gm/gm-categories.html",
+  "./gm/gm-menu.html",
+  "./gm/gm-locations.html",
   "./admin/admin-dashboard.html",
   "./staff/staff-orders.html"
 ];
