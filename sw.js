@@ -1,4 +1,4 @@
-const CACHE = "poa-customers-v10-pickup-orders";
+const CACHE = "poa-customers-v11-currency-egp";
 const SHELL = [
   "./",
   "./index.html",

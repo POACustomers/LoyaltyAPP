@@ -8,7 +8,7 @@ Upload the full contents of this `POACustomers` folder to the existing GitHub Pa
 
 ## 2. Run the database setup
 
-In the POACustomers Supabase project, open **SQL Editor → New query** and run `POACustomers-pickup-orders-setup.sql` once. The existing menu/category/location setup must already be installed. The script creates `pickup_orders` and `pickup_order_items`, access policies, and protected RPC functions. It does not delete customer, points, rewards, menu, or branch data.
+In the POACustomers Supabase project, open **SQL Editor → New query** and run `POACustomers-pickup-orders-setup.sql` once. The existing menu/category/location setup must already be installed. The script creates `pickup_orders` and `pickup_order_items`, access policies, and protected RPC functions. New orders default to Egyptian Pounds (EGP). It does not delete customer, points, rewards, menu, or branch data. If the order tables were already created with AED, run `POACustomers-currency-egp-migration.sql` once after the setup script.
 
 ## 3. Ensure branches are active
 
