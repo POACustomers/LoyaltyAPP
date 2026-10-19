@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C65F78">
+<link rel="manifest" href="../manifest.webmanifest">
+<title>Staff Profile</title>
+<link rel="stylesheet" href="../assets/style.css?v=20261017-final-batch">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="https://unpkg.com/html5-qrcode"></script>
+<script src="../assets/tenant-config.js?v=20261019-tenant-config"></script><script src="../assets/tenant-branding.js?v=20261019-tenant-branding"></script>
+</head>
+<body data-page="staff-profile">
+
+<header class="topbar">
+<a class="brand brand-image" href="staff-scan.html"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a>
+<button class="icon" onclick="logout()" title="Sign out">↪</button>
+</header>
+<main class="container">
+<h1 class="title">Staff Profile</h1><p class="sub">Your staff access details.</p>
+<div class="card">
+<div class="row"><div id="staffAvatar" class="avatar staff-avatar-frame">AN</div><div class="grow"><strong data-name>Staff</strong><small data-role>—</small></div><input id="staffAvatarInput" type="file" accept="image/*" hidden><button id="staffAvatarBtn" class="btn soft staff-photo-btn" type="button">ADD / CHANGE PHOTO</button></div><div id="staffPhotoMsg" class="note" style="margin-top:8px"></div>
+<div style="margin-top:18px">
+<div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)"><div class="grow"><small>Email</small><strong data-email>—</strong></div></div>
+<div class="row" style="padding:12px 0"><div class="grow"><small>Branch</small><strong data-location>—</strong></div></div>
+</div>
+<button class="btn danger block" onclick="logout()">Sign Out</button>
+</div></main>
+<nav class="nav"><div class="navin"><a href="staff-scan.html" class="active"><b>⌗</b>Scan</a><a href="staff-orders.html"><b>▣</b>Orders</a><a href="staff-customer.html"><b>●</b>Customer</a><a href="staff-history.html"><b>↺</b>History</a><a href="staff-profile.html"><b>●</b>Profile</a></div></nav>
+<script src="../assets/config.js"></script>
+<script src="../assets/app.js?v=20261019-reward-image-fallback"></script>
+
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("../sw.js").catch(()=>{}));}</script>
+</body>
+</html>
