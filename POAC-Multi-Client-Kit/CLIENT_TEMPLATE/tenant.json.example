@@ -1,0 +1,20 @@
+{
+  "tenant_id": "client-two",
+  "brand_name": "Client Company Name",
+  "app_name": "Client Company Loyalty & Orders",
+  "tagline": "Your tagline here",
+  "theme_id": "modern-blue-gold",
+  "theme_css_file": "theme.css",
+  "theme_color": "#071D49",
+  "page_background": "#F7F8FA",
+  "primary_color": "#071D49",
+  "secondary_color": "#D7A535",
+  "accent_color": "#D7A535",
+  "currency": "EGP",
+  "currency_locale": "ar-EG",
+  "decorative_frame": false,
+  "supabase_url": "https://YOUR-NEW-PROJECT.supabase.co",
+  "supabase_publishable_key": "YOUR_NEW_SUPABASE_PUBLISHABLE_KEY",
+  "logo_file": "logo.png",
+  "icon_file": "icon.png"
+}

@@ -1,0 +1,16 @@
+/* Example tenant theme for a future customer. Edit colors and decoration for that customer only. */
+:root{--green:#071D49;--green2:#061638;--olive:#203A68;--gold:#D7A535;--gold2:#E6C56F;--cream:#F7F8FA;--paper:#FFFFFF;--ink:#172033;--muted:#657085;--line:#DCE2EC;--danger:#B64949;--shadow:0 12px 32px rgba(7,29,73,.08)}
+html,body{background:#F7F8FA!important;color:#172033!important}
+body{background-image:none!important}
+body::before{display:none!important}
+h1,h2,h3,.title,.menu-head h2{color:#071D49!important}
+.topbar,.nav{background:rgba(255,255,255,.97)!important;border-color:#DCE2EC!important}
+.card,.authbox,.menu-panel,.pickup-panel,.pickup-order-card,.home-offer-item{background:#fff!important;border-color:#DCE2EC!important;box-shadow:0 8px 24px rgba(7,29,73,.06)!important}
+.btn.primary,.btn.block.primary,.menu-add-order{background:linear-gradient(135deg,#071D49,#12458A)!important;color:#fff!important;border:1px solid #071D49!important}
+.btn.gold{background:#D7A535!important;color:#172033!important;border:1px solid #B58A25!important}
+.btn.soft,.icon,.menu-back{background:#EEF2F8!important;color:#071D49!important;border:1px solid #DCE2EC!important}
+.hero{background:linear-gradient(135deg,#071D49,#1657A0)!important;color:#fff!important}
+.hero h2,.hero p{color:#fff!important}
+.nav a.active{background:#E8EEF9!important;color:#071D49!important}
+.menu-category{background:#fff!important;border-color:#DCE2EC!important;color:#071D49!important}
+.menu-item-price,.pickup-price,.pickup-order-number,.pickup-order-total strong{color:#071D49!important}
