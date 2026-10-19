@@ -1,0 +1,24 @@
+{
+  "name": "Dina's Corner Loyalty & Orders",
+  "short_name": "Dina's Corner",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFF4ED",
+  "theme_color": "#C65F78",
+  "description": "Customer loyalty, menu, pickup and delivery orders, rewards and branch locations.",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
