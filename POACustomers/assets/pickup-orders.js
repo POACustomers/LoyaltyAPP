@@ -7,6 +7,9 @@
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   let assignedStaffLocationId = null;
+  let savedDeliveryAddresses = [];
+  let selectedDeliveryInstructions = '';
+  let selectedSavedAddressText = '';
 
   function readCart() {
     try {
@@ -198,8 +201,64 @@
       if (button) { button.disabled = false; button.textContent = '⌖ USE MY CURRENT LOCATION'; }
     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
   }
+  async function loadSavedDeliveryAddresses() {
+    const select = $('deliverySavedAddress');
+    if (!select) return;
+    select.innerHTML = '<option value="">Loading your saved addresses…</option>';
+    try {
+      const { data: authData, error: authError } = await sb.auth.getUser();
+      if (authError) throw authError;
+      const customerId = authData?.user?.id;
+      if (!customerId) throw new Error('Please sign in again to load your saved delivery addresses.');
+      const { data, error } = await sb.from('customer_addresses')
+        .select('id,label,full_address,delivery_instructions,latitude,longitude,map_url,is_default,created_at')
+        .eq('customer_id', customerId)
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      savedDeliveryAddresses = Array.isArray(data) ? data : [];
+      if (!savedDeliveryAddresses.length) {
+        select.innerHTML = '<option value="">No saved address yet — add one in My Profile</option>';
+        selectedDeliveryInstructions = '';
+        selectedSavedAddressText = '';
+        setLocationStatus('No saved delivery address found. Add one in My Profile, or enter an address and map location for this order.', 'error');
+        return;
+      }
+      select.innerHTML = '<option value="">Choose another saved address</option>' + savedDeliveryAddresses.map(row => {
+        const details = String(row.full_address || '').replace(/\s+/g, ' ').trim();
+        const optionText = (row.label || 'Address') + (row.is_default ? ' · Default' : '') + ' — ' + (details.length > 75 ? details.slice(0, 72) + '…' : details);
+        return '<option value="' + esc(row.id) + '">' + esc(optionText) + '</option>';
+      }).join('');
+      const preferred = savedDeliveryAddresses.find(row => row.is_default) || savedDeliveryAddresses[0];
+      select.value = preferred.id;
+      applySavedDeliveryAddress(preferred);
+      select.addEventListener('change', () => {
+        const row = savedDeliveryAddresses.find(item => item.id === select.value);
+        if (row) applySavedDeliveryAddress(row);
+        else {
+          selectedDeliveryInstructions = '';
+          selectedSavedAddressText = '';
+        }
+      });
+    } catch (error) {
+      select.innerHTML = '<option value="">Saved addresses unavailable</option>';
+      setLocationStatus('Could not load saved addresses. You can add/manage them in My Profile. Details: ' + (error?.message || error), 'error');
+    }
+  }
+
+  function applySavedDeliveryAddress(row) {
+    if (!row) return;
+    if ($('deliveryAddress')) $('deliveryAddress').value = row.full_address || '';
+    if ($('deliveryLatitude')) $('deliveryLatitude').value = row.latitude == null ? '' : String(row.latitude);
+    if ($('deliveryLongitude')) $('deliveryLongitude').value = row.longitude == null ? '' : String(row.longitude);
+    if ($('deliveryMapUrl')) $('deliveryMapUrl').value = row.map_url || (Number.isFinite(Number(row.latitude)) && Number.isFinite(Number(row.longitude)) ? 'https://www.google.com/maps?q=' + encodeURIComponent(row.latitude + ',' + row.longitude) : '');
+    selectedDeliveryInstructions = row.delivery_instructions || '';
+    selectedSavedAddressText = row.full_address || '';
+    setLocationStatus((row.label || 'Saved address') + ' selected. The saved map location will be sent with your order.', 'success');
+  }
+
   function deliveryPayloadOrError() {
-    if (fulfillmentType() !== 'delivery') return { type: 'pickup', address: null, mapUrl: null, latitude: null, longitude: null };
+    if (fulfillmentType() !== 'delivery') return { type: 'pickup', address: null, mapUrl: null, latitude: null, longitude: null, instructions: null };
     const address = $('deliveryAddress')?.value.trim() || '';
     const mapInput = $('deliveryMapUrl')?.value.trim() || '';
     const latText = $('deliveryLatitude')?.value || '', lngText = $('deliveryLongitude')?.value || '';
@@ -213,7 +272,7 @@
     const mapUrl = validMapUrl(mapInput);
     if (mapInput && !mapUrl) { showMessage('pickupCheckoutMessage', 'Paste a valid Google Maps link starting with https://.', true); $('deliveryMapUrl')?.focus(); return null; }
     if (latitude === null && !mapUrl) { showMessage('pickupCheckoutMessage', 'Delivery needs a map location. Press “Use my current location” or paste a Google Maps share link.', true); $('useMyLocationBtn')?.focus(); return null; }
-    return { type: 'delivery', address, mapUrl: mapUrl || ('https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude)), latitude, longitude };
+    return { type: 'delivery', address, mapUrl: mapUrl || ('https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude)), latitude, longitude, instructions: address === selectedSavedAddressText ? selectedDeliveryInstructions : null };
   }
 
   async function loadBranches() {
@@ -270,7 +329,7 @@
         p_delivery_map_url: delivery.mapUrl,
         p_delivery_latitude: delivery.latitude,
         p_delivery_longitude: delivery.longitude,
-        p_notes: $('pickupOrderNotes')?.value?.trim() || null
+        p_notes: [delivery.instructions ? 'Delivery instructions: ' + delivery.instructions : '', $('pickupOrderNotes')?.value?.trim() ? 'Order note: ' + $('pickupOrderNotes').value.trim() : ''].filter(Boolean).join(' | ').slice(0, 500) || null
       });
       if (error) throw error;
       const result = Array.isArray(data) ? data[0] : data;
@@ -388,10 +447,14 @@
     const profile = await guardRole(['customer']);
     if (!profile) return;
     await loadBranches();
+    await loadSavedDeliveryAddresses();
     renderCart();
     $('pickupOrderForm')?.addEventListener('submit', submitCustomerOrder);
     $('orderFulfillmentType')?.addEventListener('change', updateFulfillmentUI);
     $('useMyLocationBtn')?.addEventListener('click', useMyLocation);
+    $('deliveryAddress')?.addEventListener('input', () => {
+      if ($('deliveryAddress').value.trim() !== selectedSavedAddressText) selectedDeliveryInstructions = '';
+    });
     $('deliveryMapUrl')?.addEventListener('input', () => {
       const value = $('deliveryMapUrl').value.trim();
       if (value) {

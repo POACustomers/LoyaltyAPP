@@ -268,6 +268,13 @@ async function registerCustomer() {
     return;
   }
 
+  const addressResult = window.POACustomerAddresses?.registrationPayload?.();
+  if (!addressResult || !addressResult.ok) {
+    if (msg) msg.textContent = addressResult?.message || "Select your delivery address and map location before creating your account.";
+    return;
+  }
+  const savedAddress = addressResult.address;
+
   msg.textContent = "Creating your Dina's Corner account…";
   const { data, error } = await sb.auth.signUp({
     email: customerAuthEmail(username),
@@ -296,7 +303,26 @@ async function registerCustomer() {
     return;
   }
 
-  msg.textContent = "Account created. Opening your loyalty card…";
+  const customerId = data.user?.id || data.session?.user?.id;
+  if (!customerId) {
+    msg.textContent = "Your account was created, but Supabase did not return the customer ID. Sign in and save your delivery address from My Profile.";
+    return;
+  }
+
+  msg.textContent = "Account created. Saving your default delivery address…";
+  const { error: addressError } = await sb.from("customer_addresses").insert({
+    customer_id: customerId,
+    ...savedAddress,
+    is_default: true
+  });
+  if (addressError) {
+    console.error("Customer account was created but the initial address could not be saved:", addressError);
+    msg.textContent = "Your account was created, but the address could not be saved. Confirm the saved-address SQL setup has been run, then sign in and add the address from My Profile. Details: " + addressError.message;
+    setTimeout(() => location.href = "customer-profile.html", 2500);
+    return;
+  }
+
+  msg.textContent = "Account and default delivery address created. Opening your loyalty account…";
   setTimeout(() => location.href = "customer-home.html", 500);
 }
 
@@ -518,6 +544,10 @@ async function loadCustomerProfile() {
     $("newPassword").value = ""; $("confirmNewPassword").value = "";
     btn.disabled = false; btn.textContent = "CHANGE PASSWORD";
   };
+
+  if (window.POACustomerAddresses?.initProfile) {
+    await window.POACustomerAddresses.initProfile();
+  }
 }
 
 async function loadCustomerLocations() {
@@ -1557,6 +1587,7 @@ async function init() {
       $("loginBtn").onclick = () => login("customer");
     } else if (page === "customer-register") {
       $("registerBtn").onclick = registerCustomer;
+      if (window.POACustomerAddresses?.initRegistration) await window.POACustomerAddresses.initRegistration();
     } else if (page === "customer-home") {
       await loadCustomerHome();
     } else if (page === "customer-card") {
