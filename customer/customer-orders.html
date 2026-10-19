@@ -3,21 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#071D49">
-<meta name="description" content="Place and track POACustomers pickup orders">
+<meta name="theme-color" content="#C65F78">
+<meta name="description" content="Place and track Dina's Corner pickup orders">
 <link rel="manifest" href="../manifest.webmanifest">
-<title>My Pickup Orders — POACustomers</title>
+<title>My Pickup Orders — Dina's Corner</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261019-pickup-orders">
 <link rel="stylesheet" href="../assets/pickup-orders.css?v=20261019-pickup-orders">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<link rel="stylesheet" href="../assets/dina-theme.css?v=20261019-dina-corner-theme">
 </head>
 <body data-page="customer-orders">
 <header class="topbar">
-  <a class="brand brand-image" href="customer-home.html" aria-label="POAC Software Solutions Home"><img class="brand-logo" src="../assets/poac-logo-icon.png" alt="POAC Software Solutions"></a>
+  <a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="Dina's Corner"></a>
   <button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button>
 </header>
 <main class="pickup-main">
-  <header class="pickup-heading"><p class="eyebrow">POACUSTOMERS</p><h1 class="title">Order for Pickup</h1><p class="sub">Choose a branch, review your basket and send your order to the branch. No delivery is offered in this flow.</p></header>
+  <header class="pickup-heading"><p class="eyebrow">DINA'S CORNER</p><h1 class="title">Order for Pickup</h1><p class="sub">Choose a branch, review your basket and send your order to the branch. No delivery is offered in this flow.</p></header>
   <div id="pickupCheckoutMessage" hidden aria-live="polite"></div>
 
   <section class="card pickup-panel" aria-labelledby="pickupCartTitle">
@@ -52,9 +53,9 @@
 <nav class="nav" aria-label="Customer navigation"><div class="navin">
 <a href="customer-home.html" data-nav="home"><b>⌂</b>Home</a><a href="customer-rewards.html" data-nav="rewards"><b>★</b>Rewards</a><a href="customer-locations.html" data-nav="locations"><b>⌖</b>Locations</a><a href="customer-offers.html" data-nav="offers"><b>◇</b>Offers</a><a href="customer-menu.html" data-nav="menu"><b>☰</b>Menu</a><a href="customer-orders.html" data-nav="orders" class="active"><b>▣</b>Orders</a><a href="customer-profile.html" data-nav="profile"><b>●</b>My Profile</a>
 </div></nav>
-<script src="../assets/config.js?v=20261019-pickup-orders"></script>
+<script src="../assets/config.js?v=20261019-currency-egp"></script>
 <script src="../assets/app.js?v=20261019-pickup-orders"></script>
-<script src="../assets/pickup-orders.js?v=20261019-pickup-orders"></script>
+<script src="../assets/pickup-orders.js?v=20261019-currency-egp"></script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script>
 </body>
 </html>

@@ -3,16 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#071D49">
+<meta name="theme-color" content="#C65F78">
 <link rel="manifest" href="../manifest.webmanifest">
 <title>Customer Home</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261018-home-offers">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="https://unpkg.com/html5-qrcode"></script>
+<link rel="stylesheet" href="../assets/dina-theme.css?v=20261019-dina-corner-theme">
 </head>
 <body data-page="customer-home">
 
 <header class="topbar">
-<a class="brand brand-image" href="customer-home.html"><img class="brand-logo" src="../assets/poac-logo-icon.png" alt="POAC SOFTWARE SOLUTIONS"></a>
+<a class="brand brand-image" href="customer-home.html"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a>
 <button class="icon" onclick="logout()" title="Sign out">↪</button>
 </header>
 <main class="container">
@@ -25,7 +26,7 @@
 <section id="homeOffersCard" class="card home-offers-card" style="margin-top:18px" aria-live="polite">
   <div id="homeOffersContent" class="home-offers-fallback">
     <h3>More Rewards<br>Brighter Days</h3>
-    <p class="sub">Earn points with every eligible purchase at POA Customers.</p>
+    <p class="sub">Earn points with every eligible purchase at Dina's Corner.</p>
   </div>
 </section>
 
@@ -45,7 +46,7 @@
 <a href="customer-menu.html" data-nav="menu"><b>☰</b>Menu</a>
 <a href="customer-profile.html" data-nav="profile"><b>●</b>My Profile</a>
 </div></nav>
-<script src="../assets/config.js?v=20261018-home-offers"></script>
+<script src="../assets/config.js?v=20261019-currency-egp"></script>
 <script src="../assets/app.js?v=20261019-reward-image-fallback"></script>
 
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("../sw.js").catch(()=>{}));}</script>
