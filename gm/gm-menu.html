@@ -9,16 +9,18 @@
 <div class="field"><label for="gmItemCategory">Category *</label><select class="input" id="gmItemCategory" required><option value="">Loading categories…</option></select></div>
 <div class="field"><label for="gmMenuName">Item Name *</label><input class="input" id="gmMenuName" maxlength="160" placeholder="e.g. Spanish Latte" required></div>
 <div class="field"><label for="gmMenuDescription">Description</label><input class="input" id="gmMenuDescription" maxlength="500" placeholder="Short product description"></div>
-<div class="field"><label for="gmMenuPrice">Price (AED) (optional)</label><input class="input" id="gmMenuPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Leave blank if price is not set"></div>
+<div class="field"><label for="gmMenuPrice">Price (EGP) (optional)</label><input class="input" id="gmMenuPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Leave blank if price is not set"></div>
 <div class="field"><label for="gmMenuImage">Item Image (optional)</label><input class="input" id="gmMenuImage" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/svg+xml"><small class="sub">Choose an image from your device (max 5 MB). No image URL is required.</small><div class="menu-management-preview" id="gmItemPreviewWrap" hidden><img id="gmItemPreview" alt="Selected menu item image preview"></div></div>
 <div class="field"><label for="gmMenuStatus">Status</label><select class="input" id="gmMenuStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
 </div><div class="g2"><button class="btn primary" id="saveMenuBtn" type="button">SAVE MENU ITEM</button><button class="btn" id="cancelEditBtn" type="button" hidden>CANCEL EDIT</button></div><div id="menuMsg" class="note menu-management-note" role="status" aria-live="polite"></div></section>
 <section class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h3 style="margin:0">Current Menu</h3><button class="btn soft" id="refreshMenuBtn" type="button">REFRESH</button></div><div class="menu-management-list" id="gmMenuList" style="margin-top:14px"><div class="menu-management-empty">Loading menu items…</div></div></section></main>
 <nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-orders.html"><b>▣</b>Orders</a><a href="gm-menu.html" class="active"><b>☰</b>Menu</a><a href="gm-settings.html"><b>⚙</b>Settings</a></div></nav>
-<script src="../assets/config.js?v=20261017-final-batch"></script><script src="../assets/app.js?v=20261019-reward-image-fallback"></script>
+<script src="../assets/config.js?v=20261019-currency-egp"></script><script src="../assets/app.js?v=20261019-reward-image-fallback"></script>
 <script>
 (function(){
  const $=id=>document.getElementById(id);
+ const currencyCode=window.POA_GET_CURRENCY_CODE?window.POA_GET_CURRENCY_CODE():'EGP';
+ const priceLabel=document.querySelector('label[for="gmMenuPrice"]');if(priceLabel)priceLabel.textContent='Price ('+currencyCode+') (optional)';
  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
  let categories=[],items=[];
  const message=(text,bad=false)=>{const el=$('menuMsg');el.textContent=text;el.style.color=bad?'#a33':'';};
@@ -59,7 +61,7 @@
      const category=categories.find(c=>c.id===r.category_id)?.name||'Category unavailable';
      const img=r.image_url?'<img class="reward-product-image" src="'+esc(r.image_url)+'" alt="'+esc(r.name)+'" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="menu-item-fallback" hidden aria-hidden="true">☕</div>':'<div class="menu-item-fallback" aria-hidden="true">☕</div>';
      const hasPrice=r.price!==null&&r.price!==undefined&&String(r.price).trim()!==''&&Number.isFinite(Number(r.price))&&Number(r.price)>=0;
-     const price=hasPrice?'AED '+Number(r.price).toFixed(2):'';
+     const price=hasPrice?(window.POA_FORMAT_CURRENCY?window.POA_FORMAT_CURRENCY(r.price):'EGP '+Number(r.price).toFixed(2)):'';
      const status=String(r.status||'active').toLowerCase()==='active'&&r.is_active!==false?'Active':'Inactive';
      return '<article class="menu-management-item">'+img+'<div class="menu-item-details"><strong>'+esc(r.name||'Menu item')+'</strong><small>'+esc(category)+(r.description?'<br>'+esc(r.description):'')+'</small>'+(price?'<span class="menu-item-price">'+esc(price)+'</span>':'')+'</div><span class="badge">'+status+'</span><div class="menu-management-actions"><button class="btn" type="button" data-item-edit="'+esc(r.id)+'">EDIT</button><button class="btn danger" type="button" data-item-delete="'+esc(r.id)+'">DELETE</button></div></article>';
    }).join('');
@@ -89,7 +91,7 @@
    const id=$('gmMenuId').value.trim(),category_id=$('gmItemCategory').value,name=$('gmMenuName').value.trim(),description=$('gmMenuDescription').value.trim(),priceRaw=$('gmMenuPrice').value.trim(),price=priceRaw===''?null:Number(priceRaw),status=$('gmMenuStatus').value;
    if(!category_id){message('Select a category. Create one from Settings → Categories if the list is empty.',true);return;}
    if(!name){message('Item name is required.',true);$('gmMenuName').focus();return;}
-   if(priceRaw!==''&&(!Number.isFinite(price)||price<0)){message('Enter a valid price (AED 0 or more), or leave it blank.',true);$('gmMenuPrice').focus();return;}
+   if(priceRaw!==''&&(!Number.isFinite(price)||price<0)){message('Enter a valid price ('+(window.POA_GET_CURRENCY_CODE?window.POA_GET_CURRENCY_CODE():'EGP')+' 0 or more), or leave it blank.',true);$('gmMenuPrice').focus();return;}
    const profile=await getProfile();if(!profile||!['gm','admin'].includes(profile.role)){message('GM access is required.',true);return;}
    const existing=items.find(row=>row.id===id);let image_url=existing?.image_url||null;
    const button=$('saveMenuBtn');button.disabled=true;const oldText=button.textContent;button.textContent='SAVING…';
