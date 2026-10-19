@@ -1,0 +1,1 @@
+Each tenant gets a separate config folder and a separate generated deployment. The tenant config determines brand/theme/currency; the generated assets/config.js determines the database connection. Do not put service-role secrets in tenant JSON.
