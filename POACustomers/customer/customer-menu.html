@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C65F78">
+<meta name="description" content="Dina's Corner Menu">
+<link rel="manifest" href="../manifest.webmanifest">
+<title>Dina's Corner Menu</title>
+<link rel="stylesheet" href="../assets/style.css?v=20261019-price-optional">
+<link rel="stylesheet" href="../assets/menu-display.css?v=20261019-pickup-orders">
+<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261019-pickup-orders">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<script src="../assets/tenant-config.js?v=20261019-tenant-config"></script><script src="../assets/tenant-branding.js?v=20261019-tenant-branding"></script>
+</head>
+<body data-page="customer-menu">
+<header class="topbar">
+  <a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home">
+    <img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER">
+  </a>
+  <button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button>
+</header>
+
+<main class="container menu-page">
+  <div class="menu-hero">
+    <p class="eyebrow">DINA'S CORNER</p>
+    <h1 class="title">Our Menu</h1>
+    <p class="sub">Choose a category to view the available items.</p>
+  </div>
+
+  <section class="menu-panel card" aria-label="Menu">
+    <div id="menuCategoriesView">
+      <div class="menu-loading">Loading menu…</div>
+    </div>
+    <div id="menuItemsView" hidden></div>
+  </section>
+</main>
+
+<nav class="nav" aria-label="Customer navigation">
+  <div class="navin">
+    <a href="customer-home.html" data-nav="home"><b>⌂</b>Home</a>
+    <a href="customer-rewards.html" data-nav="rewards"><b>★</b>Rewards</a>
+    <a href="customer-locations.html" data-nav="locations"><b>⌖</b>Locations</a>
+    <a href="customer-offers.html" data-nav="offers"><b>◇</b>Offers</a>
+    <a href="customer-orders.html" data-nav="orders"><b>▣</b>Orders</a>
+<a href="customer-menu.html" data-nav="menu" class="active"><b>☰</b>Menu</a>
+    <a href="customer-profile.html" data-nav="profile"><b>●</b>My Profile</a>
+  </div>
+</nav>
+
+<script src="../assets/config.js?v=20261019-currency-egp"></script>
+<script src="../assets/app.js?v=20261019-pickup-orders"></script>
+<script src="../assets/pickup-orders.js?v=20261019-currency-egp"></script>
+
+
+
+<script src="../assets/menu-display.js?v=20261019-currency-egp"></script>
+
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}
+</script>
+</body>
+</html>

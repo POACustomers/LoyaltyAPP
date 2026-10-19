@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C65F78">
+<link rel="manifest" href="../manifest.webmanifest">
+<title>Customer Profile</title>
+<link rel="stylesheet" href="../assets/style.css?v=20261017-final-batch">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+#avatarEditPanel[hidden]{display:none !important;}
+#avatarEditPanel:not([hidden]){display:block !important;}
+.avatar-picker-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;}
+.avatar-option{display:block;width:100%;aspect-ratio:1/1;border:2px solid transparent;border-radius:50%;padding:0;background:transparent;overflow:hidden;cursor:pointer;}
+.avatar-option img{width:100%;height:100%;display:block;object-fit:cover;}
+.avatar-option.selected{border-color:#b48b4a;box-shadow:0 0 0 3px #b48b4a33;}
+@media(max-width:600px){.avatar-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+</style>
+<script src="../assets/tenant-config.js?v=20261019-tenant-config"></script><script src="../assets/tenant-branding.js?v=20261019-tenant-branding"></script>
+</head>
+<body data-page="customer-profile">
+
+<header class="topbar">
+<a class="brand brand-image" href="customer-home.html"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a>
+<button class="icon" onclick="logout()" title="Sign out">↪</button>
+</header>
+<main class="container">
+<h1 class="title">My Profile</h1><p class="sub">Your Dina's Corner Loyalty account details.</p>
+<div class="card">
+<div class="profile-head"><div id="avatar" class="avatar avatar-photo">AN</div><div class="grow"><strong data-name>Customer</strong><small>Member ID: <span data-id>—</span></small></div></div>
+<div class="photo-actions">
+<input id="avatarInput" type="file" accept="image/*" hidden>
+<button id="avatarBtn" class="btn soft" type="button">ADD / CHANGE MY PHOTO</button>
+</div>
+<div id="avatarEditPanel" class="avatar-edit-panel" hidden>
+  <div class="avatar-edit-actions">
+    <button id="uploadAvatarBtn" class="btn soft" type="button">UPLOAD MY PHOTO</button>
+    <button id="closeAvatarPanelBtn" class="btn soft" type="button">CLOSE</button>
+  </div>
+  <small>Or choose another profile avatar.</small>
+<div class="avatar-picker" aria-label="Choose a profile avatar">
+<h3>Choose Your Avatar</h3>
+<p class="sub">15 women • 15 men</p>
+<div class="avatar-picker-grid"><button class="avatar-option" type="button" data-avatar-url="../assets/avater/01_women_avatar.png"><img src="../assets/avater/01_women_avatar.png" alt="UAE Gulf woman avatar 1" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/02_women_avatar.png"><img src="../assets/avater/02_women_avatar.png" alt="UAE Gulf woman avatar 2" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/03_women_avatar.png"><img src="../assets/avater/03_women_avatar.png" alt="UAE Gulf woman avatar 3" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/04_women_avatar.png"><img src="../assets/avater/04_women_avatar.png" alt="UAE Gulf woman avatar 4" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/05_women_avatar.png"><img src="../assets/avater/05_women_avatar.png" alt="UAE Gulf woman avatar 5" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/06_women_avatar.png"><img src="../assets/avater/06_women_avatar.png" alt="UAE Gulf woman avatar 6" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/07_women_avatar.png"><img src="../assets/avater/07_women_avatar.png" alt="UAE Gulf woman avatar 7" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/08_women_avatar.png"><img src="../assets/avater/08_women_avatar.png" alt="UAE Gulf woman avatar 8" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/09_women_avatar.png"><img src="../assets/avater/09_women_avatar.png" alt="UAE Gulf woman avatar 9" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/10_women_avatar.png"><img src="../assets/avater/10_women_avatar.png" alt="UAE Gulf woman avatar 10" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/11_women_avatar.png"><img src="../assets/avater/11_women_avatar.png" alt="UAE Gulf woman avatar 11" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/12_women_avatar.png"><img src="../assets/avater/12_women_avatar.png" alt="UAE Gulf woman avatar 12" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/13_women_avatar.png"><img src="../assets/avater/13_women_avatar.png" alt="UAE Gulf woman avatar 13" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/14_women_avatar.png"><img src="../assets/avater/14_women_avatar.png" alt="UAE Gulf woman avatar 14" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/15_women_avatar.png"><img src="../assets/avater/15_women_avatar.png" alt="UAE Gulf woman avatar 15" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/16_men_avatar.png"><img src="../assets/avater/16_men_avatar.png" alt="UAE Gulf man avatar 1" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/17_men_avatar.png"><img src="../assets/avater/17_men_avatar.png" alt="UAE Gulf man avatar 2" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/18_men_avatar.png"><img src="../assets/avater/18_men_avatar.png" alt="UAE Gulf man avatar 3" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/19_men_avatar.png"><img src="../assets/avater/19_men_avatar.png" alt="UAE Gulf man avatar 4" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/20_men_avatar.png"><img src="../assets/avater/20_men_avatar.png" alt="UAE Gulf man avatar 5" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/21_men_avatar.png"><img src="../assets/avater/21_men_avatar.png" alt="UAE Gulf man avatar 6" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/22_men_avatar.png"><img src="../assets/avater/22_men_avatar.png" alt="UAE Gulf man avatar 7" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/23_men_avatar.png"><img src="../assets/avater/23_men_avatar.png" alt="UAE Gulf man avatar 8" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/24_men_avatar.png"><img src="../assets/avater/24_men_avatar.png" alt="UAE Gulf man avatar 9" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/25_men_avatar.png"><img src="../assets/avater/25_men_avatar.png" alt="UAE Gulf man avatar 10" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/26_men_avatar.png"><img src="../assets/avater/26_men_avatar.png" alt="UAE Gulf man avatar 11" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/27_men_avatar.png"><img src="../assets/avater/27_men_avatar.png" alt="UAE Gulf man avatar 12" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/28_men_avatar.png"><img src="../assets/avater/28_men_avatar.png" alt="UAE Gulf man avatar 13" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/29_men_avatar.png"><img src="../assets/avater/29_men_avatar.png" alt="UAE Gulf man avatar 14" loading="lazy"></button><button class="avatar-option" type="button" data-avatar-url="../assets/avater/30_men_avatar.png"><img src="../assets/avater/30_men_avatar.png" alt="UAE Gulf man avatar 15" loading="lazy"></button></div></div>
+</div>
+<div style="margin-top:20px">
+<div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)"><div class="grow"><small>Username</small><strong data-username>—</strong></div></div>
+<div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)"><div class="grow"><small>Mobile</small><strong data-phone>—</strong></div></div>
+<div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)"><div class="grow"><small>Date of Birth</small><strong data-birthday>—</strong></div></div>
+<div class="row" style="padding:12px 0"><div class="grow"><small>Points</small><strong data-points>0</strong></div></div>
+</div>
+<div class="card" style="margin-top:16px;background:#fbf8f1">
+<h3>Change Password</h3>
+<p class="sub">Choose a new password for your Dina's Corner account.</p>
+<div class="field"><label>New Password</label><input id="newPassword" class="input" type="password" autocomplete="new-password" placeholder="At least 6 characters"></div>
+<div class="field"><label>Confirm New Password</label><input id="confirmNewPassword" class="input" type="password" autocomplete="new-password" placeholder="Repeat new password"></div>
+<button id="changePasswordBtn" class="btn primary block">CHANGE PASSWORD</button>
+<div id="passwordMsg" class="note"></div>
+</div>
+<button class="btn danger block" onclick="logout()">Sign Out</button>
+</div>
+
+</main>
+<nav class="nav"><div class="navin">
+<a href="customer-home.html" data-nav="home"><b>⌂</b>Home</a>
+<a href="customer-rewards.html" data-nav="rewards"><b>★</b>Rewards</a>
+<a href="customer-locations.html" data-nav="locations"><b>⌖</b>Locations</a>
+<a href="customer-offers.html" data-nav="offers"><b>◇</b>Offers</a>
+<a href="customer-orders.html" data-nav="orders"><b>▣</b>Orders</a>
+<a href="customer-menu.html" data-nav="menu"><b>☰</b>Menu</a>
+<a href="customer-profile.html" data-nav="profile"><b>●</b>My Profile</a>
+</div></nav>
+<script src="../assets/config.js?v=20261019-currency-egp"></script>
+<script src="../assets/app.js?v=20261019-reward-image-fallback"></script>
+
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("../sw.js").catch(()=>{}));}</script>
+
+
+</body>
+</html>
