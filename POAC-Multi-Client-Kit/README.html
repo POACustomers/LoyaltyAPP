@@ -1,0 +1,35 @@
+# POAC Multi-Client Kit
+
+**POAC Software Solutions owns the platform; it is not the customer-facing brand.** Each customer gets its own generated deployment, tenant name/logo/theme/currency and independent Supabase project. Dina's Corner is one configured tenant. A second customer uses a separate `tenant.json`, separate brand assets, and a separate Supabase project/database.
+
+## Package layout
+- `../POACustomers/` — shared source for the current Dina's Corner deployment.
+- `tenants/dina-corner/tenant.json` — Dina's brand + this tenant's own Supabase project settings.
+- `tenants/CLIENT_TEMPLATE/` — starter configuration/CSS for another company.
+- `tools/build_tenant.py` — generates a standalone white-label deployment.
+
+## Add another company (do not reuse Dina's database)
+1. Create a **new Supabase project** for the new company, and keep its URL and publishable key available for setup.
+2. Copy `tenants/CLIENT_TEMPLATE` into a new folder such as `tenants/new-bakery`.
+3. Rename `tenant.json.example` to `tenant.json`. Set a unique lowercase `tenant_id`, company name, app name, tagline, colors, theme, currency, and **that new project's own** Supabase URL and publishable key. Add the company's own `logo.png` and `icon.png`.
+4. Customize the tenant's `theme.css`. For an entirely different style, remove the floral frame/background decorations there and define the new colors.
+5. From the package root, run:
+
+   ```bash
+   python POAC-Multi-Client-Kit/tools/build_tenant.py POAC-Multi-Client-Kit/tenants/new-bakery/tenant.json --output dist/new-bakery
+   ```
+
+6. Upload the generated `dist/new-bakery` folder to the new company's own GitHub Pages repository or hosting site. Apply the menu/location/order SQL scripts to that company's Supabase project, verify RLS, and test Customer/Staff/GM before accepting real orders.
+
+The build tool creates files for a deployment, but it does **not** create Supabase projects automatically and does not include a POAC tenant-admin dashboard yet. The generated app has a fixed tenant config and database connection at build time; it does not select a database from URL parameters.
+
+## Operational order ownership
+- Customer may read their own orders.
+- **Only Staff assigned to a branch may view/process orders for that branch.** GM assigns Staff in GM → Branch Locations but does not see or process operational orders.
+- Checkout supports pickup or delivery. Delivery requires a full address and GPS coordinates or a valid Google Maps link. Only branch Staff handles operational orders; GM has no order queue.
+- Run `POACustomers/POACustomers-pickup-orders-setup.sql` to create/upgrade the order schema, Staff assignment RPCs, and permissions.
+
+## Security notes
+- Publishable/anon keys are browser-visible by design, so RLS and server-side RPC checks enforce data protection.
+- Never put `service_role`, `sb_secret_`, database passwords or private API keys in HTML/JavaScript/tenant JSON.
+- Never reuse or copy another customer's Supabase URL/key into a new tenant's deployment.
