@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#C65F78"><meta name="description" content="DINA'S CORNER GM Menu Management"><link rel="manifest" href="../manifest.webmanifest"><title>Dina's Corner — Menu Management</title><link rel="stylesheet" href="../assets/style.css?v=20261019-price-optional"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<style>
+.menu-management-main{padding-bottom:116px}.menu-management-heading{margin-bottom:18px}.menu-form-grid{display:grid;grid-template-columns:1fr;gap:0}.menu-management-preview{margin-top:8px}.menu-management-preview img{display:block;width:100%;max-width:220px;height:130px;object-fit:cover;border-radius:12px;border:1px solid var(--line);background:#f4eee3}.menu-management-list{display:grid;gap:12px}.menu-management-item{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid var(--line);border-radius:15px;background:var(--surface,#fffdf8)}.menu-management-item .reward-product-image,.menu-management-item .menu-item-fallback{width:76px;height:76px;flex:0 0 76px;border-radius:14px;object-fit:cover;background:#f2ebdf;display:grid;place-items:center;font-size:27px}.menu-management-item .menu-item-details{flex:1;min-width:0}.menu-management-item .menu-item-details strong{display:block;color:var(--green)}.menu-management-item .menu-item-details small{display:block;margin-top:4px;color:var(--muted);font-size:11px;line-height:1.45}.menu-management-item .menu-item-price{display:block;margin-top:5px;color:var(--green);font-weight:900;font-size:13px}.menu-management-actions{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}.menu-management-actions .btn{padding:8px 10px;font-size:10px}.menu-management-note{white-space:pre-wrap;line-height:1.5;margin-top:10px}.menu-management-empty{padding:22px;border:1px dashed var(--line);border-radius:14px;text-align:center;color:var(--muted)}@media(max-width:540px){.menu-management-item{align-items:flex-start;flex-wrap:wrap}.menu-management-item .menu-item-details{flex:1 1 calc(100% - 100px)}.menu-management-actions{margin-left:88px}}
+</style><script src="../assets/tenant-config.js?v=20261019-tenant-config"></script><script src="../assets/tenant-branding.js?v=20261019-tenant-branding"></script>
+</head>
+<body data-page="gm-menu"><header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
+<main class="container menu-management-main"><header class="menu-management-heading"><p class="eyebrow">GM MANAGEMENT</p><h1 class="title">Menu Management</h1><p class="sub">Manage menu items, prices, pictures, and availability. Create categories from Settings → Categories.</p></header>
+<section class="card"><h3 id="menuFormTitle">Add Menu Item</h3><input type="hidden" id="gmMenuId"><div class="menu-form-grid">
+<div class="field"><label for="gmItemCategory">Category *</label><select class="input" id="gmItemCategory" required><option value="">Loading categories…</option></select></div>
+<div class="field"><label for="gmMenuName">Item Name *</label><input class="input" id="gmMenuName" maxlength="160" placeholder="e.g. Spanish Latte" required></div>
+<div class="field"><label for="gmMenuDescription">Description</label><input class="input" id="gmMenuDescription" maxlength="500" placeholder="Short product description"></div>
+<div class="field"><label for="gmMenuPrice">Price (EGP) (optional)</label><input class="input" id="gmMenuPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Leave blank if price is not set"></div>
+<div class="field"><label for="gmMenuImage">Item Image (optional)</label><input class="input" id="gmMenuImage" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/svg+xml"><small class="sub">Choose an image from your device (max 5 MB). No image URL is required.</small><div class="menu-management-preview" id="gmItemPreviewWrap" hidden><img id="gmItemPreview" alt="Selected menu item image preview"></div></div>
+<div class="field"><label for="gmMenuStatus">Status</label><select class="input" id="gmMenuStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+</div><div class="g2"><button class="btn primary" id="saveMenuBtn" type="button">SAVE MENU ITEM</button><button class="btn" id="cancelEditBtn" type="button" hidden>CANCEL EDIT</button></div><div id="menuMsg" class="note menu-management-note" role="status" aria-live="polite"></div></section>
+<section class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h3 style="margin:0">Current Menu</h3><button class="btn soft" id="refreshMenuBtn" type="button">REFRESH</button></div><div class="menu-management-list" id="gmMenuList" style="margin-top:14px"><div class="menu-management-empty">Loading menu items…</div></div></section></main>
+<nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html" class="active"><b>☰</b>Menu</a><a href="gm-settings.html"><b>⚙</b>Settings</a></div></nav>
+<script src="../assets/config.js?v=20261019-currency-egp"></script><script src="../assets/app.js?v=20261019-reward-image-fallback"></script>
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ const currencyCode=window.POA_GET_CURRENCY_CODE?window.POA_GET_CURRENCY_CODE():'EGP';
+ const priceLabel=document.querySelector('label[for="gmMenuPrice"]');if(priceLabel)priceLabel.textContent='Price ('+currencyCode+') (optional)';
+ const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+ let categories=[],items=[];
+ const message=(text,bad=false)=>{const el=$('menuMsg');el.textContent=text;el.style.color=bad?'#a33':'';};
+ async function uploadMenuImage(file){
+   if(!file)return null;
+   const allowed=['image/jpeg','image/png','image/webp','image/gif','image/avif','image/svg+xml'];
+   if(!allowed.includes(file.type))throw new Error('Choose a JPG, PNG, WEBP, GIF, AVIF, or SVG image.');
+   if(file.size>5*1024*1024)throw new Error('Image must be 5 MB or smaller.');
+   const {data:userData,error:userError}=await sb.auth.getUser();if(userError)throw userError;
+   const uid=userData?.user?.id;if(!uid)throw new Error('Please sign in again.');
+   const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+   const path=uid+'/items/'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.'+ext;
+   const {error}=await sb.storage.from('poac-menu-images').upload(path,file,{upsert:false,contentType:file.type,cacheControl:'3600'});
+   if(error)throw new Error(error.message+'. Run the menu setup SQL in Supabase to configure image storage.');
+   return sb.storage.from('poac-menu-images').getPublicUrl(path).data.publicUrl;
+ }
+ function preview(){
+   const file=$('gmMenuImage').files?.[0];
+   if(!file){if(!$('gmMenuId').value){$('gmItemPreviewWrap').hidden=true;$('gmItemPreview').removeAttribute('src')}return;}
+   const allowed=['image/jpeg','image/png','image/webp','image/gif','image/avif','image/svg+xml'];
+   if(!allowed.includes(file.type)){message('Choose a supported image file.',true);$('gmMenuImage').value='';return;}
+   if(file.size>5*1024*1024){message('Image must be 5 MB or smaller.',true);$('gmMenuImage').value='';return;}
+   $('gmItemPreview').src=URL.createObjectURL(file);$('gmItemPreviewWrap').hidden=false;
+ }
+ async function loadCategories(){
+   const select=$('gmItemCategory');
+   const {data,error}=await sb.from('menu_categories').select('id,name,status,is_active').order('sort_order',{ascending:true});
+   if(error){categories=[];select.innerHTML='<option value="">Categories unavailable</option>';message('Could not load categories. Run the menu setup SQL in Supabase. Details: '+error.message,true);return false;}
+   categories=(data||[]).filter(c=>c.is_active!==false&&String(c.status||'active').toLowerCase()!=='inactive');
+   select.innerHTML='<option value="">Select category</option>'+categories.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('');
+   if(!categories.length)message('No categories yet. Open Settings → Categories and add your own categories first.');
+   return true;
+ }
+ function renderItems(){
+   const box=$('gmMenuList');
+   if(!items.length){box.innerHTML='<div class="menu-management-empty">No menu items yet. Add your first item above.</div>';return;}
+   box.innerHTML=items.map(r=>{
+     const category=categories.find(c=>c.id===r.category_id)?.name||'Category unavailable';
+     const img=r.image_url?'<img class="reward-product-image" src="'+esc(r.image_url)+'" alt="'+esc(r.name)+'" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="menu-item-fallback" hidden aria-hidden="true">☕</div>':'<div class="menu-item-fallback" aria-hidden="true">☕</div>';
+     const hasPrice=r.price!==null&&r.price!==undefined&&String(r.price).trim()!==''&&Number.isFinite(Number(r.price))&&Number(r.price)>=0;
+     const price=hasPrice?(window.POA_FORMAT_CURRENCY?window.POA_FORMAT_CURRENCY(r.price):'EGP '+Number(r.price).toFixed(2)):'';
+     const status=String(r.status||'active').toLowerCase()==='active'&&r.is_active!==false?'Active':'Inactive';
+     return '<article class="menu-management-item">'+img+'<div class="menu-item-details"><strong>'+esc(r.name||'Menu item')+'</strong><small>'+esc(category)+(r.description?'<br>'+esc(r.description):'')+'</small>'+(price?'<span class="menu-item-price">'+esc(price)+'</span>':'')+'</div><span class="badge">'+status+'</span><div class="menu-management-actions"><button class="btn" type="button" data-item-edit="'+esc(r.id)+'">EDIT</button><button class="btn danger" type="button" data-item-delete="'+esc(r.id)+'">DELETE</button></div></article>';
+   }).join('');
+   box.querySelectorAll('[data-item-edit]').forEach(button=>button.addEventListener('click',()=>edit(button.dataset.itemEdit)));
+   box.querySelectorAll('[data-item-delete]').forEach(button=>button.addEventListener('click',()=>remove(button.dataset.itemDelete)));
+ }
+ async function loadItems(){
+   const {data,error}=await sb.from('menu_items').select('id,name,description,price,image_url,status,is_active,category_id,created_at').order('created_at',{ascending:false});
+   if(error){$('gmMenuList').innerHTML='<div class="alert">Could not load menu items. Run the menu setup SQL in Supabase. Details: '+esc(error.message)+'</div>';return;}
+   items=Array.isArray(data)?data:[];renderItems();
+ }
+ function edit(id){
+   const item=items.find(row=>row.id===id);if(!item)return;
+   $('gmMenuId').value=item.id;$('gmItemCategory').value=item.category_id||'';$('gmMenuName').value=item.name||'';$('gmMenuDescription').value=item.description||'';$('gmMenuPrice').value=item.price??'';$('gmMenuImage').value='';$('gmMenuStatus').value=item.status||'active';
+   $('gmItemPreviewWrap').hidden=!item.image_url;if(item.image_url)$('gmItemPreview').src=item.image_url;
+   $('menuFormTitle').textContent='Edit Menu Item';$('saveMenuBtn').textContent='SAVE CHANGES';$('cancelEditBtn').hidden=false;message('');window.scrollTo({top:0,behavior:'smooth'});
+ }
+ function clearForm(){
+   $('gmMenuId').value='';$('gmItemCategory').value='';$('gmMenuName').value='';$('gmMenuDescription').value='';$('gmMenuPrice').value='';$('gmMenuImage').value='';$('gmMenuStatus').value='active';$('gmItemPreviewWrap').hidden=true;$('gmItemPreview').removeAttribute('src');$('menuFormTitle').textContent='Add Menu Item';$('saveMenuBtn').textContent='SAVE MENU ITEM';$('cancelEditBtn').hidden=true;
+ }
+ async function remove(id){
+   const item=items.find(row=>row.id===id);if(!item||!confirm('Delete menu item “'+item.name+'”?'))return;
+   const {error}=await sb.from('menu_items').delete().eq('id',id);if(error){message('Could not delete menu item: '+error.message,true);return;}
+   message('Menu item deleted.');await loadItems();
+ }
+ async function save(){
+   const id=$('gmMenuId').value.trim(),category_id=$('gmItemCategory').value,name=$('gmMenuName').value.trim(),description=$('gmMenuDescription').value.trim(),priceRaw=$('gmMenuPrice').value.trim(),price=priceRaw===''?null:Number(priceRaw),status=$('gmMenuStatus').value;
+   if(!category_id){message('Select a category. Create one from Settings → Categories if the list is empty.',true);return;}
+   if(!name){message('Item name is required.',true);$('gmMenuName').focus();return;}
+   if(priceRaw!==''&&(!Number.isFinite(price)||price<0)){message('Enter a valid price ('+(window.POA_GET_CURRENCY_CODE?window.POA_GET_CURRENCY_CODE():'EGP')+' 0 or more), or leave it blank.',true);$('gmMenuPrice').focus();return;}
+   const profile=await getProfile();if(!profile||!['gm','admin'].includes(profile.role)){message('GM access is required.',true);return;}
+   const existing=items.find(row=>row.id===id);let image_url=existing?.image_url||null;
+   const button=$('saveMenuBtn');button.disabled=true;const oldText=button.textContent;button.textContent='SAVING…';
+   try{
+     const file=$('gmMenuImage').files?.[0];if(file)image_url=await uploadMenuImage(file);
+     const payload={category_id,name,description:description||null,price,image_url,status,is_active:status==='active',updated_at:new Date().toISOString()};
+     const result=id?await sb.from('menu_items').update(payload).eq('id',id):await sb.from('menu_items').insert({...payload,created_by:profile.id});
+     if(result.error)throw result.error;
+     clearForm();message(id?'Menu item updated successfully.':'Menu item saved successfully.');await loadItems();
+   }catch(error){message(error?.message||'Could not save menu item.',true)}finally{button.disabled=false;if(!$('gmMenuId').value)button.textContent='SAVE MENU ITEM';else button.textContent=oldText;}
+ }
+ $('gmMenuImage').addEventListener('change',preview);$('saveMenuBtn').addEventListener('click',save);$('cancelEditBtn').addEventListener('click',()=>{clearForm();message('')});$('refreshMenuBtn').addEventListener('click',async()=>{message('');await loadCategories();await loadItems()});
+ (async()=>{const profile=await guardRole(['gm']);if(!profile)return;await loadCategories();await loadItems()})();
+})();
+</script><script>if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script></body></html>

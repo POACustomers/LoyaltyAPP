@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#C65F78">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <title>Rewards Management</title>
+  <link rel="stylesheet" href="../assets/style.css?v=20261018-reward-edit-delete">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<style>#cancelRewardEditBtn[hidden]{display:none!important}</style><script src="../assets/tenant-config.js?v=20261019-tenant-config"></script><script src="../assets/tenant-branding.js?v=20261019-tenant-branding"></script>
+</head>
+<body data-page="gm-rewards">
+  <header class="topbar">
+    <a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a>
+    <button class="icon" onclick="logout()" title="Sign out">↪</button>
+  </header>
+
+  <main class="container" style="padding-bottom:110px">
+    <h1 class="title">Rewards</h1>
+    <p class="sub">Create, edit, and delete the rewards customers can redeem.</p>
+
+    <section class="card" id="rewardFormCard">
+      <h3 id="rewardFormTitle">Add Reward</h3>
+      <div class="field">
+        <label for="rewardName">Reward Name *</label>
+        <input class="input" id="rewardName" maxlength="120" placeholder="e.g. Free Drink" required>
+      </div>
+      <div class="field">
+        <label for="rewardDescription">Description</label>
+        <input class="input" id="rewardDescription" maxlength="500" placeholder="e.g. One free drink">
+      </div>
+      <div class="field">
+        <label for="rewardPoints">Points Cost *</label>
+        <input class="input" id="rewardPoints" type="number" min="1" step="1" value="10" required>
+      </div>
+      <div class="field">
+        <label for="rewardImage">Reward Image (optional)</label>
+        <input class="input" id="rewardImage" type="file" accept="image/*">
+        <small class="sub">Choose an image from your device (max 5 MB). When editing, leave this blank to keep the existing image.</small>
+      </div>
+      <div id="rewardImagePreviewWrap" hidden style="margin:10px 0 16px">
+        <img id="rewardImagePreview" alt="Reward image preview" style="width:100%;max-width:180px;height:120px;object-fit:cover;border-radius:14px;border:1px solid var(--line);background:#f4eee3">
+        <small id="rewardImagePreviewLabel" class="sub">Current reward image</small>
+      </div>
+      <div class="field">
+        <label for="rewardStatus">Status</label>
+        <select class="input" id="rewardStatus"><option value="true">Active</option><option value="false">Inactive</option></select>
+      </div>
+      <div class="g2">
+        <button class="btn primary" id="saveRewardBtn">SAVE REWARD</button>
+        <button class="btn" id="cancelRewardEditBtn" hidden type="button">CANCEL EDIT</button>
+      </div>
+      <div id="rewardMsg" class="note" role="status" aria-live="polite">Rewards are saved in the rewards database.</div>
+    </section>
+
+    <section class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;gap:10px">
+        <h3>Current Rewards</h3>
+        <button class="btn" id="refreshRewardsBtn" type="button">REFRESH</button>
+      </div>
+      <div id="rewardList"><div class="empty">Loading rewards…</div></div>
+    </section>
+  </main>
+
+  <nav class="nav"><div class="navin">
+    <a href="gm-dashboard.html"><b>▦</b>Dashboard</a>
+    <a href="gm-members.html"><b>♙</b>Customers</a>
+    <a href="gm-locations.html"><b>⌖</b>Locations</a>
+    <a href="gm-settings.html"><b>⚙</b>Settings</a>
+  </div></nav>
+
+  <script src="../assets/config.js?v=20261019-currency-egp"></script>
+  <script src="../assets/app.js?v=20261019-reward-image-fallback"></script>
+  <script>
+  (() => {
+    const $ = id => document.getElementById(id);
+    const escReward = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+    let rewards = [];
+    let editingRewardId = null;
+    let currentImageUrl = null;
+
+    function setMessage(message, isError = false) {
+      $('rewardMsg').textContent = message;
+      $('rewardMsg').style.color = isError ? '#a33' : 'inherit';
+    }
+
+    async function fileToDataUrl(file) {
+      if (!file || !file.type.startsWith('image/')) throw new Error('Please choose an image file.');
+      if (file.size > 5 * 1024 * 1024) throw new Error('Image must be 5 MB or smaller.');
+      const raw = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Could not read image.'));
+        reader.readAsDataURL(file);
+      });
+      const image = await new Promise((resolve, reject) => {
+        const el = new Image();
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error('Invalid image.'));
+        el.src = raw;
+      });
+      const max = 700;
+      const scale = Math.min(1, max / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.78);
+    }
+
+    function showPreview(src, label = 'Current reward image') {
+      const preview = $('rewardImagePreview');
+      if (!src) {
+        $('rewardImagePreviewWrap').hidden = true;
+        preview.onerror = null;
+        preview.removeAttribute('src');
+        preview.dataset.fallbackAttempted = '';
+        return;
+      }
+      preview.dataset.fallbackAttempted = '';
+      preview.onerror = function () {
+        if (preview.dataset.fallbackAttempted !== 'true') {
+          preview.dataset.fallbackAttempted = 'true';
+          preview.src = rewardImageFallback({ title: $('rewardName').value });
+          return;
+        }
+        preview.onerror = null;
+        preview.hidden = true;
+        $('rewardImagePreviewLabel').textContent = 'Image unavailable; choose a new image to replace it.';
+      };
+      preview.hidden = false;
+      preview.src = src;
+      $('rewardImagePreviewLabel').textContent = label;
+      $('rewardImagePreviewWrap').hidden = false;
+    }
+
+    function resetForm() {
+      editingRewardId = null;
+      currentImageUrl = null;
+      $('rewardFormTitle').textContent = 'Add Reward';
+      $('saveRewardBtn').textContent = 'SAVE REWARD';
+      $('cancelRewardEditBtn').hidden = true;
+      $('rewardName').value = '';
+      $('rewardDescription').value = '';
+      $('rewardPoints').value = '10';
+      $('rewardImage').value = '';
+      $('rewardStatus').value = 'true';
+      showPreview(null);
+      setMessage('Rewards are saved in the rewards database.');
+    }
+
+    function startEdit(id) {
+      const reward = rewards.find(item => String(item.id) === String(id));
+      if (!reward) {
+        setMessage('This reward could not be found. Refresh the list and try again.', true);
+        return;
+      }
+      editingRewardId = reward.id;
+      currentImageUrl = reward.image_url || null;
+      $('rewardFormTitle').textContent = 'Edit Reward';
+      $('saveRewardBtn').textContent = 'SAVE CHANGES';
+      $('cancelRewardEditBtn').hidden = false;
+      $('rewardName').value = reward.title || reward.name || '';
+      $('rewardDescription').value = reward.description || '';
+      $('rewardPoints').value = String(Number(reward.points_cost || 10));
+      $('rewardImage').value = '';
+      $('rewardStatus').value = reward.is_active === false ? 'false' : 'true';
+      showPreview(currentImageUrl, currentImageUrl ? 'Current image — choose a new file to replace it' : 'No image saved for this reward');
+      setMessage('Editing “' + (reward.title || reward.name || 'Reward') + '”. Leave the image field blank to keep its current image.');
+      $('rewardFormCard').scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    function renderRewards() {
+      const box = $('rewardList');
+      if (!rewards.length) {
+        box.innerHTML = '<div class="empty">No rewards yet. Add your first reward above.</div>';
+        return;
+      }
+      box.innerHTML = rewards.map(reward => `
+        <article class="reward" style="align-items:center;flex-wrap:wrap;gap:12px">
+          <img class="reward-product-image" src="${escReward(rewardImageFor(reward))}" data-fallback-src="${escReward(rewardImageFallback(reward))}" alt="${escReward(reward.title || reward.name || 'Reward')}" onerror="handleRewardImageError(this)">
+          <div class="grow" style="min-width:120px">
+            <strong>${escReward(reward.title || reward.name || 'Reward')}</strong>
+            <small>${escReward(reward.description || '')}${reward.description ? ' · ' : ''}${Number(reward.points_cost || 10)} points</small>
+          </div>
+          <span class="badge">${reward.is_active ? 'Active' : 'Inactive'}</span>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;width:100%;justify-content:flex-end">
+            <button class="btn soft" type="button" data-edit-reward="${escReward(reward.id)}">EDIT</button>
+            <button class="btn danger" type="button" data-delete-reward="${escReward(reward.id)}">DELETE</button>
+          </div>
+        </article>`).join('');
+      box.querySelectorAll('[data-edit-reward]').forEach(button => {
+        button.addEventListener('click', () => startEdit(button.dataset.editReward));
+      });
+      box.querySelectorAll('[data-delete-reward]').forEach(button => {
+        button.addEventListener('click', () => deleteReward(button.dataset.deleteReward));
+      });
+    }
+
+    async function loadRewards() {
+      const box = $('rewardList');
+      box.innerHTML = '<div class="empty">Loading rewards…</div>';
+      const { data, error } = await sb.from('rewards')
+        .select('id,title,name,description,points_cost,is_active,image_url,created_at')
+        .order('created_at', {ascending:false});
+      if (error) {
+        box.innerHTML = `<div class="alert">${escReward(error.message)}</div>`;
+        return;
+      }
+      rewards = data || [];
+      renderRewards();
+    }
+
+    async function saveReward() {
+      const button = $('saveRewardBtn');
+      button.disabled = true;
+      try {
+        const name = $('rewardName').value.trim();
+        const description = $('rewardDescription').value.trim();
+        const pointsCost = Number($('rewardPoints').value);
+        const isActive = $('rewardStatus').value === 'true';
+        if (!name) throw new Error('Reward name is required.');
+        if (!Number.isInteger(pointsCost) || pointsCost < 1) throw new Error('Points cost must be a whole number greater than zero.');
+
+        const profile = await getProfile();
+        if (!profile || profile.role !== 'gm' || profile.is_active === false) throw new Error('Active GM access is required.');
+
+        let imageUrl = editingRewardId ? currentImageUrl : null;
+        const file = $('rewardImage').files?.[0];
+        if (file) imageUrl = await fileToDataUrl(file);
+
+        const wasEditing = Boolean(editingRewardId);
+        const payload = {
+          title: name,
+          name,
+          description: description || null,
+          points_cost: pointsCost,
+          is_active: isActive,
+          image_url: imageUrl
+        };
+
+        if (wasEditing) {
+          const { data, error } = await sb.from('rewards')
+            .update(payload).eq('id', editingRewardId).select('id');
+          if (error) throw error;
+          if (!data?.length) throw new Error('No reward was updated. Check the Supabase rewards UPDATE policy for GM users.');
+          setMessage('Reward updated successfully.');
+        } else {
+          const { data, error } = await sb.from('rewards').insert(payload).select('id');
+          if (error) throw error;
+          if (!data?.length) throw new Error('The reward was not saved. Check the Supabase rewards INSERT policy for GM users.');
+          setMessage('Reward added successfully.');
+        }
+        resetForm();
+        setMessage(wasEditing ? 'Reward updated successfully.' : 'Reward saved successfully.');
+        await loadRewards();
+      } catch (error) {
+        setMessage(error.message || 'Could not save reward.', true);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function deleteReward(id) {
+      const reward = rewards.find(item => String(item.id) === String(id));
+      if (!reward) return;
+      const rewardName = reward.title || reward.name || 'this reward';
+      if (!window.confirm(`Delete “${rewardName}”? This action cannot be undone.`)) return;
+      try {
+        const profile = await getProfile();
+        if (!profile || profile.role !== 'gm' || profile.is_active === false) throw new Error('Active GM access is required.');
+        const { data, error } = await sb.from('rewards').delete().eq('id', id).select('id');
+        if (error) {
+          if (/foreign key|violates/i.test(error.message)) {
+            throw new Error('This reward is linked to existing reward records, so the database blocked deletion. Set it to Inactive instead, or review the linked records first.');
+          }
+          throw error;
+        }
+        if (!data?.length) throw new Error('The reward was not deleted. Check the Supabase rewards DELETE policy for GM users.');
+        if (String(editingRewardId) === String(id)) resetForm();
+        setMessage('Reward deleted successfully.');
+        await loadRewards();
+      } catch (error) {
+        setMessage(error.message || 'Could not delete reward.', true);
+      }
+    }
+
+    $('saveRewardBtn').addEventListener('click', saveReward);
+    $('cancelRewardEditBtn').addEventListener('click', resetForm);
+    $('refreshRewardsBtn').addEventListener('click', loadRewards);
+    $('rewardImage').addEventListener('change', async () => {
+      const file = $('rewardImage').files?.[0];
+      if (!file) {
+        showPreview(currentImageUrl, currentImageUrl ? 'Current image — choose a new file to replace it' : '');
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        $('rewardImage').value = '';
+        setMessage('Please choose an image file.', true);
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        $('rewardImage').value = '';
+        setMessage('Image must be 5 MB or smaller.', true);
+        return;
+      }
+      showPreview(URL.createObjectURL(file), 'New image preview — it will be saved with the reward');
+    });
+
+    (async () => {
+      const profile = await guardRole(['gm']);
+      if (profile) await loadRewards();
+    })().catch(error => {
+      $('rewardList').innerHTML = `<div class="alert">${escReward(error.message || 'Could not load rewards.')}</div>`;
+    });
+  })();
+  </script>
+  <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js').catch(() => {})); }</script>
+</body>
+</html>
