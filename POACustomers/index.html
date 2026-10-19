@@ -1,16 +1,38 @@
 <!doctype html>
-<html lang="ar">
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="0; url=POACustomers/index.html">
-  <title>POACustomers</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C65F78">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Dina's Corner Loyalty</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/tenant-config.js?v=20261019-tenant-config"></script>
+<script src="assets/tenant-branding.js?v=20261019-tenant-branding"></script>
 </head>
 <body>
-  <p>جاري فتح POACustomers...</p>
-  <p><a href="POACustomers/index.html">اضغط هنا لفتح البرنامج</a></p>
-  <script>
-    window.location.replace("POACustomers/index.html");
-  </script>
+<main class="container">
+<div class="auth" style="min-height:calc(100vh - 48px);padding:0;background:transparent">
+<div class="authbox center">
+<div class="logo"><img class="official-logo" src="assets/dina-corner-logo.png" alt="DINA'S CORNER"></div>
+<h2>DINA'S CORNER LOYALTY</h2>
+<p class="sub">Good Food • Brighter Moments</p>
+<div class="grid" style="margin-top:22px">
+<a class="btn primary block" href="customer/customer-login.html">CUSTOMER</a>
+<a class="btn soft block" href="staff/staff-login.html">STAFF</a>
+<a class="btn gold block" href="GM/gm-login.html">GM</a>
+<a class="btn soft block" href="admin/admin-login.html">ADMIN</a>
+</div>
+<div class="note">Customer, Staff, GM and Admin are separate portals.</div>
+</div>
+</div>
+</main>
+<script src="assets/config.js"></script>
+<script src="assets/app.js?v=20261019-reward-image-fallback"></script>
+<script>
+if("serviceWorker" in navigator){
+window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
 </body>
 </html>
