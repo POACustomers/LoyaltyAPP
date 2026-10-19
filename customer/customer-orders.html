@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071D49">
+<meta name="description" content="Place and track POACustomers pickup orders">
+<link rel="manifest" href="../manifest.webmanifest">
+<title>My Pickup Orders — POACustomers</title>
+<link rel="stylesheet" href="../assets/style.css?v=20261019-pickup-orders">
+<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261019-pickup-orders">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+</head>
+<body data-page="customer-orders">
+<header class="topbar">
+  <a class="brand brand-image" href="customer-home.html" aria-label="POAC Software Solutions Home"><img class="brand-logo" src="../assets/poac-logo-icon.png" alt="POAC Software Solutions"></a>
+  <button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button>
+</header>
+<main class="pickup-main">
+  <header class="pickup-heading"><p class="eyebrow">POACUSTOMERS</p><h1 class="title">Order for Pickup</h1><p class="sub">Choose a branch, review your basket and send your order to the branch. No delivery is offered in this flow.</p></header>
+  <div id="pickupCheckoutMessage" hidden aria-live="polite"></div>
+
+  <section class="card pickup-panel" aria-labelledby="pickupCartTitle">
+    <h2 id="pickupCartTitle">Your basket</h2>
+    <div id="pickupCartList" class="pickup-cart-list"><div class="pickup-empty">Loading basket…</div></div>
+    <div id="pickupCartSummary" class="pickup-summary"></div>
+    <div class="pickup-actions"><a class="btn soft" href="customer-menu.html" style="text-align:center;text-decoration:none">BACK TO MENU</a><button id="clearPickupCartBtn" class="btn danger" type="button">CLEAR BASKET</button></div>
+  </section>
+
+  <section class="card pickup-panel" aria-labelledby="pickupCheckoutTitle">
+    <h2 id="pickupCheckoutTitle">Pickup details</h2>
+    <form id="pickupOrderForm">
+      <div class="pickup-form-grid">
+        <label class="pickup-field" for="pickupBranch">Pickup branch <span style="color:#a63d3d">*</span>
+          <select id="pickupBranch" class="input" required><option value="">Loading branches…</option></select>
+        </label>
+        <label class="pickup-field" for="pickupOrderNotes">Order note (optional)
+          <textarea id="pickupOrderNotes" class="input" maxlength="500" placeholder="Any special instructions for this order"></textarea>
+        </label>
+      </div>
+      <div class="pickup-note">This is a pickup order. The selected branch will receive your request and update its status. If an item has no published price, the branch will confirm the final total.</div>
+      <button id="placePickupOrderBtn" class="btn block" type="submit" disabled>PLACE PICKUP ORDER</button>
+    </form>
+  </section>
+
+  <section class="card pickup-panel" aria-labelledby="myPickupOrdersTitle">
+    <div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h2 id="myPickupOrdersTitle" style="margin-bottom:0">Your orders</h2><button id="refreshPickupOrdersBtn" class="btn soft" type="button">REFRESH</button></div>
+    <div id="pickupOrdersMessage" hidden style="margin-top:12px" aria-live="polite"></div>
+    <div id="pickupOrdersList" class="pickup-orders-list" style="margin-top:14px"><div class="pickup-empty">Loading your orders…</div></div>
+  </section>
+</main>
+<nav class="nav" aria-label="Customer navigation"><div class="navin">
+<a href="customer-home.html" data-nav="home"><b>⌂</b>Home</a><a href="customer-rewards.html" data-nav="rewards"><b>★</b>Rewards</a><a href="customer-locations.html" data-nav="locations"><b>⌖</b>Locations</a><a href="customer-offers.html" data-nav="offers"><b>◇</b>Offers</a><a href="customer-menu.html" data-nav="menu"><b>☰</b>Menu</a><a href="customer-orders.html" data-nav="orders" class="active"><b>▣</b>Orders</a><a href="customer-profile.html" data-nav="profile"><b>●</b>My Profile</a>
+</div></nav>
+<script src="../assets/config.js?v=20261019-pickup-orders"></script>
+<script src="../assets/app.js?v=20261019-pickup-orders"></script>
+<script src="../assets/pickup-orders.js?v=20261019-pickup-orders"></script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script>
+</body>
+</html>
