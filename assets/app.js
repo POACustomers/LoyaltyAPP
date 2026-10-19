@@ -255,7 +255,7 @@ async function registerCustomer() {
     return;
   }
 
-  msg.textContent = "Creating your POA Customers account…";
+  msg.textContent = "Creating your Dina's Corner account…";
   const { data, error } = await sb.auth.signUp({
     email: customerAuthEmail(username),
     password,
@@ -354,7 +354,7 @@ async function loadCustomerHomeOffers() {
 
     content.className = "home-offers-content";
     content.innerHTML = `
-      <div class="home-offers-head"><div><h3>Special Offers</h3><p class="sub">Current offers from POA Customers.</p></div></div>
+      <div class="home-offers-head"><div><h3>Special Offers</h3><p class="sub">Current offers from Dina's Corner.</p></div></div>
       <div class="home-offers-list">${cards}</div>`;
   } catch (error) {
     // Keep the page usable if offer read policies have not been applied yet.
