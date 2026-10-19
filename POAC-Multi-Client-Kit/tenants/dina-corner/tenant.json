@@ -1,0 +1,20 @@
+{
+  "tenant_id": "dina-corner",
+  "brand_name": "Dina's Corner",
+  "app_name": "Dina's Corner Loyalty & Orders",
+  "tagline": "Premium Healthy Meals",
+  "theme_id": "dina-floral",
+  "theme_css": "dina-theme.css",
+  "theme_color": "#C65F78",
+  "page_background": "#FFF4ED",
+  "primary_color": "#C65F78",
+  "secondary_color": "#73774E",
+  "accent_color": "#BA9A64",
+  "currency": "EGP",
+  "currency_locale": "en-EG",
+  "decorative_frame": true,
+  "supabase_url": "https://nbwqoknkpkqgorxtyjnm.supabase.co",
+  "supabase_publishable_key": "sb_publishable_ncPKXMFDGB6HI1lHs1kYmg_dB3hgaer",
+  "logo_file": "logo.png",
+  "icon_file": "icon.png"
+}
