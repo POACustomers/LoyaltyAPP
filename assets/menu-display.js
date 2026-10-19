@@ -76,7 +76,7 @@
       const desc=item.description?'<small class="menu-item-description">'+esc(item.description)+'</small>':'';
       const priceMissing=item.price===null||item.price===undefined||String(item.price).trim()==='';
       const rawPrice=priceMissing?null:Number(item.price);
-      const price=rawPrice!==null&&Number.isFinite(rawPrice)&&rawPrice>=0?'AED '+rawPrice.toFixed(2):'';
+      const price=rawPrice!==null&&Number.isFinite(rawPrice)&&rawPrice>=0?(window.POA_FORMAT_CURRENCY?window.POA_FORMAT_CURRENCY(rawPrice):'EGP '+rawPrice.toFixed(2)):'';
       const pickupAction=document.body.dataset.page==='customer-menu'
         ? '<button type="button" class="menu-add-order" data-add-to-order="'+esc(item.id)+'">Add to order</button>'
         : '';

@@ -24,7 +24,7 @@
   }
   function money(value) {
     const n = Number(value);
-    return Number.isFinite(n) ? 'AED ' + n.toFixed(2) : 'To be confirmed';
+    return Number.isFinite(n) ? (window.POA_FORMAT_CURRENCY ? window.POA_FORMAT_CURRENCY(n) : 'EGP ' + n.toFixed(2)) : 'To be confirmed';
   }
   function quantityCount(cart) { return cart.reduce((sum, row) => sum + Number(row.quantity || 0), 0); }
   function calculate(cart) {
