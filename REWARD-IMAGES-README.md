@@ -1,16 +1,13 @@
-# POACustomers reward image replacement
+# POACustomers reward image recovery
 
-The three standard rewards now have a consistent premium cream / navy / gold photo set:
+The Rewards pages now recover automatically from stale or invalid `image_url` values stored in Supabase. When a saved image URL fails, the page falls back to the matching local image bundled with this project:
 
 - `assets/reward-hot-cold.jpg` — Free Hot or Cold Drink
 - `assets/reward-breakfast.jpg` — Breakfast
 - `assets/reward-breakfast-drink.jpg` — Breakfast + Drink
 
-## Apply the changes
+No SQL change is required for this fallback. Existing custom image URLs remain preferred when they work. If an old saved URL fails, the customer, staff redemption, and GM reward list use the bundled matching image instead. The service-worker cache was versioned and these images were added to the shell cache to help ensure the updated files become available.
 
-1. Upload the project contents to the existing `POACustomers` GitHub repository, preserving folder paths.
-2. Wait for GitHub Pages to deploy.
-3. In the matching POACustomers Supabase project, open SQL Editor and run `POACustomers-replace-reward-images.sql` once. It updates only the image URLs for the three named standard rewards; it does not remove or change points, coupons, reward costs, or statuses.
-4. Refresh customer and staff reward pages with `Ctrl + F5`.
+## Deploy
 
-The SQL references the public GitHub Pages asset URLs under `/LoyaltyAPP/assets/`. If the repository's published base path changes, update those three URLs in the SQL before running it.
+Upload all project contents to the existing `POACustomers` GitHub repository while preserving paths. After GitHub Pages deploys, open the app and do a hard refresh (`Ctrl + F5`). If the browser still serves an old service worker, close the installed PWA/browser tab and reopen the website once online.

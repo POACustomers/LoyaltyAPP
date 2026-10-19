@@ -1,4 +1,4 @@
-const CACHE = "poa-customers-v8-customer-home-offers";
+const CACHE = "poa-customers-v10-pickup-orders";
 const SHELL = [
   "./",
   "./index.html",
@@ -8,13 +8,21 @@ const SHELL = [
   "./assets/config.js",
   "./assets/menu-display.css",
   "./assets/menu-display.js",
+  "./assets/pickup-orders.css",
+  "./assets/pickup-orders.js",
   "./manifest.webmanifest",
   "./assets/poac-logo-full.png",
   "./assets/poac-logo-icon.png",
+  "./assets/reward-hot-cold.jpg",
+  "./assets/reward-breakfast.jpg",
+  "./assets/reward-breakfast-drink.jpg",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
   "./customer/customer-home.html",
   "./customer/customer-menu.html",
+  "./customer/customer-orders.html",
+  "./gm/gm-orders.html",
+  "./staff/staff-orders.html",
   "./customer/customer-locations.html",
   "./gm/gm-dashboard.html",
   "./gm/gm-categories.html",
