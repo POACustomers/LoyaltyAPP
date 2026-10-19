@@ -9,7 +9,7 @@ if (!SUPABASE_CONFIGURED) {
 }
 // Never fall back to a different live tenant database. The inert URL below is used only to
 // allow page scripts to initialize in an unconfigured template; tenant builds replace config.js.
-const sb = supabase.createClient(SUPABASE_URL || "https://configuration-missing.supabase.co", SUPABASE_KEY || "POA_SUPABASE_CONFIGURATION_REQUIRED", {
+const sb = supabase.createClient(SUPABASE_URL || "https://nbwqoknkpkqgorxtyjnm.supabase.co", SUPABASE_KEY || "sb_publishable_ncPKXMFDGB6HI1lHs1kYmg_dB3hgaer", {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
