@@ -1,4 +1,4 @@
-const CACHE = "dina-corner-v27-customer-top-menu";
+const CACHE = "dina-corner-v28-customer-menu-v2";
 const SHELL = [
   "./",
   "./index.html",
