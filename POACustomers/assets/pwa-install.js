@@ -1,14 +1,13 @@
-/* Dina's Corner PWA install prompt — concise, device-aware flow. */
+/* Dina's Corner PWA install bottom sheet — concise, device-aware, non-blocking. */
 (function () {
   'use strict';
-  if (window.__POA_PWA_INSTALL_PROMPT__) return;
-  window.__POA_PWA_INSTALL_PROMPT__ = true;
+  if (window.__POA_PWA_INSTALL_SHEET_V3__) return;
+  window.__POA_PWA_INSTALL_SHEET_V3__ = true;
 
   var deferredPrompt = null;
-  var card = null;
   var backdrop = null;
+  var card = null;
   var actionButton = null;
-  var closeButton = null;
   var laterButton = null;
   var hint = null;
   var dismissedForSession = false;
@@ -16,115 +15,118 @@
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var isAndroid = /Android/i.test(navigator.userAgent);
   var iosInAppBrowser = isIOS && /(CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo)/i.test(navigator.userAgent);
+  var scriptUrl = (function () {
+    var s = document.currentScript;
+    return s && s.src ? s.src : '';
+  })();
 
   function isStandalone() {
     return !!((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
       (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches) ||
       navigator.standalone === true);
   }
+
   function isArabic() {
     try {
       var saved = localStorage.getItem('poa_language');
       if (saved === 'ar') return true;
       if (saved === 'en') return false;
     } catch (_) {}
-    return true; // keep Arabic as the first-use default, matching the product's language switcher.
+    return true; // Arabic is the first-use default; the visible language selector can switch to English.
   }
 
-  var text = {
+  var copy = {
     ar: {
-      button: 'تثبيت التطبيق',
-      titleAndroid: 'ثبّت التطبيق على هاتفك',
-      bodyAndroid: 'افتح Dina’s Corner من أيقونة على الشاشة الرئيسية — بخطوة واحدة.',
+      titleAndroid: 'ثبّت Dina’s Corner',
+      bodyAndroid: 'افتح التطبيق بسرعة من الشاشة الرئيسية.',
       actionAndroid: 'تثبيت التطبيق',
       titleIOS: 'أضف التطبيق إلى الشاشة الرئيسية',
       bodyIOS: 'احتفظ بـ Dina’s Corner على هاتفك وافتحه مثل أي تطبيق.',
-      actionIOS: 'إضافة إلى الشاشة الرئيسية',
+      actionIOS: 'إضافة للشاشة الرئيسية',
       titleOther: 'أضف Dina’s Corner إلى جهازك',
-      bodyOther: 'ثبّت التطبيق للوصول إليه مباشرة من الشاشة الرئيسية.',
-      actionOther: 'متابعة التثبيت',
+      bodyOther: 'افتح التطبيق مباشرةً من الشاشة الرئيسية.',
+      actionOther: 'إضافة التطبيق',
       later: 'لاحقًا',
-      close: 'إغلاق',
-      iosHintSafari: 'افتح الرابط في Safari، ثم اضغط مشاركة واختر «إضافة إلى الشاشة الرئيسية».',
-      iosHint: 'من Safari اضغط «مشاركة»، ثم اختر «إضافة إلى الشاشة الرئيسية».',
-      androidFallback: 'لم يظهر مربع التثبيت في هذا المتصفح. افتح الرابط في Chrome وحاول مرة أخرى.',
-      genericFallback: 'افتح قائمة المتصفح وابحث عن «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».',
-      installed: 'تم تثبيت التطبيق. افتحه من أيقونته على الشاشة الرئيسية.'
+      hintIOS: 'افتح «مشاركة» في Safari، ثم اختر «إضافة إلى الشاشة الرئيسية».',
+      hintIOSInApp: 'افتح الرابط في Safari أولًا، ثم اختر «إضافة إلى الشاشة الرئيسية».',
+      hintAndroid: 'لم يظهر التثبيت المباشر في هذا المتصفح. افتح الرابط في Chrome ثم اختر «تثبيت التطبيق» من القائمة.',
+      hintOther: 'افتح قائمة المتصفح وابحث عن «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».',
+      ack: 'حسنًا',
+      close: 'إغلاق'
     },
     en: {
-      button: 'Install App',
-      titleAndroid: 'Install the app on your phone',
-      bodyAndroid: 'Open Dina’s Corner from an icon on your Home screen.',
+      titleAndroid: 'Install Dina’s Corner',
+      bodyAndroid: 'Open the app quickly from your Home screen.',
       actionAndroid: 'Install App',
       titleIOS: 'Add the app to your Home Screen',
-      bodyIOS: 'Keep Dina’s Corner on your phone and open it like an app.',
+      bodyIOS: 'Keep Dina’s Corner on your phone and open it like any app.',
       actionIOS: 'Add to Home Screen',
       titleOther: 'Add Dina’s Corner to your device',
-      bodyOther: 'Install the app for one-tap access from your Home screen.',
-      actionOther: 'Continue',
-      later: 'Not now',
-      close: 'Close',
-      iosHintSafari: 'Open this link in Safari, tap Share, then choose “Add to Home Screen”.',
-      iosHint: 'In Safari, tap Share, then choose “Add to Home Screen”.',
-      androidFallback: 'The install prompt is not available in this browser. Open the link in Chrome and try again.',
-      genericFallback: 'Open your browser menu and look for “Install app” or “Add to Home Screen”.',
-      installed: 'App installed. Open it from your Home screen icon.'
+      bodyOther: 'Open the app directly from your Home screen.',
+      actionOther: 'Add App',
+      later: 'Later',
+      hintIOS: 'In Safari, tap Share, then choose “Add to Home Screen”.',
+      hintIOSInApp: 'Open this link in Safari first, then choose “Add to Home Screen”.',
+      hintAndroid: 'Direct install is unavailable in this browser. Open the link in Chrome and choose “Install app” from its menu.',
+      hintOther: 'Open your browser menu and look for “Install app” or “Add to Home Screen”.',
+      ack: 'Got it',
+      close: 'Close'
     }
   };
-
-  var scriptUrl = (function () {
-    var s = document.currentScript;
-    return s && s.src ? s.src : '';
-  })();
 
   function installStyles() {
     if (document.getElementById('poa-pwa-install-css')) return;
     var link = document.createElement('link');
     link.id = 'poa-pwa-install-css';
     link.rel = 'stylesheet';
-    if (scriptUrl) link.href = new URL('pwa-install.css', scriptUrl).href;
+    if (scriptUrl) link.href = new URL('pwa-install.css?v=20261020-bottom-sheet-v3', scriptUrl).href;
     document.head.appendChild(link);
   }
 
   function createUI() {
-    if (document.getElementById('poa-pwa-install-trigger')) return;
-    var trigger = document.createElement('button');
-    trigger.type = 'button';
-    trigger.id = 'poa-pwa-install-trigger';
-    trigger.className = 'poa-pwa-install-trigger';
-    trigger.setAttribute('aria-haspopup', 'dialog');
-    trigger.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"></rect><path d="M12 7v8m-3-3 3 3 3-3M9 18h6"></path></svg><span class="poa-pwa-install-trigger-text"></span>';
-    trigger.addEventListener('click', function () { showPrompt(true); });
-    var topbar = document.querySelector('.topbar');
-    var actions = topbar && topbar.querySelector(':scope > .poa-topbar-actions');
-    if (actions) {
-      var logout = actions.querySelector('.icon');
-      if (logout) actions.insertBefore(trigger, logout); else actions.appendChild(trigger);
-    } else {
-      trigger.classList.add('poa-pwa-install-trigger-floating');
-      document.body.appendChild(trigger);
+    if (document.getElementById('poa-pwa-install-backdrop')) {
+      backdrop = document.getElementById('poa-pwa-install-backdrop');
+      card = backdrop.querySelector('.poa-pwa-install-card');
+      actionButton = backdrop.querySelector('.poa-pwa-install-primary');
+      laterButton = backdrop.querySelector('.poa-pwa-install-secondary');
+      hint = backdrop.querySelector('.poa-pwa-install-hint');
+      return;
     }
 
     backdrop = document.createElement('div');
     backdrop.id = 'poa-pwa-install-backdrop';
     backdrop.className = 'poa-pwa-install-backdrop';
     backdrop.hidden = true;
-    backdrop.innerHTML = '<section class="poa-pwa-install-card" role="dialog" aria-modal="true" aria-labelledby="poa-pwa-install-title"><div class="poa-pwa-install-head"><span class="poa-pwa-install-icon" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><rect x="4" y="4" width="40" height="40" rx="13" fill="#FBE7E6" stroke="#E9BFC4"/><path d="M24 11v19m-7-7 7 7 7-7M15 35h18" stroke="#9F4059" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div class="poa-pwa-install-titles"><h2 id="poa-pwa-install-title" class="poa-pwa-install-title"></h2><p class="poa-pwa-install-body"></p></div><button type="button" class="poa-pwa-install-close" aria-label="Close">×</button></div><p class="poa-pwa-install-hint" hidden></p><div class="poa-pwa-install-actions"><button type="button" class="poa-pwa-install-primary"></button><button type="button" class="poa-pwa-install-secondary"></button></div></section>';
+    backdrop.setAttribute('aria-hidden', 'true');
+
+    var iconUrl = scriptUrl ? new URL('../assets/icons/icon-192.png', scriptUrl).href : '../assets/icons/icon-192.png';
+    backdrop.innerHTML =
+      '<section class="poa-pwa-install-card" role="dialog" aria-modal="false" aria-labelledby="poa-pwa-install-title">' +
+        '<div class="poa-pwa-install-grabber" aria-hidden="true"><span></span></div>' +
+        '<div class="poa-pwa-install-head">' +
+          '<img class="poa-pwa-install-icon" src="' + iconUrl + '" alt="" width="74" height="74" />' +
+          '<div class="poa-pwa-install-titles">' +
+            '<h2 id="poa-pwa-install-title" class="poa-pwa-install-title"></h2>' +
+            '<p class="poa-pwa-install-body"></p>' +
+          '</div>' +
+        '</div>' +
+        '<p class="poa-pwa-install-hint" hidden></p>' +
+        '<div class="poa-pwa-install-actions">' +
+          '<button type="button" class="poa-pwa-install-primary"></button>' +
+          '<button type="button" class="poa-pwa-install-secondary"></button>' +
+        '</div>' +
+      '</section>';
     document.body.appendChild(backdrop);
+
     card = backdrop.querySelector('.poa-pwa-install-card');
     actionButton = backdrop.querySelector('.poa-pwa-install-primary');
     laterButton = backdrop.querySelector('.poa-pwa-install-secondary');
-    closeButton = backdrop.querySelector('.poa-pwa-install-close');
     hint = backdrop.querySelector('.poa-pwa-install-hint');
 
-    actionButton.dataset.mode = 'install';
-    actionButton.addEventListener('click', function () {
-      if (actionButton.dataset.mode === 'ack') { hidePrompt(true); return; }
-      installOrShowQuickHint();
-    });
+    actionButton.addEventListener('click', installOrShowShortHint);
     laterButton.addEventListener('click', function () { hidePrompt(true); });
-    closeButton.addEventListener('click', function () { hidePrompt(true); });
     backdrop.addEventListener('click', function (event) {
+      // The area outside the sheet remains usable and closes the non-blocking prompt.
       if (event.target === backdrop) hidePrompt(true);
     });
     document.addEventListener('keydown', function (event) {
@@ -135,11 +137,7 @@
 
   function render() {
     if (!backdrop) return;
-    var c = isArabic() ? text.ar : text.en;
-    var trigger = document.getElementById('poa-pwa-install-trigger');
-    var triggerText = trigger && trigger.querySelector('.poa-pwa-install-trigger-text');
-    if (triggerText) triggerText.textContent = c.button;
-    if (trigger) { trigger.title = c.button; trigger.setAttribute('aria-label', c.button); }
+    var c = isArabic() ? copy.ar : copy.en;
     var title = backdrop.querySelector('.poa-pwa-install-title');
     var body = backdrop.querySelector('.poa-pwa-install-body');
     if (isIOS) {
@@ -155,10 +153,14 @@
       body.textContent = c.bodyOther;
       actionButton.textContent = c.actionOther;
     }
-    if (hint && !hint.hidden) { actionButton.textContent = isArabic() ? 'حسنًا' : 'Got it'; actionButton.dataset.mode = 'ack'; }
     laterButton.textContent = c.later;
-    closeButton.setAttribute('aria-label', c.close);
     backdrop.dir = isArabic() ? 'rtl' : 'ltr';
+    if (hint && !hint.hidden) {
+      actionButton.textContent = c.ack;
+      actionButton.dataset.mode = 'ack';
+    } else {
+      actionButton.dataset.mode = 'install';
+    }
   }
 
   function showPrompt(force) {
@@ -166,32 +168,43 @@
     if (!force && dismissedForSession) return;
     render();
     backdrop.hidden = false;
-    document.body.classList.add('poa-pwa-install-open');
-    window.setTimeout(function () { if (actionButton) actionButton.focus({ preventScroll: true }); }, 30);
+    backdrop.setAttribute('aria-hidden', 'false');
+    // Force a layout before animating the bottom sheet into view.
+    void card.offsetHeight;
+    card.classList.add('poa-pwa-install-visible');
   }
 
   function hidePrompt(dismissed) {
     if (!backdrop) return;
-    backdrop.hidden = true;
-    document.body.classList.remove('poa-pwa-install-open');
+    card.classList.remove('poa-pwa-install-visible', 'poa-pwa-install-hint-visible');
+    backdrop.setAttribute('aria-hidden', 'true');
+    window.setTimeout(function () {
+      if (!card.classList.contains('poa-pwa-install-visible')) backdrop.hidden = true;
+    }, 230);
     if (hint) { hint.hidden = true; hint.textContent = ''; }
     if (actionButton) { actionButton.disabled = false; actionButton.dataset.mode = 'install'; }
-    if (card) card.classList.remove('poa-pwa-install-hint-visible');
     if (dismissed) dismissedForSession = true;
   }
 
-  async function installOrShowQuickHint() {
-    var c = isArabic() ? text.ar : text.en;
+  async function installOrShowShortHint() {
+    var c = isArabic() ? copy.ar : copy.en;
+    if (actionButton.dataset.mode === 'ack') {
+      if (hint) { hint.hidden = true; hint.textContent = ''; }
+      card.classList.remove('poa-pwa-install-hint-visible');
+      render();
+      return;
+    }
+
     if (isIOS) {
-      // iOS has no web API to invoke the native Add to Home Screen action.
-      // Keep the fallback to one concise sentence; do not open a long instruction page.
-      hint.textContent = iosInAppBrowser ? c.iosHintSafari : c.iosHint;
+      // iOS does not expose an API to invoke Add to Home Screen directly.
+      hint.textContent = iosInAppBrowser ? c.hintIOSInApp : c.hintIOS;
       hint.hidden = false;
       card.classList.add('poa-pwa-install-hint-visible');
-      actionButton.textContent = isArabic() ? 'حسنًا' : 'Got it';
+      actionButton.textContent = c.ack;
       actionButton.dataset.mode = 'ack';
       return;
     }
+
     if (deferredPrompt) {
       var promptEvent = deferredPrompt;
       deferredPrompt = null;
@@ -199,31 +212,31 @@
       try {
         await promptEvent.prompt();
         var choice = await promptEvent.userChoice;
+        actionButton.disabled = false;
         if (choice && choice.outcome === 'accepted') {
           hidePrompt(false);
-        } else {
-          actionButton.disabled = false;
-          render();
+          return;
         }
+        render();
       } catch (_) {
         actionButton.disabled = false;
-        hint.textContent = c.androidFallback;
+        hint.textContent = isAndroid ? c.hintAndroid : c.hintOther;
         hint.hidden = false;
         card.classList.add('poa-pwa-install-hint-visible');
-        render();
+        actionButton.textContent = c.ack;
+        actionButton.dataset.mode = 'ack';
       }
       return;
     }
-    hint.textContent = isAndroid ? c.androidFallback : c.genericFallback;
+
+    hint.textContent = isAndroid ? c.hintAndroid : c.hintOther;
     hint.hidden = false;
     card.classList.add('poa-pwa-install-hint-visible');
-    actionButton.textContent = isArabic() ? 'حسنًا' : 'Got it';
+    actionButton.textContent = c.ack;
     actionButton.dataset.mode = 'ack';
   }
 
   function markInstalled() {
-    var trigger = document.getElementById('poa-pwa-install-trigger');
-    if (trigger) trigger.hidden = true;
     hidePrompt(false);
   }
 
@@ -234,10 +247,8 @@
     window.addEventListener('beforeinstallprompt', function (event) {
       event.preventDefault();
       deferredPrompt = event;
-      if (hint) { hint.hidden = true; hint.textContent = ''; }
-      if (actionButton) { actionButton.disabled = false; actionButton.dataset.mode = 'install'; }
+      // The browser makes this event available only on supported browsers.
       render();
-      showPrompt(false);
     });
     window.addEventListener('appinstalled', markInstalled);
     window.addEventListener('storage', function (event) {
@@ -253,12 +264,14 @@
       });
       observer.observe(document.documentElement, { attributes: true, attributeFilter: ['dir', 'lang'] });
     }
+
     var seen = false;
-    try { seen = sessionStorage.getItem('poa_pwa_install_prompt_seen') === '1'; } catch (_) {}
+    try { seen = sessionStorage.getItem('poa_pwa_install_sheet_seen_v3') === '1'; } catch (_) {}
     if (!seen) {
-      try { sessionStorage.setItem('poa_pwa_install_prompt_seen', '1'); } catch (_) {}
-      window.setTimeout(function () { showPrompt(false); }, 650);
+      try { sessionStorage.setItem('poa_pwa_install_sheet_seen_v3', '1'); } catch (_) {}
+      window.setTimeout(function () { showPrompt(false); }, 700);
     }
+
     try {
       if (window.matchMedia) {
         var media = window.matchMedia('(display-mode: standalone)');
