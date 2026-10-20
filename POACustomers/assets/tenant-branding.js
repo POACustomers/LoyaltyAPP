@@ -97,12 +97,53 @@
   const start = () => {
     applyBrandToDom(document.documentElement);
     if (document.body) document.body.dataset.tenant = String(tenant.TENANT_ID || 'customer');
-    // Catch labels created later by page logic (e.g. offers, order status, account messages).
+    // Process dynamic branding changes in batches. Re-scanning an ancestor for
+    // every translated text-node mutation can freeze large pages when the
+    // bilingual switcher translates the page in one pass.
     if (document.body && 'MutationObserver' in window) {
+      const pendingBrandRoots = new Set();
+      let brandPassScheduled = false;
+
+      function queueBrandRoot(root) {
+        if (!root || root.nodeType !== Node.ELEMENT_NODE) return;
+        if (root.closest && root.closest('.poa-language-switcher')) return;
+
+        // Keep only the highest queued ancestors so one inserted subtree is
+        // processed once, rather than repeatedly for all its descendants.
+        for (const pending of pendingBrandRoots) {
+          if (pending === root || (pending.contains && pending.contains(root))) return;
+        }
+        for (const pending of Array.from(pendingBrandRoots)) {
+          if (root.contains && root.contains(pending)) pendingBrandRoots.delete(pending);
+        }
+        pendingBrandRoots.add(root);
+        if (brandPassScheduled) return;
+        brandPassScheduled = true;
+        window.setTimeout(() => {
+          brandPassScheduled = false;
+          const roots = Array.from(pendingBrandRoots);
+          pendingBrandRoots.clear();
+          for (const queuedRoot of roots) {
+            if (queuedRoot.isConnected) applyBrandToDom(queuedRoot);
+          }
+        }, 25);
+      }
+
       const observer = new MutationObserver((records) => {
         for (const record of records) {
-          if (record.type === 'characterData') applyBrandToDom(record.target.parentElement || document.body);
-          for (const node of record.addedNodes || []) if (node.nodeType === Node.ELEMENT_NODE) applyBrandToDom(node);
+          if (record.type === 'characterData') {
+            // Branding only needs re-checking if this changed text contains a
+            // replaceable brand token. Ignore ordinary translation updates.
+            const text = record.target && record.target.nodeValue || '';
+            if (/Dina[’']s Corner|Premium Healthy Meals|POACustomers/i.test(text)) {
+              queueBrandRoot(record.target.parentElement || document.body);
+            }
+          }
+          if (record.type === 'childList') {
+            for (const node of record.addedNodes || []) {
+              if (node.nodeType === Node.ELEMENT_NODE) queueBrandRoot(node);
+            }
+          }
         }
       });
       observer.observe(document.body, { subtree: true, childList: true, characterData: true });
