@@ -1,15 +1,18 @@
 
 const POA_RUNTIME_CONFIG = window.POA_CONFIG || {};
-const SUPABASE_URL = String(POA_RUNTIME_CONFIG.SUPABASE_URL || "https://nbwqoknkpkqgorxtyjnm.supabase.co").trim();
-const SUPABASE_KEY = String(POA_RUNTIME_CONFIG.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_ncPKXMFDGB6HI1lHs1kYmg_dB3hgaer").trim();
-const SUPABASE_CONFIGURED = /^https:\/\/[^/]+\.supabase\.co\/?$/i.test(SUPABASE_URL) && !!SUPABASE_KEY && !/YOUR[_-]|PLACEHOLDER|REPLACE_ME/i.test(SUPABASE_KEY + SUPABASE_URL);
+const configuredSupabaseUrl = String(POA_RUNTIME_CONFIG.SUPABASE_URL || "").trim();
+const configuredSupabaseKey = String(POA_RUNTIME_CONFIG.SUPABASE_PUBLISHABLE_KEY || "").trim();
+const SUPABASE_CONFIGURED = /^https:\/\/[^/]+\.supabase\.co\/?$/i.test(configuredSupabaseUrl) && !!configuredSupabaseKey && !/YOUR[_-]|PLACEHOLDER|REPLACE_ME|POA_CONFIG_NOT_SET/i.test(configuredSupabaseKey + configuredSupabaseUrl);
+// Never fall back to a real tenant database. A template with missing credentials points only
+// to a reserved invalid hostname, and auth/register functions refuse to proceed until configured.
+const SUPABASE_URL = SUPABASE_CONFIGURED ? configuredSupabaseUrl : "https://not-configured.invalid";
+const SUPABASE_KEY = SUPABASE_CONFIGURED ? configuredSupabaseKey : "POA_CONFIG_NOT_SET";
+window.POA_SUPABASE_CONFIGURED = SUPABASE_CONFIGURED;
 
 if (!SUPABASE_CONFIGURED) {
-  console.warn("This customer deployment has no Supabase project configured. Add its own URL and publishable key in assets/config.js; no other customer's database will be used as a fallback.");
+  console.warn("This customer deployment has no Supabase project configured. Add its own URL and publishable key in assets/config.js; the app will not connect to another tenant's database.");
 }
-// Never fall back to a different live tenant database. The inert URL below is used only to
-// allow page scripts to initialize in an unconfigured template; tenant builds replace config.js.
-const sb = supabase.createClient(SUPABASE_URL || "https://nbwqoknkpkqgorxtyjnm.supabase.co", SUPABASE_KEY || "sb_publishable_ncPKXMFDGB6HI1lHs1kYmg_dB3hgaer", {
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -407,7 +410,9 @@ async function loadCustomerHome() {
   const profile = await guardRole(["customer"]);
   if (!profile) return;
 
-  await loadCustomerHomeOffers();
+  // Offers are independent of the customer's profile. Start their request, but do
+  // not hold back the name/points/avatar while the offers table responds.
+  void loadCustomerHomeOffers();
 
   document.querySelectorAll("[data-name]").forEach(e => e.textContent = profile.full_name || "Customer");
   document.querySelectorAll("[data-points]").forEach(e => e.textContent = Math.min(50, Number(profile.points || 0)));
