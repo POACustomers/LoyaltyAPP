@@ -108,8 +108,7 @@ function bindAvatarChoices(currentUrl, profileName) {
 
 function bindCustomerNav(page) {
   const map = {
-    "customer-home":"home", "customer-card":"card", "customer-rewards":"rewards",
-    "customer-offers":"offers", "customer-menu":"menu", "customer-locations":"locations", "customer-orders":"orders", "customer-profile":"profile"
+    "customer-home":"home", "customer-card":"card", "customer-rewards":"rewards", "customer-menu":"menu", "customer-locations":"locations", "customer-orders":"orders", "customer-profile":"profile"
   };
   document.querySelectorAll("[data-nav]").forEach(a => a.classList.toggle("active", a.dataset.nav === map[page]));
 }
@@ -1597,8 +1596,6 @@ async function init() {
     } else if (page === "customer-rewards") {
       await loadCustomerRewards();
     } else if (page === "customer-menu") {
-      await guardRole(["customer"]);
-    } else if (page === "customer-offers") {
       await guardRole(["customer"]);
     } else if (page === "customer-locations") {
       await loadCustomerLocations();
