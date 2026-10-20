@@ -5,7 +5,7 @@
   document.addEventListener('click', event=>{
     const menu = event.target.closest && event.target.closest('[data-customer-top-menu]');
     if(!menu) closeMenus();
-    else if(event.target.closest('a')) closeMenus();
+    else if(event.target.closest('a, #poaLanguageSwitcher, .customer-menu-logout')) closeMenus();
   });
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'){

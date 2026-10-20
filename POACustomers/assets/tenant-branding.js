@@ -184,7 +184,7 @@
     'GM Login':'دخول المدير العام', 'Staff Login':'دخول الموظفين', 'Staff Portal':'بوابة الموظفين', 'GM Portal':'بوابة المدير العام',
     'Secure access for Dina\'s Corner staff.':'دخول آمن لموظفي Dina\'s Corner.', 'Management operations. System Admin is a separate portal.':'إدارة العمليات. بوابة مدير النظام منفصلة.',
     'Full system administration. This portal is separate from GM.':'إدارة النظام بالكامل. هذه البوابة منفصلة عن المدير العام.',
-    'Hello,':'أهلًا،', 'Loyal Customer • Welcome back':'عميلنا العزيز • أهلًا بعودتك', 'YOUR POINTS':'نقاطك',
+    'Hello,':'أهلًا،', 'Loyal Customer':'عميلنا العزيز', 'Welcome back':'أهلًا بعودتك', 'Loyal Customer • Welcome back':'عميلنا العزيز • أهلًا بعودتك', 'YOUR POINTS':'نقاطك',
     'Keep earning brighter rewards':'اجمع المزيد من النقاط واستمتع بمكافآت أفضل', 'More Rewards':'مكافآت أكثر', 'Brighter Days':'وأيام أجمل',
     'Earn points with every eligible purchase at Dina\'s Corner.':'اجمع النقاط مع كل عملية شراء مؤهلة في Dina\'s Corner.',
     'My QR Code':'رمز QR الخاص بي', 'Show this QR code at the counter.':'اعرض رمز QR هذا عند الكاشير.', 'Your current points':'نقاطك الحالية',
@@ -465,6 +465,17 @@
   function installButton() {
     if (document.getElementById('poaLanguageSwitcher')) return;
     const button = makeButton();
+    // Customer pages use an icon-only hamburger. Keep language selection inside that menu.
+    const customerMenu = document.querySelector('[data-customer-top-menu] .customer-menu-popup');
+    if (customerMenu) {
+      button.classList.add('customer-language-menu-item');
+      const signOut = customerMenu.querySelector('.customer-menu-logout');
+      if (signOut) customerMenu.insertBefore(button, signOut);
+      else customerMenu.appendChild(button);
+      updateButton();
+      return;
+    }
+    // Staff, GM, and admin pages retain their existing topbar language control.
     const topbar = document.querySelector('.topbar');
     if (topbar) {
       let actions = topbar.querySelector(':scope > .poa-topbar-actions');

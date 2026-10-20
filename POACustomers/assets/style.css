@@ -286,3 +286,60 @@ body[data-page="customer-orders"] .pickup-main{padding-bottom:28px}
   .customer-menu-popup{width:min(260px,calc(100vw - 24px))}
 }
 @media(max-width:360px){.customer-top-menu-label{display:none}.customer-menu-popup a{padding:10px;font-size:12px}}
+
+
+/* Customer UI v2: icon-only menu, language picker inside dropdown, and compact loyalty card. */
+.customer-top-menu > summary{
+  width:42px;min-width:42px;height:42px;min-height:42px;padding:0;border-radius:13px;gap:0;
+}
+.customer-top-menu-symbol{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.customer-menu-popup .customer-menu-logout,
+.customer-menu-popup .poa-language-switcher{
+  display:flex!important;align-items:center;justify-content:flex-start;gap:12px;width:100%;min-height:44px;padding:10px 12px;
+  border:0;border-radius:10px;background:transparent;color:var(--ink);box-shadow:none;text-align:start;font:750 13px/1.25 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:0;white-space:normal;cursor:pointer;transform:none;
+}
+.customer-menu-popup .customer-menu-logout:hover,
+.customer-menu-popup .customer-menu-logout:focus-visible,
+.customer-menu-popup .poa-language-switcher:hover,
+.customer-menu-popup .poa-language-switcher:focus-visible{background:var(--rose-soft,#f9dfe1);color:var(--rose-dark,#a8435d);outline:none;box-shadow:none;transform:none}
+.customer-menu-popup .poa-language-switcher{position:static!important;z-index:auto!important;border-top:1px solid var(--line);border-radius:0;margin-top:4px;padding-top:13px}
+.customer-menu-popup .poa-language-switcher .poa-language-label{font:inherit}
+.customer-menu-popup .customer-menu-logout{border-top:1px solid var(--line);border-radius:0;margin-top:2px}
+.customer-menu-popup .customer-menu-logout::before{content:"↪";display:inline-grid;place-items:center;width:24px;flex:0 0 24px;color:var(--rose,var(--green));font-size:18px}
+.customer-loyalty-card{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:112px;padding:15px 18px;border-radius:21px;direction:ltr;overflow:hidden;
+}
+.customer-loyalty-balance{display:flex;flex:1 1 46%;min-width:0;flex-direction:column;align-items:flex-start;gap:4px;color:#fff;text-align:left}
+.customer-loyalty-balance small{font-size:10px;line-height:1.2;font-weight:850;letter-spacing:.6px;color:rgba(255,255,255,.86)}
+.customer-loyalty-balance strong{display:block;margin:1px 0;font-size:clamp(29px,5.8vw,36px);line-height:1;color:#fff;font-weight:900;white-space:nowrap}
+.customer-loyalty-balance strong{width:100%;text-align:left;direction:ltr}
+html[dir="rtl"] .customer-loyalty-balance strong{direction:rtl;text-align:left}
+.customer-loyalty-hint{display:block;max-width:100%;font-size:10px;line-height:1.35;color:rgba(255,255,255,.9)}
+.customer-loyalty-member{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex:0 1 54%;min-width:0;direction:ltr}
+.customer-loyalty-identity{min-width:0;max-width:100%;text-align:right;color:#fff}
+.customer-loyalty-identity small{display:block;color:rgba(255,255,255,.82);font-size:10px;line-height:1.25;font-weight:750}
+.customer-loyalty-identity h2{margin:4px 0 2px;color:#fff!important;font-size:clamp(14px,2.8vw,18px);line-height:1.2;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.customer-loyalty-identity p{margin:0;color:rgba(255,255,255,.88)!important;font-size:10px;line-height:1.3}
+.customer-loyalty-avatar-link{flex:0 0 auto;display:block;border-radius:14px;overflow:hidden}
+.customer-loyalty-avatar-link .avatar{width:58px;height:58px;border-radius:14px;overflow:hidden;border:1.5px solid rgba(255,255,255,.8);background:#fff0e8}
+.customer-loyalty-avatar-link .avatar img{display:block;width:100%;height:100%;object-fit:cover}
+@media(max-width:480px){
+ .customer-loyalty-card{min-height:96px;gap:8px;padding:12px 13px;border-radius:18px}
+ .customer-loyalty-balance{flex-basis:44%;gap:4px}
+ .customer-loyalty-balance small{font-size:9px;letter-spacing:.4px}
+ .customer-loyalty-balance strong{font-size:30px}
+ .customer-loyalty-hint{font-size:9px;max-width:160px}
+ .customer-loyalty-member{flex-basis:56%;gap:7px}
+ .customer-loyalty-identity small{font-size:9px}
+ .customer-loyalty-identity h2{font-size:14px;max-width:100%}
+ .customer-loyalty-identity p{font-size:9px}
+ .customer-loyalty-avatar-link .avatar{width:49px;height:49px;border-radius:12px}
+}
+@media(max-width:340px){
+ .customer-loyalty-card{padding:10px;gap:6px}
+ .customer-loyalty-balance strong{font-size:27px}
+ .customer-loyalty-hint{display:none}
+ .customer-loyalty-member{gap:5px}
+ .customer-loyalty-avatar-link .avatar{width:43px;height:43px}
+ .customer-loyalty-identity h2{font-size:12px}
+}
