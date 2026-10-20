@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#C65F78">
 <link rel="manifest" href="../manifest.webmanifest">
 <title>Create Loyalty Account</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261019-saved-addresses"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261019-saved-addresses">
+<link rel="stylesheet" href="../assets/style.css?v=20261020-optional-address"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261020-optional-address">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="https://unpkg.com/html5-qrcode"></script>
 <script src="../assets/tenant-config.js?v=20261019-tenant-config"></script><script src="../assets/tenant-branding.js?v=20261019-tenant-branding"></script>
 </head>
@@ -21,14 +21,14 @@
 
 <section class="customer-address-panel" aria-labelledby="registrationAddressTitle">
   <h3 id="registrationAddressTitle">Save your delivery address</h3>
-  <p class="customer-address-help">We will remember this address for future delivery orders. You can edit it or add other addresses from My Profile later.</p>
+  <p class="customer-address-help">Adding an address is optional while creating your account. You can add it now or later from My Profile. If you save one, choose a map pin or type the address details; you do not need to do both.</p>
   <div class="field"><label for="registrationAddressLabel">Address label</label><input id="registrationAddressLabel" class="input" type="text" maxlength="40" value="Home" placeholder="Home, Work, or another name"></div>
-  <div class="field"><label for="registrationAddress">Full delivery address *</label><textarea id="registrationAddress" class="input" maxlength="500" rows="3" required placeholder="Area, street, building, floor and apartment"></textarea></div>
+  <div class="field"><label for="registrationAddress">Address details (optional)</label><textarea id="registrationAddress" class="input" maxlength="500" rows="3" placeholder="Area, street, building, floor and apartment (optional)"></textarea></div>
   <div class="field"><label for="registrationAddressInstructions">Delivery instructions (optional)</label><textarea id="registrationAddressInstructions" class="input" maxlength="500" rows="2" placeholder="Landmark, gate, or helpful delivery details"></textarea></div>
   <div class="customer-address-map-toolbar"><button id="registrationUseLocationBtn" class="btn soft" type="button">⌖ USE CURRENT LOCATION</button><span id="registrationLocationStatus" class="customer-address-map-status" aria-live="polite">Tap the map to set the exact delivery pin.</span></div>
   <div id="registrationAddressMap" class="customer-address-map" role="application" aria-label="Choose your delivery location on the map"></div>
   <input id="registrationAddressLatitude" type="hidden"><input id="registrationAddressLongitude" type="hidden"><input id="registrationAddressMapUrl" type="hidden">
-  <p class="customer-address-note">A map pin is required for delivery so the branch can find you. You can allow GPS or tap your location on the map manually.</p>
+  <p class="customer-address-note">You can skip this section. When saving an address, a map pin or written address is enough; the other details are optional. Delivery checkout will ask for a usable map location.</p>
 </section>
 
 <div class="field"><label>Password</label><input id="password" class="input" type="password" autocomplete="new-password" minlength="6" placeholder="At least 6 characters"></div>
@@ -38,8 +38,8 @@
 </div></div>
 
 <script src="../assets/config.js?v=20261019-currency-egp"></script>
-<script src="../assets/customer-addresses.js?v=20261019-saved-addresses"></script>
-<script src="../assets/app.js?v=20261019-saved-addresses"></script>
+<script src="../assets/customer-addresses.js?v=20261020-optional-address"></script>
+<script src="../assets/app.js?v=20261020-optional-address"></script>
 
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("../sw.js").catch(()=>{}));}</script>
 </body>

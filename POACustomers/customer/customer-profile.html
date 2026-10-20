@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#C65F78">
 <link rel="manifest" href="../manifest.webmanifest">
 <title>Customer Profile</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261019-saved-addresses"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261019-saved-addresses">
+<link rel="stylesheet" href="../assets/style.css?v=20261020-optional-address"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261020-optional-address">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
@@ -54,14 +54,14 @@
 
 <section class="card" id="customerAddressesPanel" style="margin-top:16px" aria-labelledby="customerAddressesTitle">
   <div class="row" style="justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-    <div><h2 id="customerAddressesTitle" style="margin-bottom:4px">My Delivery Addresses</h2><p class="sub" style="margin:0">Your default address is filled in automatically at delivery checkout. Previous orders keep their original address.</p></div>
+    <div><h2 id="customerAddressesTitle" style="margin-bottom:4px">My Delivery Addresses</h2><p class="sub" style="margin:0">Your default address is filled in automatically at delivery checkout. Written address details and delivery instructions are optional. Choose a map pin or enter address details.</p></div>
     <button id="addCustomerAddressBtn" class="btn primary" type="button">+ ADD ADDRESS</button>
   </div>
   <div id="customerAddressList" class="customer-saved-address-list" aria-live="polite"><div class="customer-address-note">Loading saved addresses…</div></div>
   <form id="customerAddressForm" class="customer-address-panel" hidden style="margin-top:16px">
     <h3 id="customerAddressEditorTitle">Add delivery address</h3>
-    <div class="field"><label for="profileAddressLabel">Address label</label><input id="profileAddressLabel" class="input" type="text" maxlength="40" required placeholder="Home, Work, or another name"></div>
-    <div class="field"><label for="profileAddressFull">Full delivery address *</label><textarea id="profileAddressFull" class="input" maxlength="500" rows="3" required placeholder="Area, street, building, floor and apartment"></textarea></div>
+    <div class="field"><label for="profileAddressLabel">Address label (optional)</label><input id="profileAddressLabel" class="input" type="text" maxlength="40" placeholder="Home, Work, or another name (defaults to Home)"></div>
+    <div class="field"><label for="profileAddressFull">Address details (optional)</label><textarea id="profileAddressFull" class="input" maxlength="500" rows="3" placeholder="Area, street, building, floor and apartment (optional)"></textarea></div>
     <div class="field"><label for="profileAddressInstructions">Delivery instructions (optional)</label><textarea id="profileAddressInstructions" class="input" maxlength="500" rows="2" placeholder="Landmark, gate, or helpful delivery details"></textarea></div>
     <div class="customer-address-map-toolbar"><button id="profileAddressUseLocationBtn" class="btn soft" type="button">⌖ USE CURRENT LOCATION</button><span id="profileAddressMapStatus" class="customer-address-map-status" aria-live="polite">Tap the map to choose the exact location.</span></div>
     <div id="customerAddressMap" class="customer-address-map" role="application" aria-label="Choose saved address location on the map"></div>
@@ -93,8 +93,8 @@
 <a href="customer-profile.html" data-nav="profile"><b>●</b>My Profile</a>
 </div></nav>
 <script src="../assets/config.js?v=20261019-currency-egp"></script>
-<script src="../assets/customer-addresses.js?v=20261019-saved-addresses"></script>
-<script src="../assets/app.js?v=20261019-saved-addresses"></script>
+<script src="../assets/customer-addresses.js?v=20261020-optional-address"></script>
+<script src="../assets/app.js?v=20261020-optional-address"></script>
 
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("../sw.js").catch(()=>{}));}</script>
 
