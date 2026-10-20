@@ -3,21 +3,35 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#C65F78"><title>Our Locations — Dina's Corner</title>
 <link rel="manifest" href="../manifest-customer.webmanifest">
-<link rel="apple-touch-icon" href="../assets/icons/icon-192.png"><link rel="stylesheet" href="../assets/style.css?v=20261017-final-batch"><style>
-.locations-page{max-width:760px;margin:0 auto;padding:34px 18px 116px}.locations-header{text-align:center;margin-bottom:24px}.locations-title{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:38px;line-height:1.12;color:var(--green)}.locations-subtitle{margin:10px 0 0;color:var(--muted);font-size:14px}.locations-list{display:grid;gap:12px}.customer-branch{display:flex;align-items:center;justify-content:space-between;gap:16px;text-decoration:none;color:inherit;background:var(--surface,#fffdf8);border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:0 5px 18px rgba(50,65,48,.05)}.customer-branch-copy{min-width:0}.customer-branch-name{font-family:Georgia,"Times New Roman",serif;font-size:23px;font-weight:700;line-height:1.2;color:var(--green);margin:0}.customer-branch-meta{display:block;font-size:12px;line-height:1.5;color:var(--muted);margin-top:5px;overflow-wrap:anywhere}.customer-branch-map{display:inline-block;flex:0 0 auto;color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.3px}.locations-empty{padding:24px;text-align:center;border:1px dashed var(--line);border-radius:16px;color:var(--muted);background:rgba(255,255,255,.4)}
-@media(max-width:480px){.locations-page{padding:28px 14px 112px}.locations-title{font-size:34px}.customer-branch{padding:16px;border-radius:16px}.customer-branch-name{font-size:21px}.customer-branch-map{font-size:10px}}
+<link rel="apple-touch-icon" href="../assets/icons/icon-192.png"><link rel="stylesheet" href="../assets/style.css?v=20261021-top-menu"><style>
+.locations-page{max-width:760px;margin:0 auto;padding:34px 18px 24px}.locations-header{text-align:center;margin-bottom:24px}.locations-title{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:38px;line-height:1.12;color:var(--green)}.locations-subtitle{margin:10px 0 0;color:var(--muted);font-size:14px}.locations-list{display:grid;gap:12px}.customer-branch{display:flex;align-items:center;justify-content:space-between;gap:16px;text-decoration:none;color:inherit;background:var(--surface,#fffdf8);border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:0 5px 18px rgba(50,65,48,.05)}.customer-branch-copy{min-width:0}.customer-branch-name{font-family:Georgia,"Times New Roman",serif;font-size:23px;font-weight:700;line-height:1.2;color:var(--green);margin:0}.customer-branch-meta{display:block;font-size:12px;line-height:1.5;color:var(--muted);margin-top:5px;overflow-wrap:anywhere}.customer-branch-map{display:inline-block;flex:0 0 auto;color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.3px}.locations-empty{padding:24px;text-align:center;border:1px dashed var(--line);border-radius:16px;color:var(--muted);background:rgba(255,255,255,.4)}
+@media(max-width:480px){.locations-page{padding:28px 14px 20px}.locations-title{font-size:34px}.customer-branch{padding:16px;border-radius:16px}.customer-branch-name{font-size:21px}.customer-branch-map{font-size:10px}}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
 </head>
 <body data-page="customer-locations">
-<header class="topbar"><a class="brand brand-image" href="customer-home.html" aria-label="DINA'S CORNER Home"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
+<header class="topbar customer-topbar">
+<a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a>
+<details class="customer-top-menu" data-customer-top-menu>
+  <summary aria-label="Open customer navigation"><span class="customer-top-menu-symbol" aria-hidden="true">☰</span><span class="customer-top-menu-label">Menu</span></summary>
+  <nav class="customer-menu-popup" aria-label="Customer menu">
+    <a href="customer-home.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">⌂</span><span>Home</span></a>
+    <a href="customer-menu.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">☰</span><span>Menu</span></a>
+    <a href="customer-orders.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">🛒</span><span>Basket &amp; Checkout</span></a>
+    <a href="customer-rewards.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">★</span><span>Rewards</span></a>
+    <a href="customer-locations.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">⌖</span><span>Branches</span></a>
+    <a href="customer-order-history.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">▣</span><span>Order History</span></a>
+    <a href="customer-profile.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">●</span><span>My Profile</span></a>
+  </nav>
+</details>
+<button class="icon" type="button" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button>
+</header>
 <main class="locations-page"><header class="locations-header"><h1 class="locations-title">Our Locations</h1><p class="locations-subtitle">Visit one of our branches.</p></header><section class="locations-list" id="customerLocations"><div class="locations-empty">Loading branch locations…</div></section></main>
-<nav class="nav" aria-label="Customer navigation"><div class="navin"><a href="customer-home.html" data-nav="home"><b>⌂</b>Home</a><a href="customer-rewards.html" data-nav="rewards"><b>★</b>Rewards</a><a href="customer-locations.html" data-nav="locations" class="active"><b>⌖</b>Locations</a><a href="customer-orders.html" data-nav="orders"><b>▣</b>Orders</a>
-<a href="customer-menu.html" data-nav="menu"><b>☰</b>Menu</a><a href="customer-profile.html" data-nav="profile"><b>●</b>My Profile</a></div></nav>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="../assets/tenant-config.js?v=20261021-performance"></script>
-<script src="../assets/tenant-branding.js?v=20261021-performance"></script>
-<script src="../assets/config.js?v=20261019-currency-egp"></script><script src="../assets/app.js?v=20261019-reward-image-fallback"></script><script>if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script>
+<script src="../assets/tenant-config.js?v=20261021-top-menu"></script>
+<script src="../assets/tenant-branding.js?v=20261021-top-menu"></script>
+<script src="../assets/customer-navigation.js?v=20261021-top-menu"></script>
+<script src="../assets/config.js?v=20261019-currency-egp"></script><script src="../assets/app.js?v=20261021-top-menu"></script><script>if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script>
 </body></html>
