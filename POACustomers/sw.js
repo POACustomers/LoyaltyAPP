@@ -1,8 +1,9 @@
-const CACHE = "dina-corner-v18-bilingual-language-switcher-performance-fix";
+const CACHE = "dina-corner-v19-pwa-install-smart-qr";
 const SHELL = [
   "./",
   "./index.html",
   "./menu.html",
+  "./manifest.webmanifest",
   "./assets/style.css",
   "./assets/dina-theme.css",
   "./assets/dina-corner-logo.png",
@@ -15,37 +16,48 @@ const SHELL = [
   "./assets/config.js",
   "./assets/tenant-config.js",
   "./assets/tenant-branding.js",
+  "./assets/pwa-install.js",
+  "./assets/pwa-install.css",
   "./assets/tenant-branding/logo.png",
   "./assets/tenant-branding/icon.png",
   "./assets/menu-display.css",
   "./assets/menu-display.js",
   "./assets/pickup-orders.css",
   "./assets/pickup-orders.js",
-  "./manifest.webmanifest",
+  "./assets/customer-addresses.css",
+  "./assets/customer-addresses.js",
   "./assets/reward-hot-cold.jpg",
   "./assets/reward-breakfast.jpg",
   "./assets/reward-breakfast-drink.jpg",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
+  "./customer/customer-login.html",
+  "./customer/customer-register.html",
   "./customer/customer-home.html",
   "./customer/customer-menu.html",
   "./customer/customer-orders.html",
   "./customer/customer-rewards.html",
   "./customer/customer-locations.html",
   "./customer/customer-profile.html",
-  "./gm/gm-dashboard.html",
-
-  "./gm/gm-categories.html",
-  "./gm/gm-menu.html",
-  "./gm/gm-locations.html",
+  "./GM/gm-login.html",
+  "./GM/gm-dashboard.html",
+  "./GM/gm-categories.html",
+  "./GM/gm-menu.html",
+  "./GM/gm-locations.html",
+  "./admin/admin-login.html",
   "./admin/admin-dashboard.html",
+  "./admin/admin-settings.html",
+  "./staff/staff-login.html",
   "./staff/staff-orders.html"
 ];
+
+const scopeUrl = new URL(self.registration.scope);
+const shellUrls = SHELL.map(path => new URL(path, scopeUrl).href);
 
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE)
-      .then(cache => cache.addAll(SHELL))
+      .then(cache => cache.addAll(shellUrls))
       .then(() => self.skipWaiting())
   );
 });
@@ -54,26 +66,37 @@ self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(key => key !== CACHE).map(key => caches.delete(key))
+        keys.filter(key => key.startsWith("dina-corner-") && key !== CACHE).map(key => caches.delete(key))
       ))
       .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET") return;
+  const request = event.request;
+  if (request.method !== "GET") return;
 
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        const copy = response.clone();
-        caches.open(CACHE).then(cache => cache.put(event.request, copy));
-        return response;
-      })
-      .catch(() =>
-        caches.match(event.request).then(response =>
-          response || caches.match("./index.html")
-        )
-      )
-  );
+  const url = new URL(request.url);
+  // Never cache third-party services or API results in the app shell cache.
+  if (url.origin !== self.location.origin || !url.pathname.startsWith(scopeUrl.pathname)) return;
+
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    try {
+      const response = await fetch(request);
+      if (response && response.ok && response.type === "basic") {
+        cache.put(request, response.clone()).catch(() => {});
+      }
+      return response;
+    } catch (_) {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      if (request.mode === "navigate") {
+        const appStart = new URL("index.html", scopeUrl).href;
+        const fallback = await cache.match(appStart);
+        if (fallback) return fallback;
+      }
+      return Response.error();
+    }
+  })());
 });
