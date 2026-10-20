@@ -365,7 +365,7 @@
       const fulfillment = result.fulfillment_type === 'delivery' ? 'delivery' : 'pickup';
       renderCart();
       showOrderSuccess(result.order_number, fulfillment);
-      await loadCustomerOrders();
+      // Past orders are shown only on customer-order-history.html. Keep checkout focused on the current order.
       // Ask about adding the app only after a successful order, never on the landing page.
       window.setTimeout(() => {
         if (window.POAInstallPrompt && typeof window.POAInstallPrompt.showAfterOrder === 'function') {
@@ -506,8 +506,7 @@
       } else setLocationStatus('Choose your map location so the branch can find you.');
     });
     updateFulfillmentUI();
-    $('refreshPickupOrdersBtn')?.addEventListener('click', loadCustomerOrders);
-    await loadCustomerOrders();
+    // Order history is loaded separately on customer-order-history.html, not on checkout.
   }
 
   async function initStaffOrders() {
