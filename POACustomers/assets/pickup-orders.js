@@ -105,6 +105,16 @@
     toast(String(item.name) + ' added to your order.');
   };
 
+  window.POAChangeItemQuantity = function(id, delta){
+    if(page!=='customer-menu') return;
+    const cart=readCart(), item=cart.find(row=>String(row.id)===String(id));
+    if(!item) return;
+    const next=Number(item.quantity)+Number(delta);
+    if(next<=0) writeCart(cart.filter(row=>String(row.id)!==String(id)));
+    else if(next<=50){item.quantity=next;writeCart(cart);}
+    else toast('Maximum quantity for this item is 50.',false);
+    updateCartDock();
+  };
   function updateCartDock() {
     if (page !== 'customer-menu') return;
     let dock = $('pickupCartDock');
@@ -113,7 +123,7 @@
       dock.id = 'pickupCartDock';
       dock.className = 'pickup-cart-dock';
       dock.hidden = true;
-      dock.innerHTML = '<div class="pickup-cart-dock-copy"><strong id="pickupCartDockCount">Your order</strong><small id="pickupCartDockSub">Pickup or delivery at checkout</small></div><a class="btn" href="customer-orders.html">View order</a>';
+      dock.innerHTML = '<div class="pickup-cart-dock-copy"><strong id="pickupCartDockCount">Your order</strong><small id="pickupCartDockSub">Pickup or delivery at checkout</small></div><a class="btn" href="customer-orders.html">View cart · Checkout →</a>';
       document.body.appendChild(dock);
     }
     const cart = readCart();
