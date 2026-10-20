@@ -105,11 +105,6 @@
   </section>
   </div>
 
-  <section class="card pickup-panel" aria-labelledby="myPickupOrdersTitle">
-    <div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h2 id="myPickupOrdersTitle" style="margin-bottom:0">Your orders</h2><button id="refreshPickupOrdersBtn" class="btn soft" type="button">REFRESH</button></div>
-    <div id="pickupOrdersMessage" hidden style="margin-top:12px" aria-live="polite"></div>
-    <div id="pickupOrdersList" class="pickup-orders-list" style="margin-top:14px"><div class="pickup-empty">Loading your orders…</div></div>
-  </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script src="../assets/tenant-config.js?v=20261021-top-menu"></script>
@@ -117,7 +112,7 @@
 <script src="../assets/customer-navigation.js?v=20261021-unified-menu-basket"></script>
 <script src="../assets/config.js?v=20261019-currency-egp"></script>
 <script src="../assets/app.js?v=20261021-top-menu"></script>
-<script src="../assets/pickup-orders.js?v=20261021-checkout-state-fix"></script>
+<script src="../assets/pickup-orders.js?v=20261021-order-history-separated"></script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script>
 </body>
 </html>
