@@ -7,6 +7,9 @@
 
   let categories=[];
   let items=[];
+  const CART_KEY='poa_pickup_cart_v1';
+  function cartRows(){try{const v=JSON.parse(localStorage.getItem(CART_KEY)||'[]');return Array.isArray(v)?v:[]}catch(_){return []}}
+  function itemQuantity(id){const row=cartRows().find(x=>String(x.id)===String(id));return row?Number(row.quantity)||0:0}
 
   // Only display categories that are actually saved in this POACustomers database.
   // There is deliberately no demo/fallback catalog; the owner creates their own menu.
@@ -77,8 +80,9 @@
       const priceMissing=item.price===null||item.price===undefined||String(item.price).trim()==='';
       const rawPrice=priceMissing?null:Number(item.price);
       const price=rawPrice!==null&&Number.isFinite(rawPrice)&&rawPrice>=0?(window.POA_FORMAT_CURRENCY?window.POA_FORMAT_CURRENCY(rawPrice):'EGP '+rawPrice.toFixed(2)):'';
+      const qty=itemQuantity(item.id);
       const pickupAction=document.body.dataset.page==='customer-menu'
-        ? '<button type="button" class="menu-add-order" data-add-to-order="'+esc(item.id)+'">Add to order</button>'
+        ? (qty>0 ? '<div class="menu-qty-control" role="group" aria-label="Quantity for '+esc(item.name||'item')+'"><button type="button" class="menu-qty-btn" data-menu-minus="'+esc(item.id)+'" aria-label="Decrease quantity">−</button><output aria-live="polite">'+qty+'</output><button type="button" class="menu-qty-btn menu-qty-plus" data-add-to-order="'+esc(item.id)+'" aria-label="Increase quantity">+</button></div>' : '<button type="button" class="menu-add-order" data-add-to-order="'+esc(item.id)+'">+ Add</button>')
         : '';
       return '<article class="menu-item">'+image+'<div class="menu-item-copy"><strong class="menu-item-name">'+esc(item.name||'Menu item')+'</strong>'+desc+(price?'<span class="menu-item-price">'+price+'</span>':'')+pickupAction+'</div></article>';
     }).join(''):'<div class="menu-empty">No items in this category yet.</div>';
@@ -91,11 +95,16 @@
       +'<p class="menu-small-note">Tap the back arrow to return to all categories.</p>'
       +'<div class="menu-list">'+rows+'</div>';
     itemsView.querySelector('.menu-back').addEventListener('click',renderCategories);
+    itemsView.querySelectorAll('[data-menu-minus]').forEach(btn=>btn.addEventListener('click',()=>{
+      if(typeof window.POAChangeItemQuantity==='function') window.POAChangeItemQuantity(btn.dataset.menuMinus,-1);
+      renderItems(name);
+    }));
     itemsView.querySelectorAll('[data-add-to-order]').forEach(btn=>btn.addEventListener('click',()=>{
       const item=items.find(row=>String(row.id)===String(btn.dataset.addToOrder));
       if(!item)return;
       if(typeof window.POAAddItemToCart==='function'){
         window.POAAddItemToCart(item);
+        renderItems(name);
       }else{
         alert('Order cart is not ready. Refresh the page and try again.');
       }

@@ -115,6 +115,7 @@
     else toast('Maximum quantity for this item is 50.',false);
     updateCartDock();
   };
+
   function updateCartDock() {
     if (page !== 'customer-menu') return;
     let dock = $('pickupCartDock');
@@ -383,7 +384,7 @@
     box.innerHTML = '<div class="pickup-empty">Loading your orders…</div>';
     const { data, error } = await sb.from('pickup_orders')
       .select('id,order_number,customer_name,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,status,notes,subtotal,currency,created_at,updated_at')
-      .order('created_at', { ascending: false }).limit(25);
+      .order('created_at', { ascending: false }).limit(50);
     if (error) {
       box.innerHTML = '<div class="pickup-error">Could not load orders. Run the order setup SQL in Supabase. Details: ' + esc(error.message) + '</div>';
       return;
@@ -461,6 +462,13 @@
     box.querySelectorAll('[data-order-status]').forEach(button => button.addEventListener('click', () => updateManagedOrder(button.dataset.orderStatus, button.dataset.nextStatus, button.dataset.orderType)));
   }
 
+  async function initCustomerOrderHistory() {
+    const profile = await guardRole(['customer']);
+    if (!profile) return;
+    $('refreshPickupOrdersBtn')?.addEventListener('click', loadCustomerOrders);
+    await loadCustomerOrders();
+  }
+
   async function initCustomerOrders() {
     const profile = await guardRole(['customer']);
     if (!profile) return;
@@ -511,6 +519,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     if (page === 'customer-menu') updateCartDock();
     if (page === 'customer-orders') initCustomerOrders().catch(error => showMessage('pickupCheckoutMessage', error?.message || 'Could not initialize the order page.', true));
+    if (page === 'customer-order-history') initCustomerOrderHistory().catch(error => showMessage('pickupOrdersMessage', error?.message || 'Could not load order history.', true));
     if (page === 'staff-orders') initStaffOrders().catch(error => showMessage('managedOrdersMessage', error?.message || 'Could not load branch orders.', true));
   });
 })();

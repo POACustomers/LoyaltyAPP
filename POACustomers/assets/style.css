@@ -255,3 +255,34 @@ button.reward-choice-card:hover{transform:translateY(-1px)}
   .home-offer-description{font-size:11px;line-height:1.4;-webkit-line-clamp:2}
   .home-offer-expiry{margin-top:6px;padding:3px 6px;font-size:9px}
 }
+
+
+/* Customer top navigation replaces the old fixed bottom tab bar. Colors stay theme-driven. */
+body[data-page^="customer-"]{padding-bottom:0!important}
+body[data-page^="customer-"] > nav.nav{display:none!important}
+.customer-topbar{position:sticky;overflow:visible}
+.customer-top-menu{position:relative;display:inline-flex;align-items:center;flex:0 0 auto;z-index:40}
+.customer-top-menu>summary{list-style:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--green);font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer;user-select:none}
+.customer-top-menu>summary::-webkit-details-marker{display:none}
+.customer-top-menu>summary::marker{content:"";display:none}
+.customer-top-menu>summary:focus-visible{outline:3px solid color-mix(in srgb,var(--rose,#c65f78) 30%,transparent);outline-offset:2px}
+.customer-top-menu-symbol{font-size:18px;line-height:1}
+.customer-menu-popup{position:absolute;inset-inline-end:0;top:calc(100% + 8px);width:min(270px,calc(100vw - 28px));display:grid;gap:4px;padding:8px;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);z-index:100;max-height:min(72vh,520px);overflow-y:auto}
+.customer-menu-popup[hidden]{display:none!important}
+.customer-menu-popup a{display:flex;align-items:center;gap:12px;min-height:44px;padding:10px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:750;text-decoration:none}
+.customer-menu-popup a:hover,.customer-menu-popup a:focus-visible,.customer-menu-popup a[aria-current="page"]{background:var(--rose-soft,#f9dfe1);color:var(--rose-dark,#a8435d);outline:none}
+.customer-menu-icon{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:24px;color:var(--rose,var(--green));font-size:17px;font-weight:900}
+.customer-menu-popup a span:last-child{min-width:0;overflow-wrap:anywhere}
+html[dir="rtl"] .customer-menu-popup{text-align:right}
+body[data-page="customer-menu"] .menu-page{padding-bottom:92px}
+body[data-page="customer-menu"] .pickup-cart-dock{bottom:max(12px,env(safe-area-inset-bottom));left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));width:auto;transform:none}
+body[data-page^="customer-"] #toast{bottom:24px!important}
+body[data-page="customer-menu"] #toast{bottom:82px!important}
+body[data-page="customer-orders"] .pickup-main{padding-bottom:28px}
+@media(max-width:420px){
+  .customer-topbar{gap:8px;padding-inline:12px}
+  .customer-top-menu-label{display:none}
+  .customer-top-menu>summary{min-width:40px;padding:0 10px}
+  .customer-menu-popup{width:min(260px,calc(100vw - 24px))}
+}
+@media(max-width:360px){.customer-top-menu-label{display:none}.customer-menu-popup a{padding:10px;font-size:12px}}

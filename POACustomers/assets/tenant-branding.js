@@ -161,7 +161,7 @@
   window.__POA_LANGUAGE_SWITCHER__ = true;
 
   const STORAGE_KEY = 'poa_language';
-  const DEFAULT_LANGUAGE = 'ar';
+  const DEFAULT_LANGUAGE = 'en';
   const enToAr = {
     'Customer Home':'الرئيسية', 'Customer Login':'دخول العميل', 'Customer Profile':'الملف الشخصي',
     'Create Loyalty Account':'إنشاء حساب ولاء', 'Create Account':'إنشاء حساب', 'Welcome Back':'مرحبًا بعودتك',
@@ -177,6 +177,7 @@
     'Create Loyalty Account':'إنشاء حساب ولاء', 'Create My Loyalty Account →':'إنشاء حساب الولاء ←',
     'Already have an account? Sign in':'لديك حساب بالفعل؟ سجّل الدخول', '← Back':'رجوع ←', 'Back':'رجوع',
     'Home':'الرئيسية', 'Dashboard':'لوحة التحكم', 'Menu':'القائمة', 'Our Menu':'قائمتنا', 'Rewards':'المكافآت', 'Locations':'الفروع',
+    'Basket & Checkout':'السلة وتأكيد الطلب', 'Branches':'الفروع', 'Order History':'سجل الطلبات', 'Previous orders':'الطلبات السابقة', 'Your order history':'سجل طلباتك', 'Review previous orders, branch details, totals and the latest recorded status.':'راجع طلباتك السابقة والفروع والإجماليات وآخر حالة مسجلة.', 'YOUR ACCOUNT':'حسابك', 'Back to menu':'العودة إلى القائمة',
     'Offers':'العروض', 'Orders':'الطلبات', 'My Profile':'ملفي الشخصي', 'Profile':'الملف الشخصي', 'Customer':'العميل', 'Customers':'العملاء',
     'Staff':'الموظفون', 'Users':'المستخدمون', 'GM':'المدير العام', 'General Manager':'المدير العام', 'Settings':'الإعدادات',
     'Sign Out':'تسجيل الخروج', 'Sign out':'تسجيل الخروج', 'Sign Out':'تسجيل الخروج', 'System Admin':'مدير النظام', 'Admin Login':'دخول الإدارة',
@@ -208,9 +209,18 @@
     'Current Rewards':'المكافآت الحالية', 'Rewards are saved in the rewards database.':'يتم حفظ المكافآت في قاعدة بيانات المكافآت.',
     'SAVE REWARD':'حفظ المكافأة', 'CANCEL EDIT':'إلغاء التعديل', 'Active':'نشط', 'Inactive':'غير نشط', 'Status':'الحالة',
     'Offers Management':'إدارة العروض', 'Manage products and offer date limits.':'إدارة المنتجات وحدود تواريخ العروض.', 'Add / Edit Offer':'إضافة / تعديل عرض',
-    'Product Name':'اسم المنتج', 'Production Date':'تاريخ الإنتاج', 'Expiry Date':'تاريخ انتهاء الصلاحية', 'Product Image':'صورة المنتج',
-    'You can choose a product photo from the computer.':'يمكنك اختيار صورة المنتج من جهاز الكمبيوتر.', 'Products are saved with production and expiry dates.':'يتم حفظ المنتجات مع تاريخ الإنتاج وانتهاء الصلاحية.',
-    'Current Offers':'العروض الحالية', 'Categories':'الأقسام', 'GM MANAGEMENT':'إدارة المدير العام', 'Menu Management':'إدارة القائمة',
+    'Add New Offer':'إضافة عرض جديد', 'Edit Offer':'تعديل العرض', 'Product / Offer Name':'اسم المنتج / العرض', 'Start Date':'تاريخ بدء العرض',
+    'Expiry Date':'تاريخ انتهاء الصلاحية', 'Offer Image':'صورة العرض', 'Optional. Up to 5 MB; a selected image is resized before saving.':'اختياري. حتى 5 ميجابايت؛ يتم تصغير الصورة قبل الحفظ.',
+    'Active offers within their valid dates appear on the customer Home screen.':'تظهر العروض النشطة خلال فترة صلاحيتها في الصفحة الرئيسية للعميل.',
+    'SAVE OFFER':'حفظ العرض', 'SAVE CHANGES':'حفظ التغييرات', 'CANCEL EDIT':'إلغاء التعديل', 'EDIT':'تعديل', 'DELETE':'حذف', 'No offers yet.':'لا توجد عروض حاليًا.',
+    'No description':'بدون وصف', 'Starts:':'يبدأ:', 'Expires:':'ينتهي:', 'Current image (kept unless replaced).':'الصورة الحالية (تظل كما هي ما لم تستبدلها).',
+    'Select a new image only if you want to replace the current one.':'اختر صورة جديدة فقط إذا كنت تريد استبدال الصورة الحالية.',
+    'Enter the product or offer name.':'أدخل اسم المنتج أو العرض.', 'Choose both the start and expiry dates.':'اختر تاريخ بدء العرض وتاريخ انتهائه.',
+    'Expiry date cannot be before the start date.':'لا يمكن أن يسبق تاريخ الانتهاء تاريخ البدء.', 'Choose an image file.':'اختر ملف صورة.',
+    'Image must be 5 MB or smaller.':'يجب ألا يتجاوز حجم الصورة 5 ميجابايت.', 'Could not read image.':'تعذرت قراءة الصورة.',
+    'Invalid image.':'الصورة غير صالحة.', 'Could not process the image.':'تعذرت معالجة الصورة.',
+    'Offer updated successfully.':'تم تعديل العرض بنجاح.', 'Offer added successfully.':'تمت إضافة العرض بنجاح.',
+    'An active GM account is required.':'يلزم حساب مدير عام نشط.', 'Current Offers':'العروض الحالية', 'Categories':'الأقسام', 'GM MANAGEMENT':'إدارة المدير العام', 'Menu Management':'إدارة القائمة',
     'Add Menu Item':'إضافة منتج للقائمة', 'Category *':'القسم *', 'Item Name *':'اسم المنتج *', 'Item Name':'اسم المنتج', 'Price (EGP) (optional)':'السعر (جنيه مصري) (اختياري)',
     'Item Image (optional)':'صورة المنتج (اختياري)', 'No image URL is required.':'لا حاجة لإدخال رابط للصورة.', 'SAVE MENU ITEM':'حفظ المنتج',
     'CANCEL EDIT':'إلغاء التعديل', 'Current Menu':'القائمة الحالية', 'Add Category':'إضافة قسم', 'Category name *':'اسم القسم *',

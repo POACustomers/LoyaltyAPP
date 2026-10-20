@@ -141,7 +141,7 @@ function toast(message, good = true) {
     el = document.createElement("div");
     el.id = "toast";
     el.style.cssText =
-      "position:fixed;left:50%;bottom:92px;transform:translateX(-50%);" +
+      "position:fixed;left:50%;bottom:" + (document.body?.dataset.page === "customer-menu" ? "82px" : (String(document.body?.dataset.page || "").startsWith("customer-") ? "24px" : "92px")) + ";transform:translateX(-50%);" +
       "z-index:99;max-width:90%;padding:12px 16px;border-radius:12px;" +
       "font-size:12px;font-weight:800;box-shadow:0 12px 30px #0002;" +
       "text-align:center;";
