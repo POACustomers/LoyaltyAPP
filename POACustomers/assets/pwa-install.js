@@ -79,7 +79,7 @@
     var link = document.createElement('link');
     link.id = 'poa-pwa-install-css';
     link.rel = 'stylesheet';
-    if (scriptUrl) link.href = new URL('pwa-install.css?v=20261020-bottom-sheet-v3', scriptUrl).href;
+    if (scriptUrl) link.href = new URL('pwa-install.css?v=20261020-after-order-v4', scriptUrl).href;
     document.head.appendChild(link);
   }
 
@@ -265,12 +265,7 @@
       observer.observe(document.documentElement, { attributes: true, attributeFilter: ['dir', 'lang'] });
     }
 
-    var seen = false;
-    try { seen = sessionStorage.getItem('poa_pwa_install_sheet_seen_v3') === '1'; } catch (_) {}
-    if (!seen) {
-      try { sessionStorage.setItem('poa_pwa_install_sheet_seen_v3', '1'); } catch (_) {}
-      window.setTimeout(function () { showPrompt(false); }, 700);
-    }
+    // The install prompt is intentionally not shown on page load. It is called only after an order succeeds.
 
     try {
       if (window.matchMedia) {
@@ -280,6 +275,32 @@
       }
     } catch (_) {}
   }
+
+  // Public entry point used by the successful checkout flow.
+  // Install permission still requires a clear user gesture; iOS does not expose a programmatic
+  // Add to Home Screen API, so the iOS action shows the short native-workflow hint only after tap.
+  window.POAInstallPrompt = window.POAInstallPrompt || {};
+  window.POAInstallPrompt.showAfterOrder = function () {
+    if (isStandalone()) return false;
+    var key = 'poa_pwa_install_after_order_last_shown';
+    var now = Date.now();
+    var last = 0;
+    try { last = Number(localStorage.getItem(key) || 0); } catch (_) {}
+    // Avoid nagging repeat customers: at most once every 7 days on this device.
+    if (last && now - last < 7 * 24 * 60 * 60 * 1000) return false;
+    try { localStorage.setItem(key, String(now)); } catch (_) {}
+    dismissedForSession = false;
+    if (!backdrop) {
+      // If the page loaded late, initialize the sheet before showing it.
+      if (document.body) {
+        installStyles();
+        createUI();
+      }
+    }
+    if (!backdrop) return false;
+    showPrompt(true);
+    return true;
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();

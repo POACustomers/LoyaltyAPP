@@ -340,6 +340,12 @@
       showMessage('pickupCheckoutMessage', 'Order sent successfully. Order number: ' + result.order_number + '. Method: ' + fulfillment + '. Branch Staff will update its status.', false);
       renderCart();
       await loadCustomerOrders();
+      // Ask about adding the app only after a successful order, never on the landing page.
+      window.setTimeout(() => {
+        if (window.POAInstallPrompt && typeof window.POAInstallPrompt.showAfterOrder === 'function') {
+          window.POAInstallPrompt.showAfterOrder();
+        }
+      }, 450);
     } catch (error) {
       showMessage('pickupCheckoutMessage', error?.message || 'Could not send your order. Please try again.', true);
     } finally {
