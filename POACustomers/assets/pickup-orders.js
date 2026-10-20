@@ -116,6 +116,27 @@
     updateCartDock();
   };
 
+  function setCheckoutView(mode) {
+    const body = $('pickupCheckoutBody');
+    const empty = $('pickupEmptyState');
+    const success = $('pickupOrderSuccess');
+    if (body) body.hidden = mode !== 'checkout';
+    if (empty) empty.hidden = mode !== 'empty';
+    if (success) success.hidden = mode !== 'success';
+  }
+
+  function showOrderSuccess(orderNumber, fulfillment) {
+    const number = $('pickupOrderSuccessNumber');
+    const method = $('pickupOrderSuccessMethod');
+    if (number) number.textContent = String(orderNumber || '—');
+    if (method) method.textContent = fulfillment === 'delivery'
+      ? 'Delivery to your location. Branch Staff will update the order status.'
+      : 'Pickup from the selected branch. Branch Staff will update the order status.';
+    $('pickupCheckoutMessage')?.setAttribute('hidden', '');
+    setCheckoutView('success');
+    $('pickupOrderSuccess')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   // The menu and basket now share one page. Do not create the old fixed bottom dock.
   // The menu renderer owns the live basket preview above the categories/items.
   function updateCartDock() {
@@ -128,8 +149,9 @@
   function renderCart() {
     const list = $('pickupCartList'), summary = $('pickupCartSummary'), submit = $('placePickupOrderBtn'), cart = readCart();
     if (!list) return;
+    setCheckoutView(cart.length ? 'checkout' : 'empty');
     if (!cart.length) {
-      list.innerHTML = '<div class="pickup-empty">Your basket is empty. Open Menu and add the items you want to order.</div>';
+      list.innerHTML = '';
       if (summary) summary.innerHTML = '';
       if (submit) submit.disabled = true;
       return;
@@ -316,7 +338,7 @@
   async function submitCustomerOrder(event) {
     event.preventDefault();
     const cart = readCart(), branchId = $('pickupBranch')?.value;
-    if (!cart.length) { showMessage('pickupCheckoutMessage', 'Your basket is empty.', true); return; }
+    if (!cart.length) { setCheckoutView('empty'); return; }
     if (!branchId) { showMessage('pickupCheckoutMessage', 'Choose the branch that will handle your order.', true); $('pickupBranch')?.focus(); return; }
     const delivery = deliveryPayloadOrError();
     if (!delivery) return;
@@ -340,9 +362,9 @@
       if (!result || !result.order_number) throw new Error('The branch did not return an order number. Refresh your order history before trying again.');
       localStorage.removeItem(CART_KEY);
       if ($('pickupOrderNotes')) $('pickupOrderNotes').value = '';
-      const fulfillment = result.fulfillment_type === 'delivery' ? 'delivery to your location' : 'pickup from the selected branch';
-      showMessage('pickupCheckoutMessage', 'Order sent successfully. Order number: ' + result.order_number + '. Method: ' + fulfillment + '. Branch Staff will update its status.', false);
+      const fulfillment = result.fulfillment_type === 'delivery' ? 'delivery' : 'pickup';
       renderCart();
+      showOrderSuccess(result.order_number, fulfillment);
       await loadCustomerOrders();
       // Ask about adding the app only after a successful order, never on the landing page.
       window.setTimeout(() => {
@@ -463,9 +485,12 @@
   async function initCustomerOrders() {
     const profile = await guardRole(['customer']);
     if (!profile) return;
-    await loadBranches();
-    await loadSavedDeliveryAddresses();
+    // Draw the local basket immediately. If it is empty, do not fetch checkout-only data.
     renderCart();
+    if (readCart().length) {
+      await Promise.all([loadBranches(), loadSavedDeliveryAddresses()]);
+      renderCart();
+    }
     $('pickupOrderForm')?.addEventListener('submit', submitCustomerOrder);
     $('orderFulfillmentType')?.addEventListener('change', updateFulfillmentUI);
     $('useMyLocationBtn')?.addEventListener('click', useMyLocation);
@@ -481,7 +506,6 @@
       } else setLocationStatus('Choose your map location so the branch can find you.');
     });
     updateFulfillmentUI();
-    $('clearPickupCartBtn')?.addEventListener('click', () => { if (!confirm('Clear all items from your basket?')) return; writeCart([]); renderCart(); });
     $('refreshPickupOrdersBtn')?.addEventListener('click', loadCustomerOrders);
     await loadCustomerOrders();
   }

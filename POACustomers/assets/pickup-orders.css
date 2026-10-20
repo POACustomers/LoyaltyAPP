@@ -67,3 +67,22 @@
 .delivery-location-status.error{color:#a63d3d;font-weight:800}
 .delivery-location-link{display:inline-flex;align-items:center;gap:6px;margin-top:6px;color:var(--green);font-weight:800;text-decoration:underline;overflow-wrap:anywhere}
 .fulfillment-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:#fae5e8;color:#9b3452;font-size:10px;font-weight:900;margin-bottom:7px}
+
+
+/* Cleaner checkout states: never show an empty cart beside an active order form. */
+.pickup-main [hidden]{display:none!important}
+.pickup-heading{margin-bottom:10px}
+.pickup-heading .title{font-size:clamp(21px,4vw,28px);margin:0}
+.pickup-empty-state,.pickup-success-state{padding:clamp(20px,4vw,30px);text-align:center;margin:10px 0 18px}
+.pickup-empty-state h2,.pickup-success-state h2{margin:10px 0 7px;font-size:19px;color:var(--green)}
+.pickup-empty-state p,.pickup-success-state p{color:var(--muted);font-size:13px;line-height:1.6;margin:7px 0 14px}
+.pickup-empty-icon,.pickup-success-icon{width:48px;height:48px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;background:#f9e4e9;color:#a74160;font-size:27px;font-weight:900}
+.pickup-success-icon{background:#e8f5ea;color:#27613a}
+.pickup-empty-state .btn{display:inline-flex;justify-content:center;min-width:170px;margin-top:4px;text-decoration:none}
+.pickup-success-number{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0;padding:13px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.55);color:var(--muted);font-size:12px}
+.pickup-success-number strong{color:var(--green);font-size:17px;letter-spacing:.03em}
+.pickup-success-method{margin-bottom:18px!important}
+.pickup-success-actions{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+.pickup-success-actions .btn{text-decoration:none;min-width:180px}
+.pickup-success-link{color:var(--green);font-size:12px;font-weight:800;text-decoration:underline;padding:8px}
+@media(max-width:560px){.pickup-empty-state,.pickup-success-state{padding:20px 15px}.pickup-success-actions{flex-direction:column;gap:8px}.pickup-success-actions .btn{width:100%}}
