@@ -1,4 +1,4 @@
-const CACHE = "dina-corner-v20-pwa-install-prompt";
+const CACHE = "dina-corner-v21-pwa-install-sheet";
 const SHELL = [
   "./",
   "./index.html",
