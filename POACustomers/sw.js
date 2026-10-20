@@ -1,4 +1,4 @@
-const CACHE = "dina-corner-v19-pwa-install-smart-qr";
+const CACHE = "dina-corner-v20-pwa-install-prompt";
 const SHELL = [
   "./",
   "./index.html",
