@@ -1,4 +1,4 @@
-const CACHE = "dina-corner-v30-checkout-state-fix";
+const CACHE = "dina-corner-v31-order-history-separated";
 const SHELL = [
   "./",
   "./index.html",
