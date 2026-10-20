@@ -116,22 +116,13 @@
     updateCartDock();
   };
 
+  // The menu and basket now share one page. Do not create the old fixed bottom dock.
+  // The menu renderer owns the live basket preview above the categories/items.
   function updateCartDock() {
     if (page !== 'customer-menu') return;
-    let dock = $('pickupCartDock');
-    if (!dock) {
-      dock = document.createElement('div');
-      dock.id = 'pickupCartDock';
-      dock.className = 'pickup-cart-dock';
-      dock.hidden = true;
-      dock.innerHTML = '<div class="pickup-cart-dock-copy"><strong id="pickupCartDockCount">Your order</strong><small id="pickupCartDockSub">Pickup or delivery at checkout</small></div><a class="btn" href="customer-orders.html">View cart · Checkout →</a>';
-      document.body.appendChild(dock);
-    }
-    const cart = readCart();
-    dock.hidden = cart.length === 0;
-    if ($('pickupCartDockCount')) $('pickupCartDockCount').textContent = 'Your order · ' + quantityCount(cart) + (quantityCount(cart) === 1 ? ' item' : ' items');
-    const calc = calculate(cart);
-    if ($('pickupCartDockSub')) $('pickupCartDockSub').textContent = calc.known ? money(calc.total) + ' · Pickup or delivery' : 'Final price confirmed by branch · Pickup or delivery';
+    const oldDock = $('pickupCartDock');
+    if (oldDock) oldDock.remove();
+    if (typeof window.POARenderMenuCart === 'function') window.POARenderMenuCart();
   }
 
   function renderCart() {

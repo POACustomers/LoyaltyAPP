@@ -274,10 +274,10 @@ body[data-page^="customer-"] > nav.nav{display:none!important}
 .customer-menu-icon{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:24px;color:var(--rose,var(--green));font-size:17px;font-weight:900}
 .customer-menu-popup a span:last-child{min-width:0;overflow-wrap:anywhere}
 html[dir="rtl"] .customer-menu-popup{text-align:right}
-body[data-page="customer-menu"] .menu-page{padding-bottom:92px}
+body[data-page="customer-menu"] .menu-page{padding-bottom:36px}
 body[data-page="customer-menu"] .pickup-cart-dock{bottom:max(12px,env(safe-area-inset-bottom));left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));width:auto;transform:none}
 body[data-page^="customer-"] #toast{bottom:24px!important}
-body[data-page="customer-menu"] #toast{bottom:82px!important}
+body[data-page="customer-menu"] #toast{bottom:24px!important}
 body[data-page="customer-orders"] .pickup-main{padding-bottom:28px}
 @media(max-width:420px){
   .customer-topbar{gap:8px;padding-inline:12px}

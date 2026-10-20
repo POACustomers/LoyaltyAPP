@@ -176,7 +176,7 @@
     'Sign In →':'تسجيل الدخول ←', 'Staff Sign In →':'دخول الموظفين ←', 'GM Sign In →':'دخول المدير العام ←', 'Admin Sign In →':'دخول الإدارة ←',
     'Create Loyalty Account':'إنشاء حساب ولاء', 'Create My Loyalty Account →':'إنشاء حساب الولاء ←',
     'Already have an account? Sign in':'لديك حساب بالفعل؟ سجّل الدخول', '← Back':'رجوع ←', 'Back':'رجوع',
-    'Home':'الرئيسية', 'Dashboard':'لوحة التحكم', 'Menu':'القائمة', 'Our Menu':'قائمتنا', 'Rewards':'المكافآت', 'Locations':'الفروع',
+    'Home':'الرئيسية', 'Dashboard':'لوحة التحكم', 'Menu':'القائمة', 'Menu & Basket':'القائمة والسلة', 'Continue to checkout →':'متابعة إتمام الطلب ←', 'Your order':'طلبك', 'items':'منتجات', 'item':'منتج', 'Our Menu':'قائمتنا', 'Rewards':'المكافآت', 'Locations':'الفروع',
     'Basket & Checkout':'السلة وتأكيد الطلب', 'Branches':'الفروع', 'Order History':'سجل الطلبات', 'Previous orders':'الطلبات السابقة', 'Your order history':'سجل طلباتك', 'Review previous orders, branch details, totals and the latest recorded status.':'راجع طلباتك السابقة والفروع والإجماليات وآخر حالة مسجلة.', 'YOUR ACCOUNT':'حسابك', 'Back to menu':'العودة إلى القائمة',
     'Offers':'العروض', 'Orders':'الطلبات', 'My Profile':'ملفي الشخصي', 'Profile':'الملف الشخصي', 'Customer':'العميل', 'Customers':'العملاء',
     'Staff':'الموظفون', 'Users':'المستخدمون', 'GM':'المدير العام', 'General Manager':'المدير العام', 'Settings':'الإعدادات',
