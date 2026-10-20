@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
 <title>My Orders</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261021-customer-menu-v2">
-<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261021-top-menu"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261020-optional-address">
+<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261021-checkout-state-fix"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261020-optional-address">
 <script defer src="../assets/pwa-install.js?v=20261020-after-order-v4"></script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -31,17 +31,36 @@
 </details>
 </header>
 <main class="pickup-main">
-  <header class="pickup-heading"><p class="eyebrow">YOUR ORDER</p><h1 class="title">Order & Checkout</h1><p class="sub">Choose pickup or delivery, send the order to the branch, and track its progress here.</p></header>
+  <header class="pickup-heading"><h1 class="title">Checkout</h1></header>
   <div id="pickupCheckoutMessage" hidden aria-live="polite"></div>
 
-  <section class="card pickup-panel" aria-labelledby="pickupCartTitle">
+  <section id="pickupEmptyState" class="card pickup-empty-state" hidden aria-live="polite">
+    <div class="pickup-empty-icon" aria-hidden="true">＋</div>
+    <h2>Your basket is empty</h2>
+    <p>Choose the items you want from the menu first.</p>
+    <a class="btn" href="customer-menu.html#menu-cart">Open menu</a>
+  </section>
+
+  <section id="pickupOrderSuccess" class="card pickup-success-state" hidden aria-live="polite">
+    <div class="pickup-success-icon" aria-hidden="true">✓</div>
+    <h2>Order confirmed</h2>
+    <p>Your order has been sent to the branch.</p>
+    <div class="pickup-success-number"><span>Order number</span><strong id="pickupOrderSuccessNumber"></strong></div>
+    <p id="pickupOrderSuccessMethod" class="pickup-success-method"></p>
+    <div class="pickup-success-actions">
+      <a class="btn" href="customer-order-history.html">View order history</a>
+      <a class="pickup-success-link" href="customer-menu.html#menu-cart">Continue shopping</a>
+    </div>
+  </section>
+
+  <div id="pickupCheckoutBody" hidden>
+  <section id="pickupCartPanel" class="card pickup-panel" aria-labelledby="pickupCartTitle">
     <h2 id="pickupCartTitle">Your basket</h2>
     <div id="pickupCartList" class="pickup-cart-list"><div class="pickup-empty">Loading basket…</div></div>
     <div id="pickupCartSummary" class="pickup-summary"></div>
-    <div class="pickup-actions"><a class="btn soft" href="customer-menu.html" style="text-align:center;text-decoration:none">BACK TO MENU</a><button id="clearPickupCartBtn" class="btn danger" type="button">CLEAR BASKET</button></div>
   </section>
 
-  <section class="card pickup-panel" aria-labelledby="pickupCheckoutTitle">
+  <section id="pickupCheckoutFormPanel" class="card pickup-panel" aria-labelledby="pickupCheckoutTitle">
     <h2 id="pickupCheckoutTitle">How would you like to receive your order?</h2>
     <form id="pickupOrderForm">
       <div class="pickup-form-grid">
@@ -84,6 +103,7 @@
       <button id="placePickupOrderBtn" class="btn block" type="submit" disabled>PLACE ORDER</button>
     </form>
   </section>
+  </div>
 
   <section class="card pickup-panel" aria-labelledby="myPickupOrdersTitle">
     <div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h2 id="myPickupOrdersTitle" style="margin-bottom:0">Your orders</h2><button id="refreshPickupOrdersBtn" class="btn soft" type="button">REFRESH</button></div>
@@ -93,11 +113,11 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script src="../assets/tenant-config.js?v=20261021-top-menu"></script>
-<script src="../assets/tenant-branding.js?v=20261021-unified-menu-basket"></script>
+<script src="../assets/tenant-branding.js?v=20261021-checkout-state-fix"></script>
 <script src="../assets/customer-navigation.js?v=20261021-unified-menu-basket"></script>
 <script src="../assets/config.js?v=20261019-currency-egp"></script>
 <script src="../assets/app.js?v=20261021-top-menu"></script>
-<script src="../assets/pickup-orders.js?v=20261021-top-menu"></script>
+<script src="../assets/pickup-orders.js?v=20261021-checkout-state-fix"></script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script>
 </body>
 </html>
