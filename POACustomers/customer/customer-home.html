@@ -7,7 +7,7 @@
 <link rel="manifest" href="../manifest-customer.webmanifest">
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
 <title>Customer Home</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261021-top-menu">
+<link rel="stylesheet" href="../assets/style.css?v=20261021-customer-menu-v2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
@@ -17,7 +17,7 @@
 <header class="topbar customer-topbar">
 <a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a>
 <details class="customer-top-menu" data-customer-top-menu>
-  <summary aria-label="Open customer navigation"><span class="customer-top-menu-symbol" aria-hidden="true">☰</span><span class="customer-top-menu-label">Menu</span></summary>
+  <summary aria-label="Open customer navigation" title="Open customer navigation"><svg class="customer-top-menu-symbol" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 6h16M4 12h16M4 18h16" /></svg></summary>
   <nav class="customer-menu-popup" aria-label="Customer menu">
     <a href="customer-home.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">⌂</span><span>Home</span></a>
     <a href="customer-menu.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">☰</span><span>Menu</span></a>
@@ -26,16 +26,27 @@
     <a href="customer-locations.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">⌖</span><span>Branches</span></a>
     <a href="customer-order-history.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">▣</span><span>Order History</span></a>
     <a href="customer-profile.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">●</span><span>My Profile</span></a>
-  </nav>
+  <button class="customer-menu-logout" type="button" onclick="logout()" aria-label="Sign out">Sign Out</button></nav>
 </details>
-<button class="icon" type="button" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button>
 </header>
 <main class="container">
-<div class="hero">
-<div class="home-head"><div><h2>Hello, <span data-name>Customer</span> 👋</h2>
-<p>Loyal Customer • Welcome back</p></div></div>
-<div class="points"><small>YOUR POINTS</small><strong><span data-points>0</span> / 50</strong><span>Keep earning brighter rewards</span><div class="home-avatar-inline"><a href="customer-profile.html" class="avatar-link"><div id="homeAvatar" class="avatar avatar-photo">AN</div></a></div></div>
-</div>
+<section class="hero customer-loyalty-card" aria-label="Customer loyalty card">
+  <div class="customer-loyalty-balance">
+    <small>YOUR POINTS</small>
+    <strong><span data-points>0</span> / 50</strong>
+    <span class="customer-loyalty-hint">Keep earning brighter rewards</span>
+  </div>
+  <div class="customer-loyalty-member">
+    <div class="customer-loyalty-identity">
+      <small>Loyal Customer</small>
+      <h2>Hello, <span data-name>Customer</span></h2>
+      <p>Welcome back</p>
+    </div>
+    <a href="customer-profile.html" class="avatar-link customer-loyalty-avatar-link" aria-label="Edit profile">
+      <div id="homeAvatar" class="avatar avatar-photo">AN</div>
+    </a>
+  </div>
+</section>
 
 <section id="homeOffersCard" class="card home-offers-card" style="margin-top:18px" aria-live="polite">
   <div id="homeOffersContent" class="home-offers-fallback">
@@ -54,8 +65,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="../assets/tenant-config.js?v=20261021-top-menu"></script>
-<script src="../assets/tenant-branding.js?v=20261021-top-menu"></script>
-<script src="../assets/customer-navigation.js?v=20261021-top-menu"></script>
+<script src="../assets/tenant-branding.js?v=20261021-customer-menu-v2"></script>
+<script src="../assets/customer-navigation.js?v=20261021-customer-menu-v2"></script>
 <script src="../assets/config.js?v=20261019-currency-egp"></script>
 <script src="../assets/app.js?v=20261021-top-menu"></script>
 
