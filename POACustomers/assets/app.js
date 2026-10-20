@@ -308,21 +308,24 @@ async function registerCustomer() {
     return;
   }
 
-  msg.textContent = "Account created. Saving your default delivery address…";
-  const { error: addressError } = await sb.from("customer_addresses").insert({
-    customer_id: customerId,
-    ...savedAddress,
-    is_default: true
-  });
-  if (addressError) {
-    console.error("Customer account was created but the initial address could not be saved:", addressError);
-    msg.textContent = "Your account was created, but the address could not be saved. Confirm the saved-address SQL setup has been run, then sign in and add the address from My Profile. Details: " + addressError.message;
-    setTimeout(() => location.href = "customer-profile.html", 2500);
-    return;
+  if (savedAddress) {
+    msg.textContent = "Account created. Saving your delivery address…";
+    const { error: addressError } = await sb.from("customer_addresses").insert({
+      customer_id: customerId,
+      ...savedAddress,
+      is_default: true
+    });
+    if (addressError) {
+      console.error("Customer account was created but the initial address could not be saved:", addressError);
+      msg.textContent = "Your account was created, but the address could not be saved. You can sign in and add it from My Profile. Details: " + addressError.message;
+      setTimeout(() => location.href = "customer-profile.html", 2500);
+      return;
+    }
+    msg.textContent = "Account and delivery address created. Opening your loyalty account…";
+  } else {
+    msg.textContent = "Account created. You can add a delivery address now or later from My Profile.";
   }
-
-  msg.textContent = "Account and default delivery address created. Opening your loyalty account…";
-  setTimeout(() => location.href = "customer-home.html", 500);
+  setTimeout(() => location.href = "customer-home.html", 700);
 }
 
 async function logout() {

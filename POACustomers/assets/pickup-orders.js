@@ -178,7 +178,8 @@
     const panel = $('deliveryDetails');
     if (panel) panel.hidden = !delivery;
     const address = $('deliveryAddress');
-    if (address) address.required = delivery;
+    // Written address details are optional when a usable delivery location is supplied.
+    if (address) address.required = false;
     const btn = $('placePickupOrderBtn');
     if (btn && !btn.dataset.sending) btn.textContent = delivery ? 'PLACE DELIVERY ORDER' : 'PLACE PICKUP ORDER';
     refreshPlaceButton();
@@ -226,7 +227,8 @@
       }
       select.innerHTML = '<option value="">Choose another saved address</option>' + savedDeliveryAddresses.map(row => {
         const details = String(row.full_address || '').replace(/\s+/g, ' ').trim();
-        const optionText = (row.label || 'Address') + (row.is_default ? ' · Default' : '') + ' — ' + (details.length > 75 ? details.slice(0, 72) + '…' : details);
+        const locationSummary = details ? (details.length > 75 ? details.slice(0, 72) + '…' : details) : (row.latitude != null && row.longitude != null && Number.isFinite(Number(row.latitude)) && Number.isFinite(Number(row.longitude)) ? 'Map pin saved' : 'Written details not added');
+        const optionText = (row.label || 'Address') + (row.is_default ? ' · Default' : '') + ' — ' + locationSummary;
         return '<option value="' + esc(row.id) + '">' + esc(optionText) + '</option>';
       }).join('');
       const preferred = savedDeliveryAddresses.find(row => row.is_default) || savedDeliveryAddresses[0];
@@ -251,7 +253,7 @@
     if ($('deliveryAddress')) $('deliveryAddress').value = row.full_address || '';
     if ($('deliveryLatitude')) $('deliveryLatitude').value = row.latitude == null ? '' : String(row.latitude);
     if ($('deliveryLongitude')) $('deliveryLongitude').value = row.longitude == null ? '' : String(row.longitude);
-    if ($('deliveryMapUrl')) $('deliveryMapUrl').value = row.map_url || (Number.isFinite(Number(row.latitude)) && Number.isFinite(Number(row.longitude)) ? 'https://www.google.com/maps?q=' + encodeURIComponent(row.latitude + ',' + row.longitude) : '');
+    if ($('deliveryMapUrl')) $('deliveryMapUrl').value = row.map_url || (row.latitude != null && row.longitude != null && Number.isFinite(Number(row.latitude)) && Number.isFinite(Number(row.longitude)) ? 'https://www.google.com/maps?q=' + encodeURIComponent(row.latitude + ',' + row.longitude) : '');
     selectedDeliveryInstructions = row.delivery_instructions || '';
     selectedSavedAddressText = row.full_address || '';
     setLocationStatus((row.label || 'Saved address') + ' selected. The saved map location will be sent with your order.', 'success');
@@ -264,15 +266,15 @@
     const latText = $('deliveryLatitude')?.value || '', lngText = $('deliveryLongitude')?.value || '';
     const latitude = latText === '' ? null : Number(latText);
     const longitude = lngText === '' ? null : Number(lngText);
-    if (!address) { showMessage('pickupCheckoutMessage', 'Enter the full delivery address.', true); $('deliveryAddress')?.focus(); return null; }
     if ((latitude === null) !== (longitude === null)) { showMessage('pickupCheckoutMessage', 'The map location is incomplete. Use current location again or paste a Google Maps link.', true); return null; }
     if (latitude !== null && (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)) {
       showMessage('pickupCheckoutMessage', 'The map coordinates are invalid. Select your current location or paste a valid map link.', true); return null;
     }
     const mapUrl = validMapUrl(mapInput);
     if (mapInput && !mapUrl) { showMessage('pickupCheckoutMessage', 'Paste a valid Google Maps link starting with https://.', true); $('deliveryMapUrl')?.focus(); return null; }
-    if (latitude === null && !mapUrl) { showMessage('pickupCheckoutMessage', 'Delivery needs a map location. Press “Use my current location” or paste a Google Maps share link.', true); $('useMyLocationBtn')?.focus(); return null; }
-    return { type: 'delivery', address, mapUrl: mapUrl || ('https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude)), latitude, longitude, instructions: address === selectedSavedAddressText ? selectedDeliveryInstructions : null };
+    if (latitude === null && !mapUrl) { showMessage('pickupCheckoutMessage', 'For delivery, select your map location or paste a Google Maps link. Written address details are optional.', true); $('useMyLocationBtn')?.focus(); return null; }
+    const resolvedMapUrl = mapUrl || (latitude !== null ? 'https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude) : null);
+    return { type: 'delivery', address: address || null, mapUrl: resolvedMapUrl, latitude, longitude, instructions: address === selectedSavedAddressText ? selectedDeliveryInstructions : null };
   }
 
   async function loadBranches() {

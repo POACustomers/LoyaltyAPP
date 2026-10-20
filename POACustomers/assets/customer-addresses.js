@@ -17,6 +17,7 @@
     return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]));
   }
   function coordinatePair(lat, lng) {
+    if (lat === null || lat === undefined || lng === null || lng === undefined || String(lat).trim() === '' || String(lng).trim() === '') return false;
     const latitude = Number(lat), longitude = Number(lng);
     return Number.isFinite(latitude) && Number.isFinite(longitude) && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
   }
@@ -150,17 +151,25 @@
     const lngText = $('registrationAddressLongitude')?.value || '';
     const latitude = latText === '' ? null : Number(latText);
     const longitude = lngText === '' ? null : Number(lngText);
-    if (address.length < 5) return { ok: false, message: 'Enter the full delivery address (at least 5 characters).' };
-    if (!coordinatePair(latitude, longitude)) return { ok: false, message: 'Select your delivery location on the map or press “Use current location” before creating your account.' };
+    const hasCoordinates = coordinatePair(latitude, longitude);
+    if ((latText === '') !== (lngText === '')) {
+      return { ok: false, message: 'The map location is incomplete. Select the location again, or leave the address for later.' };
+    }
+    if ((latText !== '' || lngText !== '') && !hasCoordinates) {
+      return { ok: false, message: 'The map location is invalid. Select your location again or skip address setup for now.' };
+    }
+    // Address setup is optional during registration. Create an address row only
+    // when the customer entered text or selected a map point.
+    if (!address && !hasCoordinates) return { ok: true, address: null };
     return {
       ok: true,
       address: {
         label: label.slice(0, 40) || 'Home',
-        full_address: address.slice(0, 500),
+        full_address: address ? address.slice(0, 500) : null,
         delivery_instructions: instructions ? instructions.slice(0, 500) : null,
-        latitude,
-        longitude,
-        map_url: mapsUrl(latitude, longitude),
+        latitude: hasCoordinates ? latitude : null,
+        longitude: hasCoordinates ? longitude : null,
+        map_url: hasCoordinates ? mapsUrl(latitude, longitude) : null,
         is_default: true
       }
     };
@@ -206,7 +215,7 @@
       const map = row.map_url || (coordinatePair(row.latitude, row.longitude) ? mapsUrl(row.latitude, row.longitude) : '');
       return `<article class="customer-saved-address">
         <div class="customer-saved-address-head"><div><h4 class="customer-saved-address-label">${esc(row.label || 'Address')}</h4></div>${row.is_default ? '<span class="customer-address-default-tag">DEFAULT ADDRESS</span>' : ''}</div>
-        <p class="customer-address-text">${esc(row.full_address)}</p>
+        ${row.full_address ? `<p class="customer-address-text">${esc(row.full_address)}</p>` : `<p class="customer-address-text">${coordinatePair(row.latitude, row.longitude) ? 'Map location saved. Written details are optional.' : 'Written address saved. Choose a map location at checkout for delivery.'}</p>`}
         ${row.delivery_instructions ? `<p class="customer-address-text"><strong>Delivery instructions:</strong> ${esc(row.delivery_instructions)}</p>` : ''}
         <div class="customer-address-actions">
           ${!row.is_default ? `<button type="button" class="btn soft" data-address-default="${esc(row.id)}">MAKE DEFAULT</button>` : ''}
@@ -316,9 +325,12 @@
     const instructions = $('profileAddressInstructions').value.trim();
     const latText = $('profileAddressLatitude').value, lngText = $('profileAddressLongitude').value;
     const latitude = latText === '' ? null : Number(latText), longitude = lngText === '' ? null : Number(lngText);
+    const hasCoordinates = coordinatePair(latitude, longitude);
     if (label.length > 40) { showFormMessage('customerAddressFormMessage', 'Address label must be 40 characters or fewer.', true); return; }
-    if (fullAddress.length < 5 || fullAddress.length > 500) { showFormMessage('customerAddressFormMessage', 'Enter the full address (5–500 characters).', true); $('profileAddressFull').focus(); return; }
-    if (!coordinatePair(latitude, longitude)) { showFormMessage('customerAddressFormMessage', 'Tap the map or use current location to select a map pin.', true); return; }
+    if (fullAddress.length > 500) { showFormMessage('customerAddressFormMessage', 'Address details must be 500 characters or fewer.', true); $('profileAddressFull').focus(); return; }
+    if ((latText === '') !== (lngText === '')) { showFormMessage('customerAddressFormMessage', 'The map location is incomplete. Select the location again.', true); return; }
+    if ((latText !== '' || lngText !== '') && !hasCoordinates) { showFormMessage('customerAddressFormMessage', 'The map location is invalid. Select the location again.', true); return; }
+    if (!fullAddress && !hasCoordinates) { showFormMessage('customerAddressFormMessage', 'Choose a map pin or enter address details. You can leave the other fields blank.', true); return; }
     if (instructions.length > 500) { showFormMessage('customerAddressFormMessage', 'Delivery instructions must be 500 characters or fewer.', true); return; }
 
     const button = $('saveCustomerAddressBtn');
@@ -336,11 +348,11 @@
       const payload = {
         customer_id: profileUserId,
         label: label || 'Home',
-        full_address: fullAddress,
+        full_address: fullAddress || null,
         delivery_instructions: instructions || null,
-        latitude,
-        longitude,
-        map_url: mapsUrl(latitude, longitude),
+        latitude: hasCoordinates ? latitude : null,
+        longitude: hasCoordinates ? longitude : null,
+        map_url: hasCoordinates ? mapsUrl(latitude, longitude) : null,
         is_default: requestedDefault,
         updated_at: new Date().toISOString()
       };
