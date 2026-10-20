@@ -1,4 +1,4 @@
-const CACHE = "dina-corner-v29-unified-menu-basket";
+const CACHE = "dina-corner-v30-checkout-state-fix";
 const SHELL = [
   "./",
   "./index.html",
