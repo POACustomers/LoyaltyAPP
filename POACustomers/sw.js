@@ -1,9 +1,10 @@
-const CACHE = "dina-corner-v25-optional-delivery-address";
+const CACHE = "dina-corner-v27-customer-top-menu";
 const SHELL = [
   "./",
   "./index.html",
   "./menu.html",
   "./manifest.webmanifest",
+  "./manifest-customer.webmanifest",
   "./assets/style.css",
   "./assets/dina-theme.css",
   "./assets/dina-corner-logo.png",
@@ -16,6 +17,7 @@ const SHELL = [
   "./assets/config.js",
   "./assets/tenant-config.js",
   "./assets/tenant-branding.js",
+  "./assets/customer-navigation.js",
   "./assets/pwa-install.js",
   "./assets/pwa-install.css",
   "./assets/tenant-branding/logo.png",
@@ -36,6 +38,7 @@ const SHELL = [
   "./customer/customer-home.html",
   "./customer/customer-menu.html",
   "./customer/customer-orders.html",
+  "./customer/customer-order-history.html",
   "./customer/customer-rewards.html",
   "./customer/customer-locations.html",
   "./customer/customer-profile.html",
@@ -43,6 +46,7 @@ const SHELL = [
   "./GM/gm-dashboard.html",
   "./GM/gm-categories.html",
   "./GM/gm-menu.html",
+  "./GM/gm-offers.html",
   "./GM/gm-locations.html",
   "./admin/admin-login.html",
   "./admin/admin-dashboard.html",
