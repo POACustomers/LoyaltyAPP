@@ -5,14 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#C65F78">
 <meta name="description" content="Place and track orders">
-<link rel="manifest" href="../manifest.webmanifest">
+<link rel="manifest" href="../manifest-customer.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
 <title>My Orders</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261019-delivery-staff-orders">
 <link rel="stylesheet" href="../assets/pickup-orders.css?v=20261020-optional-address"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261020-optional-address">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="../assets/tenant-config.js?v=20261019-tenant-config"></script>
-<script src="../assets/tenant-branding.js?v=20261019-tenant-branding"></script>
 <script defer src="../assets/pwa-install.js?v=20261020-after-order-v4"></script>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dina's Corner">
 </head>
 <body data-page="customer-orders">
 <header class="topbar">
@@ -83,6 +84,9 @@
 <nav class="nav" aria-label="Customer navigation"><div class="navin">
 <a href="customer-home.html" data-nav="home"><b>⌂</b>Home</a><a href="customer-rewards.html" data-nav="rewards"><b>★</b>Rewards</a><a href="customer-locations.html" data-nav="locations"><b>⌖</b>Locations</a><a href="customer-menu.html" data-nav="menu"><b>☰</b>Menu</a><a href="customer-orders.html" data-nav="orders" class="active"><b>▣</b>Orders</a><a href="customer-profile.html" data-nav="profile"><b>●</b>My Profile</a>
 </div></nav>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<script src="../assets/tenant-config.js?v=20261021-performance"></script>
+<script src="../assets/tenant-branding.js?v=20261021-performance"></script>
 <script src="../assets/config.js?v=20261019-currency-egp"></script>
 <script src="../assets/app.js?v=20261020-optional-address"></script>
 <script src="../assets/pickup-orders.js?v=20261020-optional-address"></script>

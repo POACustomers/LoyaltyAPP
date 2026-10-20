@@ -4,11 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#C65F78">
-<link rel="manifest" href="../manifest.webmanifest">
+<link rel="manifest" href="../manifest-customer.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
 <title>Customer Home</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261020-home-offers-horizontal">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="https://unpkg.com/html5-qrcode"></script>
-<script src="../assets/tenant-config.js?v=20261019-tenant-config"></script><script src="../assets/tenant-branding.js?v=20261019-tenant-branding"></script>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dina's Corner">
 </head>
 <body data-page="customer-home">
 
@@ -45,8 +47,12 @@
 <a href="customer-menu.html" data-nav="menu"><b>☰</b>Menu</a>
 <a href="customer-profile.html" data-nav="profile"><b>●</b>My Profile</a>
 </div></nav>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="../assets/tenant-config.js?v=20261021-performance"></script>
+<script src="../assets/tenant-branding.js?v=20261021-performance"></script>
 <script src="../assets/config.js?v=20261019-currency-egp"></script>
-<script src="../assets/app.js?v=20261019-reward-image-fallback"></script>
+<script src="../assets/app.js?v=20261021-performance"></script>
 
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("../sw.js").catch(()=>{}));}</script>
 </body>
