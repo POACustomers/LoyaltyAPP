@@ -1,4 +1,4 @@
-const CACHE = "dina-corner-v24-home-offers-only";
+const CACHE = "dina-corner-v25-optional-delivery-address";
 const SHELL = [
   "./",
   "./index.html",
