@@ -1,4 +1,4 @@
-const CACHE = "dina-corner-v17-bilingual-language-switcher";
+const CACHE = "dina-corner-v18-bilingual-language-switcher-performance-fix";
 const SHELL = [
   "./",
   "./index.html",
