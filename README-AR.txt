@@ -1,24 +1,40 @@
-إصلاح مسارات الدخول لكل الأدوار — POACustomers
+إصلاح بنية الدخول وروابط الأدوار والكاش — 22 أكتوبر 2026
 
-الملفات داخل هذا الملف المضغوط يجب وضعها في المسارات التالية في مستودع GitHub LoyaltyAPP:
+تم فحص نسخة LoyaltyAPP المرفوعة وإصلاح المشكلات المؤكدة في صفحات الدخول والتنقل:
+- صفحة الدخول الموحدة الوحيدة أصبحت index.html في جذر المستودع.
+- POACustomers/index.html يحوّل إلى صفحة الدخول الرئيسية بدل عرض نسخة ثانية.
+- مجلد POAC-Multi-Client-Kit أصبح صفحة تعريف بالقوالب، وليس نسخة تشغيل بأزرار أدوار وروابط غير موجودة.
+- تم تصحيح روابط صفحة GM وحالة الأحرف.
+- تم إصلاح روابط manifest الخاصة بصفحات العميل.
+- تم فصل كاش Service Worker الجذر عن كاش Service Worker المتداخل.
 
-1) index.html
-   استبدل ملف index.html الموجود في جذر المستودع (بجوار مجلد POACustomers).
+الملفات المعدلة داخل حزمة التحديث:
+- index.html
+- sw.js
+- POACustomers/index.html
+- POACustomers/manifest.webmanifest
+- POACustomers/sw.js
+- POACustomers/assets/app.js
+- POACustomers/admin/admin-settings.html
+- POACustomers/customer/customer-home.html
+- POACustomers/customer/customer-locations.html
+- POACustomers/customer/customer-login.html
+- POACustomers/customer/customer-menu.html
+- POACustomers/customer/customer-order-history.html
+- POACustomers/customer/customer-orders.html
+- POACustomers/customer/customer-profile.html
+- POACustomers/customer/customer-register.html
+- POACustomers/customer/customer-rewards.html
+- POAC-Multi-Client-Kit/index.html
+- AUDIT-RESULT-AR.md
+- README-AR.txt (تعليمات هذا التحديث)
 
-2) POACustomers/assets/app.js
-   افتح مجلد POACustomers ثم assets، واستبدل app.js الموجود هناك.
+طريقة التركيب:
+1. فك ضغط حزمة التحديث.
+2. انقل الملفات المعدلة إلى المستودع نفسه مع الحفاظ على المسارات بالضبط، واستبدل الملفات ذات الأسماء نفسها.
+3. اضغط Commit changes في GitHub.
+4. أغلق تبويبات الموقع وأي نافذة PWA قديمة، ثم افتح الموقع من جديد واضغط Ctrl+F5.
 
-3) sw.js
-   استبدل ملف sw.js الموجود في جذر المستودع.
-
-ثم اضغط Commit changes، وافتح الموقع واضغط Ctrl+F5.
-
-المسارات بعد التعديل:
-- customer -> POACustomers/customer/customer-home.html
-- staff -> POACustomers/staff/staff-scan.html
-- gm -> POACustomers/GM/gm-dashboard.html
-- admin -> POACustomers/admin/admin-dashboard.html
-
-تنبيه مهم:
-هذا التحديث يصلح مسارات الصفحات والكاش. تسجيل الدخول بأسماء المستخدمين لحسابات الإدارة وGM والموظفين يحتاج كذلك أن تكون وظيفة Supabase Edge Function المسماة username-login منشورة، وأن يكون لكل حساب username صحيح في profiles. إذا ظهرت رسالة أن اسم المستخدم أو كلمة المرور غير صحيحة بدل 404، فهذا إعداد دخول في Supabase وليس مسار صفحة. لا تلصق config.toml في SQL Editor؛ config.toml ملف إعدادات CLI وليس SQL.
-لم يتم نشر أي ملف تلقائيًا إلى GitHub أو Supabase.
+تنبيه بخصوص تسجيل الدخول:
+هذا التحديث يعالج التداخلات والمسارات والكاش في الواجهة. لكن الأرشيف الأصلي لا يحتوي على مجلد supabase/ أو SQL migration أو Edge Function باسم username-login. لذلك لا يمكن اعتبار دخول الإدارة وGM والموظفين باسم المستخدم مكتملًا قبل توفير تلك الملفات ونشر الوظيفة وضبط usernames في قاعدة Supabase. لا تلصق config.toml في SQL Editor؛ فهو ملف إعدادات CLI وليس SQL.
+لم يتم نشر أي شيء تلقائيًا إلى GitHub أو Supabase، ولم يتم اختبار حسابات حية.
