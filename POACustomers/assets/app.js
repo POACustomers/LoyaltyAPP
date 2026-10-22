@@ -205,8 +205,7 @@ function customerAuthEmail(username) {
 }
 
 function routeForRoleFromRoot(role) {
-  // The public login is served from /LoyaltyAPP/index.html, while application
-  // pages and assets live under /LoyaltyAPP/POACustomers/.
+  // The unified login lives at /LoyaltyAPP/index.html, while role pages are inside /LoyaltyAPP/POACustomers/.
   const normalized = String(role || "").toLowerCase();
   if (normalized === "admin") return "POACustomers/admin/admin-dashboard.html";
   if (normalized === "gm") return "POACustomers/GM/gm-dashboard.html";
