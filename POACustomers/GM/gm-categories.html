@@ -1,10 +1,205 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#C65F78"><link rel="manifest" href="../manifest.webmanifest"><title>Dina's Corner — Categories</title><link rel="stylesheet" href="../assets/style.css?v=20261022-unified-routing-order-points-v1"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="../assets/tenant-config.js?v=20261019-tenant-config"></script><script src="../assets/tenant-branding.js?v=20261019-tenant-branding"></script>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#C65F78"><link rel="manifest" href="../manifest.webmanifest"><title>Dina's Corner — Categories</title><link rel="stylesheet" href="../assets/style.css?v=20261019-category-form-cleanup"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="../assets/tenant-config.js?v=20261019-tenant-config"></script><script src="../assets/tenant-branding.js?v=20261019-tenant-branding"></script>
 </head>
 <body data-page="gm-categories"><header class="topbar"><a class="brand brand-image" href="gm-settings.html"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" title="Sign out">↪</button></header>
 <main class="container" style="padding-bottom:110px"><p class="eyebrow">GM MANAGEMENT</p><h1 class="title">Categories</h1><p class="sub">Add, edit, and organize the menu categories shown to customers.</p>
 <section class="card"><h3 id="formTitle">Add Category</h3><input id="categoryId" type="hidden"><div class="field"><label for="categoryName">Category name *</label><input id="categoryName" class="input" maxlength="80" placeholder="e.g. Hot Coffee" required></div><div class="field"><label for="categoryImage">Category image (optional)</label><input id="categoryImage" class="input" type="file" accept="image/*"><small class="sub">Choose an image from your device (max 5 MB).</small></div><div id="imagePreviewWrap" hidden style="margin:10px 0"><img id="imagePreview" alt="Category image preview" style="width:100%;max-width:220px;height:120px;object-fit:contain;border-radius:14px;background:#f4eee3"><p id="imagePreviewError" class="note" hidden>Image unavailable; choose another image from your device.</p></div><div class="g2"><button id="saveCategory" class="btn primary">SAVE CATEGORY</button><button id="resetCategory" class="btn">CLEAR FORM</button></div><div id="categoryMsg" class="note" role="status" aria-live="polite"></div></section>
 <section class="card"><div class="row" style="justify-content:space-between;align-items:center"><h3>Current Categories</h3><button id="refreshCategories" class="btn">REFRESH</button></div><div id="categoriesList"><div class="empty">Loading categories…</div></div></section></main>
 <nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html"><b>☰</b>Menu</a><a href="gm-settings.html" class="active"><b>⚙</b>Settings</a></div></nav>
-<script src="../assets/config.js?v=20261019-currency-egp"></script><script src="../assets/app.js?v=20261022-unified-routing-order-points-v1"></script>
-</body></html>
+<script src="../assets/config.js?v=20261019-currency-egp"></script><script src="../assets/app.js?v=20261019-reward-image-fallback"></script>
+<script>
+(()=>{
+  const $ = id => document.getElementById(id);
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+  let rows = [];
+
+  function message(text, bad = false) {
+    $('categoryMsg').textContent = text;
+    $('categoryMsg').style.color = bad ? '#a33' : 'inherit';
+  }
+
+  function reset() {
+    $('categoryId').value = '';
+    $('categoryName').value = '';
+    $('categoryImage').value = '';
+    $('formTitle').textContent = 'Add Category';
+    $('saveCategory').textContent = 'SAVE CATEGORY';
+    preview();
+    message('');
+  }
+
+  function preview() {
+    const file = $('categoryImage').files?.[0];
+    $('imagePreviewError').hidden = true;
+    if (!file) {
+      if (!$('categoryId').value) {
+        $('imagePreviewWrap').hidden = true;
+        $('imagePreview').removeAttribute('src');
+      }
+      return;
+    }
+    $('imagePreviewWrap').hidden = false;
+    if (!file.type.startsWith('image/')) {
+      message('Choose an image file.', true);
+      $('categoryImage').value = '';
+      $('imagePreviewWrap').hidden = true;
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      message('Image must be 5 MB or smaller.', true);
+      $('categoryImage').value = '';
+      $('imagePreviewWrap').hidden = true;
+      return;
+    }
+    $('imagePreview').src = URL.createObjectURL(file);
+  }
+
+  async function load() {
+    const list = $('categoriesList');
+    list.innerHTML = '<div class="empty">Loading categories…</div>';
+    try {
+      if (!window.sb) throw new Error('Supabase did not start. Refresh the page; if the problem remains, check that config.js and app.js loaded successfully.');
+      if (window.POA_SUPABASE_CONFIGURED === false) throw new Error('This deployment is not connected to its Supabase project. Check POACustomers/assets/config.js.');
+
+      let timer;
+      let result;
+      try {
+        result = await Promise.race([
+          sb.from('menu_categories')
+            .select('id,name,image_url,icon,sort_order,status,is_active,created_at')
+            .order('sort_order', { ascending: true }),
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error('The request took too long. Check your internet connection and Supabase status, then press TRY AGAIN.')), 15000);
+          })
+        ]);
+      } finally {
+        clearTimeout(timer);
+      }
+
+      const { data, error } = result;
+      if (error) {
+        const detail = error.message || 'Unknown database error.';
+        list.innerHTML = '<div class="alert"><strong>Could not load categories.</strong><br>' + esc(detail) +
+          '<br><br>If the table or image bucket is not configured, run <code>POACustomers-menu-categories-setup.sql</code> in the correct Supabase project. If the error mentions permission/RLS, sign in with an active GM or Admin account, then refresh.' +
+          '<br><br><button class="btn" type="button" id="retryCategories">TRY AGAIN</button></div>';
+        $('retryCategories').onclick = load;
+        return;
+      }
+
+      rows = data || [];
+      list.innerHTML = rows.length ? rows.map(row =>
+        '<article class="reward" style="align-items:center">' +
+        (row.image_url
+          ? '<img class="reward-product-image" src="' + esc(row.image_url) + '" alt="" onerror="this.hidden=true">'
+          : '<div class="food">' + esc(row.icon || '☕') + '</div>') +
+        '<div class="grow"><strong>' + esc(row.name) + '</strong></div>' +
+        '<button class="btn" data-edit="' + esc(row.id) + '">EDIT</button>' +
+        '<button class="btn danger" data-delete="' + esc(row.id) + '">DELETE</button>' +
+        '</article>'
+      ).join('') : '<div class="empty">No categories yet. Add the first category above.</div>';
+      list.querySelectorAll('[data-edit]').forEach(button => {
+        button.onclick = () => edit(button.dataset.edit);
+      });
+      list.querySelectorAll('[data-delete]').forEach(button => {
+        button.onclick = () => del(button.dataset.delete);
+      });
+    } catch (error) {
+      const detail = error?.message || String(error || 'Unknown error.');
+      list.innerHTML = '<div class="alert"><strong>Could not load categories.</strong><br>' + esc(detail) +
+        '<br><br>Check the connection and confirm the menu setup SQL has been run in the Supabase project used by this site.' +
+        '<br><br><button class="btn" type="button" id="retryCategories">TRY AGAIN</button></div>';
+      const retry = $('retryCategories');
+      if (retry) retry.onclick = load;
+    }
+  }
+
+  function edit(id) {
+    const row = rows.find(item => item.id === id);
+    if (!row) return;
+    $('categoryId').value = row.id;
+    $('categoryName').value = row.name || '';
+    $('categoryImage').value = '';
+    $('imagePreviewWrap').hidden = !row.image_url;
+    if (row.image_url) $('imagePreview').src = row.image_url;
+    $('formTitle').textContent = 'Edit Category';
+    $('saveCategory').textContent = 'SAVE CHANGES';
+    preview();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+
+  async function del(id) {
+    const row = rows.find(item => item.id === id);
+    if (!row || !confirm('Delete category “' + row.name + '”? Categories that still contain menu items may be protected by the database.')) return;
+    const {error} = await sb.from('menu_categories').delete().eq('id', id);
+    if (error) {
+      message('Could not delete category: ' + error.message, true);
+      return;
+    }
+    message('Category deleted.');
+    reset();
+    await load();
+  }
+
+  $('categoryImage').addEventListener('change', preview);
+  $('resetCategory').onclick = reset;
+  $('refreshCategories').onclick = load;
+  $('saveCategory').onclick = async () => {
+    const name = $('categoryName').value.trim();
+    if (!name) {
+      message('Category name is required.', true);
+      return;
+    }
+    const id = $('categoryId').value;
+    const existing = rows.find(row => row.id === id) || null;
+    let image_url = existing?.image_url || null;
+    $('saveCategory').disabled = true;
+    try {
+      const file = $('categoryImage').files?.[0];
+      if (file) {
+        if (!file.type.startsWith('image/')) throw new Error('Choose an image file.');
+        if (file.size > 5 * 1024 * 1024) throw new Error('Image must be 5 MB or smaller.');
+        const profile = await getProfile();
+        if (!profile?.id) throw new Error('Please sign in again.');
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+        const path = profile.id + '/categories/' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.' + ext;
+        const uploaded = await sb.storage.from('poac-menu-images').upload(path, file, {
+          upsert: false, contentType: file.type, cacheControl: '3600'
+        });
+        if (uploaded.error) throw new Error('The image could not be uploaded, so the category was not saved. ' + uploaded.error.message + ' Check the poac-menu-images bucket and its GM/Admin upload policy; run POACustomers-menu-categories-setup.sql if they are missing.');
+        image_url = sb.storage.from('poac-menu-images').getPublicUrl(path).data.publicUrl;
+      }
+
+      // Unused icon/order/visibility controls are removed from the form.
+      // Keep legacy values on edits; new categories are active by default and receive an internal order.
+      const payload = { name, image_url };
+      if (existing) {
+        payload.icon = existing.icon || '☕';
+        payload.sort_order = Number(existing.sort_order || 0);
+        payload.is_active = existing.is_active !== false && existing.status !== 'inactive';
+        payload.status = payload.is_active ? 'active' : 'inactive';
+      } else {
+        payload.sort_order = rows.reduce((max, row) => Math.max(max, Number(row.sort_order || 0)), -10) + 10;
+        payload.is_active = true;
+        payload.status = 'active';
+      }
+
+      const result = id
+        ? await sb.from('menu_categories').update(payload).eq('id', id)
+        : await sb.from('menu_categories').insert(payload);
+      if (result.error) {
+        if (result.error.code === '23505') throw new Error('A category with this name already exists. Choose a different name.');
+        if (result.error.code === '42501') throw new Error('Supabase denied this change. Sign in with an active GM or Admin account and check the menu_categories INSERT/UPDATE policies. Details: ' + result.error.message);
+        throw new Error(result.error.message || 'Supabase could not save this category.');
+      }
+      message(id ? 'Category updated successfully.' : 'Category added successfully.');
+      reset();
+      await load();
+    } catch (error) {
+      message(error.message || 'Could not save category.', true);
+    } finally {
+      $('saveCategory').disabled = false;
+    }
+  };
+  load();
+})();
+</script><script>if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script></body></html>
