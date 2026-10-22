@@ -86,3 +86,8 @@
 .pickup-success-actions .btn{text-decoration:none;min-width:180px}
 .pickup-success-link{color:var(--green);font-size:12px;font-weight:800;text-decoration:underline;padding:8px}
 @media(max-width:560px){.pickup-empty-state,.pickup-success-state{padding:20px 15px}.pickup-success-actions{flex-direction:column;gap:8px}.pickup-success-actions .btn{width:100%}}
+
+/* Loyalty point feedback in customer order history */
+.pickup-order-loyalty{margin:10px 0 2px;padding:9px 12px;border-radius:10px;background:#e8f5ec;color:#145b3c;font-size:13px;font-weight:700;line-height:1.55}
+.pickup-order-loyalty.pending{background:#fff8e7;color:#795b13;font-weight:600}
+.pickup-order-loyalty.muted{background:#f4f0ed;color:#776d67;font-weight:500}

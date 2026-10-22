@@ -29,6 +29,19 @@ const KEYS = {
 
 const $ = (id) => document.getElementById(id);
 
+// The repository has one canonical login at the GitHub Pages project root.
+function getProjectRootPath() {
+  const path = window.location.pathname || '/';
+  const marker = '/POACustomers/';
+  const index = path.toLowerCase().indexOf(marker.toLowerCase());
+  if (index >= 0) return path.slice(0, index + 1);
+  return new URL('./', window.location.href).pathname;
+}
+function getProjectRootUrl(relativePath = 'index.html') {
+  return new URL(relativePath, window.location.origin + getProjectRootPath()).href;
+}
+
+
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, m => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
@@ -175,8 +188,7 @@ async function getStaffProfile() {
 async function guardRole(allowedRoles) {
   const session = await getSession();
   if (!session) {
-    const role = allowedRoles[0];
-    location.href = role === "customer" ? "customer-login.html" : role === "gm" ? "gm-login.html" : role === "admin" ? "admin-login.html" : "staff-login.html";
+    location.replace(getProjectRootUrl());
     return null;
   }
 
@@ -186,7 +198,7 @@ async function guardRole(allowedRoles) {
   if (!profile || (!allowedRoles.includes(profile.role) && !adminPortalAccess)) {
     toast("You do not have access to this portal.", false);
     await sb.auth.signOut();
-    location.href = "../index.html";
+    location.replace(getProjectRootUrl());
     return null;
   }
   return profile;
@@ -448,7 +460,7 @@ async function logout() {
   await sb.auth.signOut();
   localStorage.removeItem(KEYS.customerToken);
   localStorage.removeItem(KEYS.staffCustomer);
-  location.href = "../index.html";
+  location.replace(getProjectRootUrl());
 }
 
 function escapeOfferHtml(value) {
@@ -1675,7 +1687,7 @@ async function loadAdminRoleList(role, target) {
     box.innerHTML = `<div class="alert">${esc(e.message)}</div>`;
     return;
   }
-  const portalHref = role === "gm" ? "../GM/gm-dashboard.html" : "../staff/staff-scan.html";
+  const portalHref = role === "gm" ? "../gm/gm-dashboard.html" : "../staff/staff-scan.html";
   box.innerHTML = data.length ? data.map(u => `
     <a class="row admin-portal-row" href="${portalHref}" style="padding:13px 0;border-bottom:1px solid var(--line)">
       <div class="avatar">${esc(initials(u.full_name))}</div>
@@ -1727,7 +1739,10 @@ async function init() {
   const page = document.body.dataset.page;
   bindCustomerNav(page);
   try {
-    if (page === "public-login") {
+    if (["customer-login", "staff-login", "gm-login", "admin-login"].includes(page)) {
+      location.replace(getProjectRootUrl());
+      return;
+    } else if (page === "public-login") {
       const form = $("unifiedLoginForm");
       if (form) form.onsubmit = async (event) => { event.preventDefault(); await loginAuto(); };
       await redirectRootSession();
@@ -1801,9 +1816,18 @@ async function init() {
 document.addEventListener("DOMContentLoaded", init);
 
 if ("serviceWorker" in navigator) {
-  // GitHub Pages URLs are case-sensitive, so normalize the path before selecting the worker.
-  const appPath = window.location.pathname.toLowerCase();
-  const isRoleSubfolder = /\/pocustomers\/(customer|gm|staff|admin)\//.test(appPath);
-  const swPath = isRoleSubfolder ? "../sw.js" : "./sw.js";
-  window.addEventListener("load", () => navigator.serviceWorker.register(swPath).catch(error => console.warn("Service Worker registration failed:", error)));
+  window.addEventListener("load", async () => {
+    try {
+      const rootPath = getProjectRootPath();
+      const legacyNestedWorkerPath = (rootPath + "POACustomers/sw.js").toLowerCase();
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.filter(reg => {
+        const workers = [reg.active, reg.waiting, reg.installing].filter(Boolean);
+        return reg.scope.toLowerCase().startsWith((rootPath + "POACustomers/").toLowerCase()) &&
+          workers.some(worker => new URL(worker.scriptURL).pathname.toLowerCase() === legacyNestedWorkerPath);
+      }).map(reg => reg.unregister()));
+      const workerUrl = new URL("sw.js?v=20261022-unified-routing-order-points-v1", window.location.origin + rootPath).href;
+      await navigator.serviceWorker.register(workerUrl, { scope: rootPath });
+    } catch (error) { console.warn("Unified service worker registration failed:", error); }
+  });
 }

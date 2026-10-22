@@ -407,16 +407,33 @@
     const orderIds = orders.map(row => row.id);
     const { data: items, error: itemsError } = await sb.from('pickup_order_items').select('id,order_id,item_name,quantity,unit_price,line_total').in('order_id', orderIds).order('created_at', { ascending: true });
     if (itemsError) { box.innerHTML = '<div class="pickup-error">Your orders loaded, but their items could not be loaded: ' + esc(itemsError.message) + '</div>'; return; }
+    // Award rows are customer-scoped by RLS; failure to read them must not hide order history.
+    let awardRows = [], awardQueryFailed = false;
+    try {
+      const awardsResult = await sb.from('pickup_order_point_awards').select('order_id,points_awarded').in('order_id', orderIds);
+      if (awardsResult.error) awardQueryFailed = true;
+      else awardRows = Array.isArray(awardsResult.data) ? awardsResult.data : [];
+    } catch (_) { awardQueryFailed = true; }
+    const awardsByOrder = Object.fromEntries(awardRows.map(row => [String(row.order_id), Number(row.points_awarded || 0)]));
     const grouped = {};
     (items || []).forEach(item => (grouped[item.order_id] ||= []).push(item));
     box.innerHTML = orders.map(order => {
       const rows = grouped[order.id] || [], type = order.fulfillment_type || 'pickup', canCancel = order.status === 'placed';
       const itemHtml = rows.map(row => '<div>• ' + esc(row.item_name) + ' × ' + Number(row.quantity) + (row.unit_price === null ? ' — price to be confirmed' : ' — ' + money(row.line_total)) + '</div>').join('');
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
+      const awardedPoints = awardsByOrder[String(order.id)] || 0;
+      let loyaltyLine = '';
+      if (!awardQueryFailed && awardedPoints > 0) {
+        loyaltyLine = '<div class="pickup-order-loyalty">★ You earned 1 loyalty point for this order.</div>';
+      } else if (!awardQueryFailed && order.status === 'completed') {
+        loyaltyLine = '<div class="pickup-order-loyalty muted">No point was added. The balance may be at the 50-point limit, or the order was completed before points were enabled.</div>';
+      } else if (!awardQueryFailed && order.status !== 'cancelled') {
+        loyaltyLine = '<div class="pickup-order-loyalty pending">You will earn 1 loyalty point when this order is completed. Delivery orders count when delivered.</div>';
+      }
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>Branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + '<br>' + esc(statusHint(order.status, type)) +
         deliveryDetailsHtml(order, false) + (order.notes ? '<br>Note: ' + esc(order.notes) : '') + '</div>' +
-        '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.subtotal === null ? 'To be confirmed by branch' : money(order.subtotal)) + '</strong></div>' +
+        '<div class="pickup-order-items">' + itemHtml + '</div>' + loyaltyLine + '<div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.subtotal === null ? 'To be confirmed by branch' : money(order.subtotal)) + '</strong></div>' +
         (canCancel ? '<button class="btn danger" type="button" data-cancel-order="' + esc(order.id) + '">Cancel order</button>' : '') + '</div></article>';
     }).join('');
     box.querySelectorAll('[data-cancel-order]').forEach(button => button.addEventListener('click', () => cancelCustomerOrder(button.dataset.cancelOrder)));
