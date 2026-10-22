@@ -204,6 +204,118 @@ function customerAuthEmail(username) {
   return `${String(username || "").trim().toLowerCase()}@poacustomers.invalid`;
 }
 
+function routeForRoleFromRoot(role) {
+  const normalized = String(role || "").toLowerCase();
+  if (normalized === "admin") return "admin/admin-dashboard.html";
+  if (normalized === "gm") return "GM/gm-dashboard.html";
+  if (normalized === "staff") return "staff/staff-scan.html";
+  if (normalized === "customer") return "customer/customer-home.html";
+  return null;
+}
+
+function showLoginMessage(message, good = false) {
+  const msg = $("msg");
+  if (!msg) return;
+  msg.hidden = false;
+  msg.textContent = message;
+  msg.style.background = good ? "#e6f4ec" : "#f8e8e7";
+  msg.style.color = good ? "#0b4a36" : "#8d302e";
+}
+
+async function redirectRootSession() {
+  if (!SUPABASE_CONFIGURED) return;
+  try {
+    const session = await getSession();
+    if (!session?.user) return;
+    const profile = await getProfile();
+    const target = routeForRoleFromRoot(profile?.role);
+    if (target && profile?.is_active !== false) location.replace(target);
+  } catch (error) {
+    // Keep the login form available if the saved session cannot be verified.
+    console.warn("Could not auto-route the existing session:", error);
+  }
+}
+
+async function loginAuto() {
+  if (!SUPABASE_CONFIGURED) {
+    showLoginMessage("صفحة الدخول غير متصلة بقاعدة البيانات الخاصة بالمشروع بعد.");
+    return;
+  }
+
+  const identifier = $("username")?.value.trim().toLowerCase() || "";
+  const password = $("password")?.value || "";
+  const button = $("loginBtn");
+  if (!identifier || !password) {
+    showLoginMessage("اكتب اسم المستخدم وكلمة المرور.");
+    return;
+  }
+
+  // Management accounts can continue using their existing email. Username-only
+  // accounts use the same internal identifier convention as customer accounts.
+  let email = identifier;
+  if (!identifier.includes("@")) {
+    if (!/^[a-z0-9._-]{3,24}$/.test(identifier)) {
+      showLoginMessage("اسم المستخدم من 3 إلى 24 حرفًا، ويقبل الحروف الإنجليزية والأرقام والنقطة والشرطة فقط.");
+      return;
+    }
+    email = customerAuthEmail(identifier);
+  }
+
+  if (button) { button.disabled = true; button.textContent = "جارٍ تسجيل الدخول…"; }
+  showLoginMessage("جارٍ التحقق من بيانات الدخول…", true);
+
+  try {
+    let authError = null;
+    if (identifier.includes("@")) {
+      const result = await sb.auth.signInWithPassword({ email, password });
+      authError = result.error;
+    } else {
+      // Preferred path: securely resolve any role's username on the Edge Function.
+      // Fallback keeps existing username-only customer accounts working before the function is deployed.
+      let signedInByUsername = false;
+      try {
+        const result = await sb.functions.invoke("username-login", {
+          body: { username: identifier, password }
+        });
+        const session = result?.data?.session;
+        if (!result.error && session?.access_token && session?.refresh_token) {
+          const setResult = await sb.auth.setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token
+          });
+          authError = setResult.error;
+          signedInByUsername = !setResult.error;
+        }
+      } catch (functionError) {
+        // Function is not deployed yet; try the established customer username convention below.
+        console.warn("Username-login function unavailable; trying customer username authentication.", functionError);
+      }
+      if (!signedInByUsername) {
+        const result = await sb.auth.signInWithPassword({ email: customerAuthEmail(identifier), password });
+        authError = result.error;
+      }
+    }
+    if (authError) {
+      showLoginMessage("اسم المستخدم أو كلمة المرور غير صحيحة.");
+      return;
+    }
+
+    const profile = await getProfile();
+    const target = routeForRoleFromRoot(profile?.role);
+    if (!profile || !target || profile.is_active === false) {
+      await sb.auth.signOut();
+      showLoginMessage("الحساب غير نشط أو لم تُضبط له صلاحيات صحيحة. تواصل مع الإدارة.");
+      return;
+    }
+
+    location.replace(target);
+  } catch (error) {
+    showLoginMessage(error?.message || "تعذر تسجيل الدخول. حاول مرة أخرى.");
+  } finally {
+    if (button) { button.disabled = false; button.textContent = "تسجيل الدخول"; }
+  }
+}
+
 async function login(role) {
   if (!SUPABASE_CONFIGURED) {
     const cfgMsg = $("msg");
@@ -376,7 +488,7 @@ async function loadCustomerHomeOffers() {
     const offers = Array.isArray(data) ? data : [];
     if (!offers.length) return;
 
-    const cards = offers.map(offer => {
+    const cards = offers.map((offer, index) => {
       const title = offer.product_name || offer.title || "Special Offer";
       const description = offer.description || "A special offer is available for customers.";
       const image = safeOfferImageSource(offer.image_url);
@@ -384,22 +496,57 @@ async function loadCustomerHomeOffers() {
         ? `<span class="home-offer-expiry">Valid through ${escapeOfferHtml(offer.expiry_date)}</span>`
         : "";
       return `
-        <article class="home-offer-item">
-          ${image
-            ? `<div class="home-offer-image-wrap"><img class="home-offer-image" src="${escapeOfferHtml(image)}" alt="${escapeOfferHtml(title)}" loading="lazy"></div>`
-            : `<div class="home-offer-no-image" role="img" aria-label="Offer image unavailable"><span>★</span><small>Special Offer</small></div>`}
-          <div class="home-offer-body">
-            <strong class="home-offer-title">${escapeOfferHtml(title)}</strong>
-            <p class="home-offer-description">${escapeOfferHtml(description)}</p>
-            ${expiry}
+        <article class="home-offer-slide${index === 0 ? " is-active" : ""}" data-offer-slide="${index}" aria-label="Offer ${index + 1} of ${offers.length}">
+          <div class="home-offer-item">
+            ${image
+              ? `<div class="home-offer-image-wrap"><img class="home-offer-image" src="${escapeOfferHtml(image)}" alt="${escapeOfferHtml(title)}" loading="${index === 0 ? "eager" : "lazy"}"></div>`
+              : `<div class="home-offer-no-image" role="img" aria-label="Offer image unavailable"><span>★</span><small>Special Offer</small></div>`}
+            <div class="home-offer-body">
+              <strong class="home-offer-title">${escapeOfferHtml(title)}</strong>
+              <p class="home-offer-description">${escapeOfferHtml(description)}</p>
+              ${expiry}
+            </div>
           </div>
         </article>`;
     }).join("");
+    const dots = offers.map((_, index) => `<button type="button" class="home-offer-dot${index === 0 ? " is-active" : ""}" data-offer-dot="${index}" aria-label="Show offer ${index + 1}" aria-current="${index === 0 ? "true" : "false"}"></button>`).join("");
 
-    content.className = "home-offers-content";
+    content.className = "home-offers-content home-offers-carousel";
     content.innerHTML = `
       <div class="home-offers-head"><div><h3>Special Offers</h3><p class="sub">Current offers from Dina's Corner.</p></div></div>
-      <div class="home-offers-list">${cards}</div>`;
+      <div class="home-offer-stage" data-offer-stage>${cards}</div>
+      ${offers.length > 1 ? `<div class="home-offer-controls" aria-label="Offer slideshow controls"><button type="button" class="home-offer-arrow" data-offer-prev aria-label="Previous offer">‹</button><div class="home-offer-dots">${dots}</div><button type="button" class="home-offer-arrow" data-offer-next aria-label="Next offer">›</button></div>` : ""}`;
+    if (offers.length > 1) {
+      let activeIndex = 0;
+      const setActive = nextIndex => {
+        activeIndex = (nextIndex + offers.length) % offers.length;
+        content.querySelectorAll("[data-offer-slide]").forEach((slide, index) => {
+          slide.classList.toggle("is-active", index === activeIndex);
+          slide.setAttribute("aria-hidden", index === activeIndex ? "false" : "true");
+        });
+        content.querySelectorAll("[data-offer-dot]").forEach((dot, index) => {
+          dot.classList.toggle("is-active", index === activeIndex);
+          dot.setAttribute("aria-current", index === activeIndex ? "true" : "false");
+        });
+      };
+      content.querySelector("[data-offer-prev]")?.addEventListener("click", () => setActive(activeIndex - 1));
+      content.querySelector("[data-offer-next]")?.addEventListener("click", () => setActive(activeIndex + 1));
+      content.querySelectorAll("[data-offer-dot]").forEach(dot => dot.addEventListener("click", () => setActive(Number(dot.dataset.offerDot))));
+      let touchStartX = null;
+      const stage = content.querySelector("[data-offer-stage]");
+      stage?.addEventListener("touchstart", event => { touchStartX = event.changedTouches[0]?.clientX ?? null; }, { passive: true });
+      stage?.addEventListener("touchend", event => {
+        if (touchStartX === null) return;
+        const delta = (event.changedTouches[0]?.clientX ?? touchStartX) - touchStartX;
+        if (Math.abs(delta) > 40) setActive(activeIndex + (delta < 0 ? 1 : -1));
+        touchStartX = null;
+      }, { passive: true });
+      let autoplay = window.setInterval(() => setActive(activeIndex + 1), 5000);
+      content.addEventListener("mouseenter", () => { window.clearInterval(autoplay); autoplay = null; });
+      content.addEventListener("mouseleave", () => { if (autoplay === null) autoplay = window.setInterval(() => setActive(activeIndex + 1), 5000); });
+      content.addEventListener("focusin", () => { if (autoplay !== null) window.clearInterval(autoplay); autoplay = null; });
+      content.addEventListener("focusout", event => { if (!content.contains(event.relatedTarget) && autoplay === null) autoplay = window.setInterval(() => setActive(activeIndex + 1), 5000); });
+    }
   } catch (error) {
     // Keep the page usable if offer read policies have not been applied yet.
     console.warn("Could not load customer home offers:", error?.message || error);
@@ -1579,7 +1726,11 @@ async function init() {
   const page = document.body.dataset.page;
   bindCustomerNav(page);
   try {
-    if (page === "admin-login") {
+    if (page === "public-login") {
+      const form = $("unifiedLoginForm");
+      if (form) form.onsubmit = async (event) => { event.preventDefault(); await loginAuto(); };
+      await redirectRootSession();
+    } else if (page === "admin-login") {
       $("loginBtn").onclick = () => login("admin");
     } else if (page === "admin-dashboard") {
       await loadAdminDashboard();
