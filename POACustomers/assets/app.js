@@ -205,11 +205,13 @@ function customerAuthEmail(username) {
 }
 
 function routeForRoleFromRoot(role) {
+  // The public login is served from /LoyaltyAPP/index.html, while application
+  // pages and assets live under /LoyaltyAPP/POACustomers/.
   const normalized = String(role || "").toLowerCase();
-  if (normalized === "admin") return "admin/admin-dashboard.html";
-  if (normalized === "gm") return "GM/gm-dashboard.html";
-  if (normalized === "staff") return "staff/staff-scan.html";
-  if (normalized === "customer") return "customer/customer-home.html";
+  if (normalized === "admin") return "POACustomers/admin/admin-dashboard.html";
+  if (normalized === "gm") return "POACustomers/GM/gm-dashboard.html";
+  if (normalized === "staff") return "POACustomers/staff/staff-scan.html";
+  if (normalized === "customer") return "POACustomers/customer/customer-home.html";
   return null;
 }
 
