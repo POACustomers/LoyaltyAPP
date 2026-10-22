@@ -1675,7 +1675,7 @@ async function loadAdminRoleList(role, target) {
     box.innerHTML = `<div class="alert">${esc(e.message)}</div>`;
     return;
   }
-  const portalHref = role === "gm" ? "../gm/gm-dashboard.html" : "../staff/staff-scan.html";
+  const portalHref = role === "gm" ? "../GM/gm-dashboard.html" : "../staff/staff-scan.html";
   box.innerHTML = data.length ? data.map(u => `
     <a class="row admin-portal-row" href="${portalHref}" style="padding:13px 0;border-bottom:1px solid var(--line)">
       <div class="avatar">${esc(initials(u.full_name))}</div>
@@ -1801,5 +1801,9 @@ async function init() {
 document.addEventListener("DOMContentLoaded", init);
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register(location.pathname.includes("/customer/") || location.pathname.includes("/gm/") || location.pathname.includes("/staff/") || location.pathname.includes("/admin/") ? "../sw.js" : "./sw.js").catch(() => {}));
+  // GitHub Pages URLs are case-sensitive, so normalize the path before selecting the worker.
+  const appPath = window.location.pathname.toLowerCase();
+  const isRoleSubfolder = /\/pocustomers\/(customer|gm|staff|admin)\//.test(appPath);
+  const swPath = isRoleSubfolder ? "../sw.js" : "./sw.js";
+  window.addEventListener("load", () => navigator.serviceWorker.register(swPath).catch(error => console.warn("Service Worker registration failed:", error)));
 }
