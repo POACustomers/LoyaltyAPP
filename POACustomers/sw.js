@@ -1,10 +1,10 @@
-const CACHE = "dina-corner-v31-order-history-separated";
+const CACHE = "dina-corner-app-v32-cache-isolation";
 const SHELL = [
   "./",
   "./index.html",
   "./menu.html",
   "./manifest.webmanifest",
-  "./manifest-customer.webmanifest",
+  
   "./assets/style.css",
   "./assets/dina-theme.css",
   "./assets/dina-corner-logo.png",
@@ -70,7 +70,7 @@ self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(key => key.startsWith("dina-corner-") && key !== CACHE).map(key => caches.delete(key))
+        keys.filter(key => (key.startsWith("dina-corner-app-") || /^dina-corner-v\d/.test(key)) && key !== CACHE).map(key => caches.delete(key))
       ))
       .then(() => self.clients.claim())
   );

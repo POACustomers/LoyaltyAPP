@@ -1,10 +1,10 @@
 {
-  "id": "./index.html",
+  "id": "../index.html",
   "name": "Dina's Corner Loyalty & Orders",
   "short_name": "Dina's Corner",
   "description": "Dina's Corner loyalty card, menu, rewards, pickup and delivery orders.",
-  "start_url": "./index.html?source=pwa",
-  "scope": "./",
+  "start_url": "../index.html?source=pwa",
+  "scope": "../",
   "display": "standalone",
   "display_override": [
     "standalone",
