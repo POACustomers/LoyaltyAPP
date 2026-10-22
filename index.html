@@ -1,15 +1,51 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>POACustomers</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C65F78">
+<link rel="manifest" href="manifest-customer.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<title>تسجيل الدخول | Dina's Corner Loyalty</title>
+<link rel="stylesheet" href="assets/style.css?v=20261022-unified-login">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<script src="assets/tenant-config.js?v=20261022-unified-login"></script>
+<script src="assets/tenant-branding.js?v=20261022-unified-login"></script>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
-<body>
-  <p>Opening POACustomers...</p>
-  <script>
-    window.location.replace("./POACustomers/index.html");
-  </script>
-  <a href="./POACustomers/index.html">Open POACustomers</a>
+<body data-page="public-login">
+<main class="container">
+  <div class="auth" style="min-height:calc(100vh - 24px);padding:12px;background:transparent">
+    <section class="authbox" dir="rtl" aria-labelledby="loginTitle">
+      <div class="logo"><img class="official-logo" src="assets/dina-corner-logo.png" alt="DINA'S CORNER"></div>
+      <h2 id="loginTitle" class="center">أهلاً بيك</h2>
+      <p class="sub center">سجّل دخولك للمتابعة</p>
+      <form id="unifiedLoginForm" autocomplete="on">
+        <div class="field">
+          <label for="username">اسم المستخدم أو البريد الإلكتروني</label>
+          <input id="username" class="input" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="اكتب اسم المستخدم" required>
+        </div>
+        <div class="field">
+          <label for="password">كلمة المرور</label>
+          <input id="password" class="input" type="password" autocomplete="current-password" placeholder="اكتب كلمة المرور" required>
+        </div>
+        <button id="loginBtn" class="btn primary block" type="submit">تسجيل الدخول</button>
+      </form>
+      <div id="msg" class="note" role="status" aria-live="polite" hidden></div>
+      <div class="center" style="margin-top:16px">
+        <p class="sub" style="margin:0 0 9px">أول مرة تستخدم التطبيق؟</p>
+        <a href="customer/customer-register.html" class="btn soft block">إنشاء حساب جديد</a>
+      </div>
+    </section>
+  </div>
+</main>
+<script src="assets/config.js?v=20261022-unified-login"></script>
+<script src="assets/app.js?v=20261022-unified-login"></script>
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
 </body>
 </html>
