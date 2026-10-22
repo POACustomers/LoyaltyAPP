@@ -1,60 +1,5 @@
-const CACHE = "dina-corner-v32-unified-login";
-const SHELL = [
-  "./",
-  "./index.html",
-  "./menu.html",
-  "./manifest.webmanifest",
-  "./manifest-customer.webmanifest",
-  "./assets/style.css",
-  "./assets/dina-theme.css",
-  "./assets/dina-corner-logo.png",
-  "./assets/dina-corner-icon.png",
-  "./assets/dina-floral-tl.png",
-  "./assets/dina-floral-tr.png",
-  "./assets/dina-floral-bl.png",
-  "./assets/dina-floral-br.png",
-  "./assets/app.js",
-  "./assets/config.js",
-  "./assets/tenant-config.js",
-  "./assets/tenant-branding.js",
-  "./assets/customer-navigation.js",
-  "./assets/pwa-install.js",
-  "./assets/pwa-install.css",
-  "./assets/tenant-branding/logo.png",
-  "./assets/tenant-branding/icon.png",
-  "./assets/menu-display.css",
-  "./assets/menu-display.js",
-  "./assets/pickup-orders.css",
-  "./assets/pickup-orders.js",
-  "./assets/customer-addresses.css",
-  "./assets/customer-addresses.js",
-  "./assets/reward-hot-cold.jpg",
-  "./assets/reward-breakfast.jpg",
-  "./assets/reward-breakfast-drink.jpg",
-  "./assets/icons/icon-192.png",
-  "./assets/icons/icon-512.png",
-  "./customer/customer-login.html",
-  "./customer/customer-register.html",
-  "./customer/customer-home.html",
-  "./customer/customer-menu.html",
-  "./customer/customer-orders.html",
-  "./customer/customer-order-history.html",
-  "./customer/customer-rewards.html",
-  "./customer/customer-locations.html",
-  "./customer/customer-profile.html",
-  "./GM/gm-login.html",
-  "./GM/gm-dashboard.html",
-  "./GM/gm-categories.html",
-  "./GM/gm-menu.html",
-  "./GM/gm-offers.html",
-  "./GM/gm-locations.html",
-  "./admin/admin-login.html",
-  "./admin/admin-dashboard.html",
-  "./admin/admin-settings.html",
-  "./staff/staff-login.html",
-  "./staff/staff-orders.html"
-];
-
+const CACHE = "dina-corner-root-v33-all-roles-routing-fix";
+const SHELL = ["./", "./index.html", "./POACustomers/manifest.webmanifest", "./POACustomers/assets/style.css", "./POACustomers/assets/dina-theme.css", "./POACustomers/assets/dina-corner-logo.png", "./POACustomers/assets/dina-corner-icon.png", "./POACustomers/assets/dina-floral-tl.png", "./POACustomers/assets/dina-floral-tr.png", "./POACustomers/assets/dina-floral-bl.png", "./POACustomers/assets/dina-floral-br.png", "./POACustomers/assets/app.js", "./POACustomers/assets/config.js", "./POACustomers/assets/tenant-config.js", "./POACustomers/assets/tenant-branding.js", "./POACustomers/assets/customer-navigation.js", "./POACustomers/assets/pwa-install.js", "./POACustomers/assets/pwa-install.css", "./POACustomers/assets/tenant-branding/logo.png", "./POACustomers/assets/tenant-branding/icon.png", "./POACustomers/assets/menu-display.css", "./POACustomers/assets/menu-display.js", "./POACustomers/assets/pickup-orders.css", "./POACustomers/assets/pickup-orders.js", "./POACustomers/assets/customer-addresses.css", "./POACustomers/assets/customer-addresses.js", "./POACustomers/assets/reward-hot-cold.jpg", "./POACustomers/assets/reward-breakfast.jpg", "./POACustomers/assets/reward-breakfast-drink.jpg", "./POACustomers/assets/icons/icon-192.png", "./POACustomers/assets/icons/icon-512.png", "./POACustomers/customer/customer-login.html", "./POACustomers/customer/customer-register.html", "./POACustomers/customer/customer-home.html", "./POACustomers/customer/customer-menu.html", "./POACustomers/customer/customer-orders.html", "./POACustomers/customer/customer-order-history.html", "./POACustomers/customer/customer-rewards.html", "./POACustomers/customer/customer-locations.html", "./POACustomers/customer/customer-profile.html", "./POACustomers/GM/gm-login.html", "./POACustomers/GM/gm-dashboard.html", "./POACustomers/GM/gm-categories.html", "./POACustomers/GM/gm-menu.html", "./POACustomers/GM/gm-offers.html", "./POACustomers/GM/gm-locations.html", "./POACustomers/admin/admin-login.html", "./POACustomers/admin/admin-dashboard.html", "./POACustomers/admin/admin-settings.html", "./POACustomers/admin/admin-users.html", "./POACustomers/admin/admin-staff.html", "./POACustomers/staff/staff-login.html", "./POACustomers/staff/staff-scan.html", "./POACustomers/staff/staff-orders.html", "./POACustomers/menu.html", "./POACustomers/offers.html", "./POACustomers/rewards.html", "./POACustomers/locations.html"];
 const scopeUrl = new URL(self.registration.scope);
 const shellUrls = SHELL.map(path => new URL(path, scopeUrl).href);
 
@@ -79,25 +24,19 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   const request = event.request;
   if (request.method !== "GET") return;
-
   const url = new URL(request.url);
-  // Never cache third-party services or API results in the app shell cache.
   if (url.origin !== self.location.origin || !url.pathname.startsWith(scopeUrl.pathname)) return;
-
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     try {
       const response = await fetch(request);
-      if (response && response.ok && response.type === "basic") {
-        cache.put(request, response.clone()).catch(() => {});
-      }
+      if (response && response.ok && response.type === "basic") cache.put(request, response.clone()).catch(() => {});
       return response;
     } catch (_) {
       const cached = await cache.match(request);
       if (cached) return cached;
       if (request.mode === "navigate") {
-        const appStart = new URL("index.html", scopeUrl).href;
-        const fallback = await cache.match(appStart);
+        const fallback = await cache.match(new URL("index.html", scopeUrl).href);
         if (fallback) return fallback;
       }
       return Response.error();
