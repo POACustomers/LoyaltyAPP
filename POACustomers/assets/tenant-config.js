@@ -6,6 +6,7 @@ window.POA_TENANT_CONFIG = Object.freeze({
   "TAGLINE": "Premium Healthy Meals",
   "THEME_ID": "dina-floral",
   "THEME_CSS": "dina-theme.css",
+  "THEME_VERSION": "20261022-category-image-fill-v2",
   "THEME_COLOR": "#C65F78",
   "PAGE_BACKGROUND": "#FFF4ED",
   "PRIMARY_COLOR": "#C65F78",

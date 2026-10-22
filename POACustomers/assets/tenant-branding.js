@@ -37,7 +37,7 @@
     if (tenant.THEME_CSS && !document.querySelector('link[data-tenant-theme]')) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = assetUrl(tenant.THEME_CSS) + '?v=' + encodeURIComponent(tenant.TENANT_ID || 'tenant');
+      link.href = assetUrl(tenant.THEME_CSS) + '?v=' + encodeURIComponent(tenant.THEME_VERSION || tenant.TENANT_ID || 'tenant');
       link.dataset.tenantTheme = 'true';
       document.head.appendChild(link);
     }
@@ -177,7 +177,7 @@
     'Create Loyalty Account':'إنشاء حساب ولاء', 'Create My Loyalty Account →':'إنشاء حساب الولاء ←',
     'Already have an account? Sign in':'لديك حساب بالفعل؟ سجّل الدخول', '← Back':'رجوع ←', 'Back':'رجوع',
     'Home':'الرئيسية', 'Dashboard':'لوحة التحكم', 'Menu':'القائمة', 'Menu & Basket':'القائمة والسلة', 'Continue to checkout →':'متابعة إتمام الطلب ←', 'Your order':'طلبك', 'items':'منتجات', 'item':'منتج', 'Our Menu':'قائمتنا', 'Rewards':'المكافآت', 'Locations':'الفروع',
-    'Basket & Checkout':'السلة وتأكيد الطلب', 'Branches':'الفروع', 'Order History':'سجل الطلبات', 'You earned 1 loyalty point for this order.':'كسبت نقطة ولاء واحدة على هذا الطلب.', 'You will earn 1 loyalty point when this order is completed. Delivery orders count when delivered.':'ستحصل على نقطة ولاء واحدة عند اكتمال الطلب، وتُحتسب طلبات التوصيل بعد تسليمها.', 'No point was added. The balance may be at the 50-point limit, or the order was completed before points were enabled.':'لم تُضف نقطة؛ قد يكون الرصيد وصل للحد الأقصى 50 نقطة أو اكتمل الطلب قبل تفعيل النقاط.', 'Previous orders':'الطلبات السابقة', 'Your order history':'سجل طلباتك', 'Review previous orders, branch details, totals and the latest recorded status.':'راجع طلباتك السابقة والفروع والإجماليات وآخر حالة مسجلة.', 'YOUR ACCOUNT':'حسابك', 'Back to menu':'العودة إلى القائمة',
+    'Basket & Checkout':'السلة وتأكيد الطلب', 'Branches':'الفروع', 'Order History':'سجل الطلبات', 'Previous orders':'الطلبات السابقة', 'Your order history':'سجل طلباتك', 'Review previous orders, branch details, totals and the latest recorded status.':'راجع طلباتك السابقة والفروع والإجماليات وآخر حالة مسجلة.', 'YOUR ACCOUNT':'حسابك', 'Back to menu':'العودة إلى القائمة',
     'Offers':'العروض', 'Orders':'الطلبات', 'My Profile':'ملفي الشخصي', 'Profile':'الملف الشخصي', 'Customer':'العميل', 'Customers':'العملاء',
     'Staff':'الموظفون', 'Users':'المستخدمون', 'GM':'المدير العام', 'General Manager':'المدير العام', 'Settings':'الإعدادات',
     'Sign Out':'تسجيل الخروج', 'Sign out':'تسجيل الخروج', 'Sign Out':'تسجيل الخروج', 'System Admin':'مدير النظام', 'Admin Login':'دخول الإدارة',
