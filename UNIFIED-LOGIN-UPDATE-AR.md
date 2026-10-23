@@ -24,7 +24,7 @@
 3. إذا كانت أسماء المستخدمين فارغة، حدّد اسم مستخدم فريد لكل حساب إدارة/GM/موظف باستخدام `UPDATE public.profiles SET username = 'اسم_مستخدم' WHERE id = 'UUID_الحساب';` مع استبدال القيم الفعلية. لا تغيّر `role` أو البريد أو كلمة المرور بهذه الخطوة.
 4. انشر Edge Function من مجلد المشروع الذي يحتوي على `supabase/` باستخدام Supabase CLI:
    `supabase functions deploy username-login --no-verify-jwt`
-   تأكد أن وظيفة `username-login` تستخدم متغيرات البيئة الافتراضية في Supabase: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. لا تضع مفتاح `service_role` في ملفات الواجهة أو GitHub.
+   تأكد من نشر وظيفة `username-login` وضبط `ALLOWED_ORIGINS` على نطاق الموقع. بيئة Edge Functions المستضافة توفر متغيرات Supabase الافتراضية؛ لا تضع أي مفتاح سري في الواجهة أو GitHub. راجع `POACustomers/USERNAME-LOGIN-SETUP.md`.
 5. ارفع `index.html`, `assets/app.js`, `sw.js` إلى المسارات نفسها في GitHub Pages، ثم اختبر حساب عميل وحساب إدارة.
 
 ## سلوك الدخول
