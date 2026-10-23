@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#C65F78">
-<link rel="manifest" href="../manifest.webmanifest">
+<link rel="manifest" href="../manifest-customer.webmanifest">
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
 <title>Customer Home</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261022-unified-routing-order-points-v1">
+<link rel="stylesheet" href="../assets/style.css?v=20261021-customer-menu-v2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
@@ -48,9 +48,9 @@
 </section>
 
 <section id="homeOffersCard" class="card home-offers-card" style="margin-top:18px" aria-live="polite">
-  <div id="homeOffersContent" class="home-offers-fallback">
-    <h3>More Rewards<br>Brighter Days</h3>
-    <p class="sub">Earn points with every eligible purchase at Dina's Corner.</p>
+  <div id="homeOffersContent" class="home-offers-fallback" aria-live="polite">
+    <h3>Special Offers</h3>
+    <p class="sub">Loading current offers…</p>
   </div>
 </section>
 
@@ -67,8 +67,8 @@
 <script src="../assets/tenant-branding.js?v=20261021-unified-menu-basket"></script>
 <script src="../assets/customer-navigation.js?v=20261021-unified-menu-basket"></script>
 <script src="../assets/config.js?v=20261019-currency-egp"></script>
-<script src="../assets/app.js?v=20261022-unified-routing-order-points-v1"></script>
+<script src="../assets/app.js?v=20261024-customer-home-offers-fix"></script>
 
-
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("../sw.js").catch(()=>{}));}</script>
 </body>
 </html>
