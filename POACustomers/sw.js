@@ -1,4 +1,4 @@
-const CACHE = "dina-corner-v32-category-loading-fix-20261023";
+const CACHE = "dina-corner-v32-offers-edit-delete-fix";
 const SHELL = [
   "./",
   "./index.html",
