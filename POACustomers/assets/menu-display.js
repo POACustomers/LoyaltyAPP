@@ -2,6 +2,11 @@
   const categoriesView=document.getElementById('menuCategoriesView');
   const itemsView=document.getElementById('menuItemsView');
   const cartPanel=document.getElementById('menu-cart');
+  const cartBackdrop=document.getElementById('menuCartBackdrop');
+  const cartButton=document.getElementById('menuCartButton');
+  const cartButtonCount=document.getElementById('menuCartButtonCount');
+  const cartButtonTotal=document.getElementById('menuCartButtonTotal');
+  let cartFocusReturn=null;
 
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
   const slug=v=>String(v??'').trim().toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
@@ -28,21 +33,46 @@
   }
   function quantityCount(rows){return rows.reduce((sum,row)=>sum+(Number(row.quantity)||0),0);}
 
+  function updateCartButton(cart=cartRows()){
+    const count=quantityCount(cart);
+    const known=cart.length>0&&cart.every(row=>normalizePrice(row.price)!==null);
+    const total=known?cart.reduce((sum,row)=>sum+Number(row.price)*Number(row.quantity),0):null;
+    if(cartButtonCount){cartButtonCount.textContent=String(count);cartButtonCount.hidden=count===0;}
+    if(cartButtonTotal)cartButtonTotal.textContent=count===0?'Basket':(known?money(total):'View basket');
+    if(cartButton)cartButton.setAttribute('aria-label',count===0?'Open shopping basket':`Open shopping basket, ${count} item${count===1?'':'s'}${known?', total '+money(total):''}`);
+  }
+  function openCart(){
+    if(!cartBackdrop)return;
+    renderCartPanel();
+    cartFocusReturn=cartButton||document.activeElement;
+    cartBackdrop.hidden=false;
+    cartBackdrop.setAttribute('aria-hidden','false');
+    document.body.classList.add('menu-cart-open');
+    setTimeout(()=>cartPanel?.querySelector('[data-cart-close]')?.focus(),30);
+  }
+  function closeCart(){
+    if(!cartBackdrop||cartBackdrop.hidden)return;
+    cartBackdrop.hidden=true;
+    cartBackdrop.setAttribute('aria-hidden','true');
+    document.body.classList.remove('menu-cart-open');
+    if(location.hash==='#menu-cart')history.replaceState(null,'',location.pathname+location.search);
+    const focusTarget=cartFocusReturn;
+    cartFocusReturn=null;
+    if(focusTarget&&typeof focusTarget.focus==='function')setTimeout(()=>focusTarget.focus(),0);
+  }
   function renderCartPanel(){
     if(!cartPanel)return;
     const cart=cartRows();
-    cartPanel.hidden=cart.length===0;
+    const count=quantityCount(cart);
+    const known=cart.length>0&&cart.every(row=>normalizePrice(row.price)!==null);
+    const total=known?cart.reduce((sum,row)=>sum+Number(row.price)*Number(row.quantity),0):null;
     if(!cart.length){
-      cartPanel.innerHTML='';
-      if(location.hash==='#menu-cart'&&!anchorScrollDone){
-        anchorScrollDone=true;
-        setTimeout(()=>document.querySelector('.menu-panel')?.scrollIntoView({behavior:'smooth',block:'start'}),120);
-      }
+      cartPanel.innerHTML='<div class="menu-cart-header"><div><p class="eyebrow">DINA\'S CORNER</p><h2 id="menuCartTitle">Your basket</h2></div><button type="button" class="menu-cart-close" data-cart-close aria-label="Close basket">×</button></div>'+ 
+        '<div class="menu-cart-empty"><span class="menu-cart-empty-icon" aria-hidden="true">🛒</span><h3>Your basket is empty</h3><p>Add products from the menu and they will appear here.</p><button type="button" class="btn menu-cart-continue" data-cart-close>Continue shopping</button></div>';
+      updateCartButton(cart);
+      cartPanel.querySelectorAll('[data-cart-close]').forEach(btn=>btn.addEventListener('click',closeCart));
       return;
     }
-    const count=quantityCount(cart);
-    const known=cart.every(row=>normalizePrice(row.price)!==null);
-    const total=known?cart.reduce((sum,row)=>sum+Number(row.price)*Number(row.quantity),0):null;
     const rows=cart.map(row=>{
       const price=normalizePrice(row.price);
       const image=row.image_url
@@ -50,7 +80,7 @@
         : '<span class="menu-cart-thumb-fallback" aria-hidden="true">◉</span>';
       return '<article class="menu-cart-row">'+image+
         '<div class="menu-cart-item-copy"><strong>'+esc(row.name||'Menu item')+'</strong>'+
-        '<small>'+ (price===null?'Price to be confirmed':esc(money(price))+' each') +'</small>'+
+        '<small>'+(price===null?'Price to be confirmed':esc(money(price))+' each')+'</small>'+
         '<div class="menu-cart-qty" role="group" aria-label="Quantity for '+esc(row.name||'item')+'">'+
         '<button type="button" data-cart-minus="'+esc(row.id)+'" aria-label="Decrease quantity">−</button>'+
         '<output aria-live="polite">'+Number(row.quantity)+'</output>'+
@@ -58,12 +88,14 @@
         '<strong class="menu-cart-line-total">'+(price===null?'TBC':esc(money(price*Number(row.quantity))))+'</strong></article>';
     }).join('');
     cartPanel.innerHTML=
-      '<div class="menu-cart-header"><div><p class="eyebrow">Your order</p><h2>Your basket <span class="menu-cart-count"><span class="menu-cart-count-number">'+count+'</span> <span>'+(count===1?'item':'items')+'</span></span></h2></div>'+
-      '<strong class="menu-cart-total">'+(known?esc(money(total)):'To be confirmed')+'</strong></div>'+
-      '<div class="menu-cart-lines">'+rows+'</div>'+
-      '<div class="menu-cart-footer"><small>'+(known?'Pickup or delivery can be selected at checkout.':'The branch will confirm the final price for items without a published price.')+'</small>'+
-      '<a class="btn menu-cart-checkout" href="customer-orders.html">Continue to checkout →</a></div>';
-
+      '<div class="menu-cart-header"><div><p class="eyebrow">DINA\'S CORNER</p><h2 id="menuCartTitle">Your basket <span class="menu-cart-count"><span class="menu-cart-count-number">'+count+'</span> <span>'+(count===1?'item':'items')+'</span></span></h2></div>'+ 
+      '<button type="button" class="menu-cart-close" data-cart-close aria-label="Close basket">×</button></div>'+ 
+      '<div class="menu-cart-order-total"><span>Order total</span><strong>'+(known?esc(money(total)):'To be confirmed')+'</strong></div>'+ 
+      '<div class="menu-cart-lines">'+rows+'</div>'+ 
+      '<div class="menu-cart-footer"><small>'+(known?'Choose pickup or delivery at checkout.':'The branch will confirm the final price for items without a published price.')+'</small>'+ 
+      '<a class="btn menu-cart-checkout" href="customer-orders.html">Continue to checkout <span aria-hidden="true">→</span></a></div>';
+    updateCartButton(cart);
+    cartPanel.querySelectorAll('[data-cart-close]').forEach(btn=>btn.addEventListener('click',closeCart));
     cartPanel.querySelectorAll('[data-cart-minus]').forEach(btn=>btn.addEventListener('click',()=>{
       if(typeof window.POAChangeItemQuantity==='function')window.POAChangeItemQuantity(btn.dataset.cartMinus,-1);
       if(activeCategoryName)renderItems(activeCategoryName);
@@ -72,16 +104,17 @@
       if(typeof window.POAChangeItemQuantity==='function')window.POAChangeItemQuantity(btn.dataset.cartPlus,1);
       if(activeCategoryName)renderItems(activeCategoryName);
     }));
-    if(location.hash==='#menu-cart'&&!anchorScrollDone){
-      anchorScrollDone=true;
-      setTimeout(()=>cartPanel.scrollIntoView({behavior:'smooth',block:'start'}),120);
-    }
   }
   window.POARenderMenuCart=renderCartPanel;
+  window.POAOpenCart=openCart;
+  window.POACloseCart=closeCart;
+  cartButton?.addEventListener('click',openCart);
+  cartBackdrop?.addEventListener('click',event=>{if(event.target===cartBackdrop)closeCart();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&cartBackdrop&&!cartBackdrop.hidden)closeCart();});
+  window.addEventListener('hashchange',()=>{if(location.hash==='#menu-cart')openCart();});
   window.addEventListener('storage',event=>{
     if(event.key===CART_KEY){renderCartPanel();if(activeCategoryName)renderItems(activeCategoryName);}
   });
-
   // Only display categories that are actually saved in this POACustomers database.
   // There is deliberately no demo/fallback catalog; the owner creates their own menu.
   function normalizeCategoryRows(rows){
@@ -164,6 +197,7 @@
   }
 
   renderCartPanel();
+  if(location.hash==='#menu-cart')openCart();
   loadMenu().catch(err=>{
     categories=[];items=[];categoriesView.hidden=false;itemsView.hidden=true;
     categoriesView.innerHTML='<div class="menu-error"><strong>Menu could not be loaded from the database.</strong><br>'+esc(err?.message||'Please try again later.')+'<br><small>Ask the company administrator to verify the menu database setup.</small></div>';
