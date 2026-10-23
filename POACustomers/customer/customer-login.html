@@ -1,5 +1,35 @@
 <!doctype html>
-<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="refresh" content="0;url=../../index.html"><title>تسجيل دخول العميل</title>
-<script>location.replace(new URL("../../index.html", location.href).href + location.search + location.hash);</script></head>
-<body><p>جاري فتح صفحة الدخول الموحدة… <a href="../../index.html">اضغط هنا للمتابعة</a></p></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C65F78">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261024-presale-candidate">
+<title>Customer Login</title>
+<link rel="stylesheet" href="../assets/style.css?v=20261024-presale-candidate">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dina's Corner">
+</head>
+<body data-page="customer-login">
+
+<div class="auth"><div class="authbox">
+<div class="logo"><img class="official-logo" src="../assets/dina-corner-logo.png?v=20261024-presale-candidate" alt="DINA'S CORNER"></div>
+<h2>Welcome Back</h2><p class="sub">Sign in to your Dina's Corner Loyalty account.</p>
+<div class="field"><label>Username</label><input id="username" class="input" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Your username"></div>
+<div class="field"><label>Password</label><input id="password" class="input" type="password" autocomplete="current-password" placeholder="Your password"></div>
+<button id="loginBtn" class="btn primary block">Sign In →</button>
+<div id="msg" class="note"></div>
+<div class="center" style="margin-top:16px"><a href="customer-register.html" class="btn soft block">Create Loyalty Account</a></div>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<script src="../assets/tenant-config.js?v=20261024-presale-candidate"></script>
+<script src="../assets/tenant-branding.js?v=20261024-presale-candidate"></script>
+<script src="../assets/config.js?v=20261024-presale-candidate"></script>
+<script src="../assets/app.js?v=20261024-presale-candidate"></script>
+
+
+</body>
+</html>
