@@ -37,7 +37,9 @@
     if (tenant.THEME_CSS && !document.querySelector('link[data-tenant-theme]')) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = assetUrl(tenant.THEME_CSS) + '?v=' + encodeURIComponent(tenant.THEME_VERSION || tenant.TENANT_ID || 'tenant');
+      const themeUrl = new URL(String(tenant.THEME_CSS), assetsBase);
+      themeUrl.searchParams.set('v', String(tenant.THEME_ID || tenant.TENANT_ID || 'theme'));
+      link.href = themeUrl.href;
       link.dataset.tenantTheme = 'true';
       document.head.appendChild(link);
     }
