@@ -1,4 +1,4 @@
-const CACHE = "dina-corner-v32-offers-edit-delete-fix";
+const CACHE = "dina-corner-v33-offers-carousel-10s";
 const SHELL = [
   "./",
   "./index.html",
