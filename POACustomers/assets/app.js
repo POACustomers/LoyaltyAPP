@@ -205,12 +205,14 @@ function customerAuthEmail(username) {
 }
 
 function routeForRoleFromRoot(role) {
-  // The unified login lives at /LoyaltyAPP/index.html, while role pages are inside /LoyaltyAPP/POACustomers/.
+  // Root repository login needs the POACustomers/ prefix; a standalone tenant build does not.
   const normalized = String(role || "").toLowerCase();
-  if (normalized === "admin") return "POACustomers/admin/admin-dashboard.html";
-  if (normalized === "gm") return "POACustomers/GM/gm-dashboard.html";
-  if (normalized === "staff") return "POACustomers/staff/staff-scan.html";
-  if (normalized === "customer") return "POACustomers/customer/customer-home.html";
+  const standalone = document.body?.dataset?.loginScope === "tenant";
+  const prefix = standalone ? "" : "POACustomers/";
+  if (normalized === "admin") return prefix + "admin/admin-dashboard.html";
+  if (normalized === "gm") return prefix + "GM/gm-dashboard.html";
+  if (normalized === "staff") return prefix + "staff/staff-scan.html";
+  if (normalized === "customer") return prefix + "customer/customer-home.html";
   return null;
 }
 
@@ -1131,9 +1133,15 @@ async function loadStaffHistory() {
         const staffId = t.staff_id || t.staff_user_id || t.created_by || t.user_id;
         const staffName = t.staff_member_name || t.staff_name || t.staff_member ||
           t.staff_email || (staffId ? staffMap[staffId] : "") || currentStaffName;
+        const transactionTypeLabels = {
+          visit: "Visit point",
+          order_completed: "Completed order point",
+          reward_redeemed: "Reward redeemed"
+        };
+        const transactionLabel = transactionTypeLabels[String(t.type || "").toLowerCase()] || String(t.type || "Transaction");
         return `
         <tr>
-          <td>${esc(t.type)}</td>
+          <td>${esc(transactionLabel)}</td>
           <td>${moneyPoints(t.points)}</td>
           <td>${esc(staffName)}</td>
           <td>${new Date(t.created_at).toLocaleString()}</td>
@@ -1829,5 +1837,19 @@ async function init() {
 document.addEventListener("DOMContentLoaded", init);
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register(location.pathname.includes("/customer/") || location.pathname.includes("/gm/") || location.pathname.includes("/staff/") || location.pathname.includes("/admin/") ? "../sw.js" : "./sw.js").catch(() => {}));
+  window.addEventListener("load", () => {
+    const path = location.pathname;
+    const marker = "/POACustomers/";
+    const index = path.indexOf(marker);
+    let workerPath = "./sw.js";
+    if (index >= 0) {
+      const innerPath = path.slice(index + marker.length);
+      workerPath = innerPath.includes("/") ? "../sw.js" : "./sw.js";
+    } else if (/\/(customer|GM|gm|staff|admin)\//.test(path)) {
+      // Standalone tenant deployments publish POACustomers as their root.
+      workerPath = "../sw.js";
+    }
+    navigator.serviceWorker.register(workerPath + "?v=20261024-presale-candidate")
+      .catch(error => console.warn("Service worker registration failed:", error));
+  });
 }

@@ -5,7 +5,7 @@
   "use strict";
   const STYLE_ID = "poa-offers-slideshow-style";
   const ROOT_ID = "poa-offers-slideshow";
-  const ROTATE_MS = 4000;
+  const ROTATE_MS = 10000;
   let timer = null;
   let current = 0;
   let offers = [];
