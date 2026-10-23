@@ -221,7 +221,7 @@ button.reward-choice-card:hover{transform:translateY(-1px)}
 @media(max-width:560px){.admin-registration-card{padding:15px;margin-bottom:90px;}.registration-chart-summary{gap:6px}.registration-stat{padding:9px}.registration-stat strong{font-size:21px}.registration-minute-chart{gap:1px;padding-left:0;padding-right:0}.registration-minute-value{font-size:7px}.registration-minute-tick{font-size:7px}.admin-chart-head{align-items:center}}
 
 
-/* Customer home offers: compact horizontal cards with a fixed thumbnail on the right. */
+/* Customer home offers: one large image slide at a time, with discount text underneath. */
 .home-offers-card{padding:0;overflow:hidden}
 .home-offers-fallback{padding:20px}
 .home-offers-fallback h3{margin:0 0 10px;font-size:18px;color:var(--ink)}
@@ -231,30 +231,42 @@ button.reward-choice-card:hover{transform:translateY(-1px)}
 .home-offers-head h3{margin:0 0 5px;color:var(--green);font-size:18px}
 .home-offers-head .sub{margin:0;font-size:12px}
 .home-offers-link{flex:0 0 auto;color:var(--green);font-weight:800;font-size:12px;padding:8px 10px;border-radius:10px;background:#edf2eb}
-.home-offers-list{display:grid;gap:10px}
-.home-offer-item{position:relative;display:block;box-sizing:border-box;min-width:0;min-height:126px;overflow:hidden;padding:12px 126px 12px 14px;border:1px solid var(--line);border-radius:15px;background:#fff;box-shadow:0 4px 12px rgba(151,78,89,.045)}
-/* The image stays on the physical right side in both Arabic and English modes. */
-.home-offer-image-wrap{position:absolute;top:12px;right:12px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:102px;height:102px;min-height:0;max-height:none;padding:4px;overflow:hidden;border:1px solid rgba(234,208,201,.75);border-radius:12px;background:#fff0e8}
-.home-offer-image{display:block;width:100%;height:100%;max-height:none;object-fit:contain;object-position:center;border-radius:8px}
-.home-offer-no-image{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;width:100%;height:100%;min-height:0;border-radius:8px;background:linear-gradient(135deg,#c65f78,#a9435c);color:#fff}
-.home-offer-no-image span{font-size:26px;color:#f4d7a6;line-height:1}
-.home-offer-no-image small{font-size:9px;letter-spacing:.5px;text-transform:uppercase;font-weight:800;text-align:center}
-.home-offer-body{min-width:0;padding:1px 0 0;text-align:start}
-.home-offer-title{display:block;margin:0 0 5px;color:var(--green);font-size:14px;line-height:1.4;font-weight:900;overflow-wrap:anywhere}
-.home-offer-description{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;margin:0;color:var(--muted);font-size:12px;line-height:1.45;overflow-wrap:anywhere}
-.home-offer-expiry{display:inline-block;max-width:100%;margin-top:8px;padding:4px 7px;border-radius:999px;background:#fff0e8;color:#8b6a2f;font-size:10px;line-height:1.3;font-weight:800;overflow-wrap:anywhere}
+.home-offer-stage{position:relative;min-width:0;width:100%;overflow:hidden;border-radius:16px}
+.home-offer-slide{display:none!important;width:100%;min-width:0;margin:0}
+.home-offer-slide.is-active{display:block!important;animation:homeOfferFadeIn .35s ease both}
+.home-offer-item{position:relative;display:flex;flex-direction:column;box-sizing:border-box;width:100%;min-width:0;min-height:0;overflow:hidden;padding:0;border:1px solid var(--line);border-radius:16px;background:var(--paper,#fffaf5);box-shadow:0 4px 14px rgba(151,78,89,.08)}
+/* The offer photo fills the entire card width; the name and discount sit below it. */
+.home-offer-image-wrap{position:relative;inset:auto;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;height:auto;min-height:0;max-height:none;aspect-ratio:16/9;padding:0;overflow:hidden;border:0;border-radius:15px 15px 0 0;background:#f9e7e2}
+.home-offer-image{position:static;display:block;width:100%;height:100%;min-height:0;max-height:none;object-fit:cover;object-position:center;border-radius:0}
+.home-offer-no-image{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;width:100%;height:100%;min-height:0;aspect-ratio:16/9;border-radius:0;background:linear-gradient(135deg,#c65f78,#a9435c);color:#fff}
+.home-offer-no-image span{font-size:32px;color:#f4d7a6;line-height:1}
+.home-offer-no-image small{font-size:11px;letter-spacing:.3px;font-weight:800;text-align:center}
+.home-offer-body{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;width:100%;box-sizing:border-box;padding:14px 16px 16px;direction:rtl;text-align:right}
+.home-offer-title{display:block;margin:0;color:var(--green);font-size:clamp(15px,3.7vw,19px);line-height:1.4;font-weight:900;overflow-wrap:anywhere}
+.home-offer-description{display:block;margin:0;color:var(--rose-dark,#a8435d);font-size:clamp(13px,3.2vw,16px);line-height:1.5;font-weight:800;overflow-wrap:anywhere}
+.home-offer-expiry{display:inline-block;max-width:100%;margin-top:2px;padding:5px 9px;border-radius:999px;background:#fff0e8;color:#8b6a2f;font-size:11px;line-height:1.4;font-weight:800;overflow-wrap:anywhere}
+.home-offers-carousel .home-offers-head{margin-bottom:12px}
+.home-offer-controls{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:11px;min-height:34px}
+.home-offer-dots{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0}
+.home-offer-arrow{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--paper,#fffaf5);color:var(--rose-dark,#a8435d);font-size:23px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(151,78,89,.06)}
+.home-offer-arrow:focus-visible,.home-offer-dot:focus-visible{outline:2px solid var(--rose,#c65f78);outline-offset:2px}
+.home-offer-dot{width:7px;height:7px;padding:0;border:0;border-radius:50%;background:#dcc7c3;cursor:pointer;transition:width .2s,background .2s}
+.home-offer-dot.is-active{width:22px;border-radius:8px;background:var(--rose,#c65f78)}
+@keyframes homeOfferFadeIn{from{opacity:.45;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:560px){
   .home-offers-content{padding:12px}
   .home-offers-head{gap:8px;margin-bottom:10px}
   .home-offers-head h3{font-size:16px}
-  .home-offer-item{min-height:98px;padding:10px 94px 10px 10px;border-radius:13px}
-  .home-offer-image-wrap{top:10px;right:10px;width:74px;height:74px;padding:3px;border-radius:10px}
-  .home-offer-no-image span{font-size:21px}
-  .home-offer-no-image small{font-size:8px}
-  .home-offer-title{font-size:13px;margin-bottom:4px}
-  .home-offer-description{font-size:11px;line-height:1.4;-webkit-line-clamp:2}
-  .home-offer-expiry{margin-top:6px;padding:3px 6px;font-size:9px}
+  .home-offer-stage{border-radius:13px}
+  .home-offer-item{border-radius:13px}
+  .home-offer-image-wrap{aspect-ratio:16/9;border-radius:12px 12px 0 0}
+  .home-offer-body{gap:6px;padding:12px 13px 14px}
+  .home-offer-title{font-size:15px}
+  .home-offer-description{font-size:13px}
+  .home-offer-expiry{font-size:10px}
+  .home-offer-controls{gap:12px;margin-top:9px}
 }
+@media(prefers-reduced-motion:reduce){.home-offer-slide.is-active{animation:none}.home-offer-dot{transition:none}}
 
 
 /* Customer top navigation replaces the old fixed bottom tab bar. Colors stay theme-driven. */

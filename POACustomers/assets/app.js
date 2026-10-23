@@ -502,7 +502,7 @@ async function loadCustomerHomeOffers() {
       const production = String(offer.production_date || "").slice(0, 10);
       const expiry = String(offer.expiry_date || "").slice(0, 10);
       return (!production || production <= today) && (!expiry || expiry >= today);
-    }).slice(0, 3);
+    });
 
     if (!offers.length) {
       renderNotice(
@@ -567,11 +567,11 @@ async function loadCustomerHomeOffers() {
         if (Math.abs(delta) > 40) setActive(activeIndex + (delta < 0 ? 1 : -1));
         touchStartX = null;
       }, { passive: true });
-      let autoplay = window.setInterval(() => setActive(activeIndex + 1), 5000);
+      let autoplay = window.setInterval(() => setActive(activeIndex + 1), 10000);
       content.addEventListener("mouseenter", () => { window.clearInterval(autoplay); autoplay = null; });
-      content.addEventListener("mouseleave", () => { if (autoplay === null) autoplay = window.setInterval(() => setActive(activeIndex + 1), 5000); });
+      content.addEventListener("mouseleave", () => { if (autoplay === null) autoplay = window.setInterval(() => setActive(activeIndex + 1), 10000); });
       content.addEventListener("focusin", () => { if (autoplay !== null) window.clearInterval(autoplay); autoplay = null; });
-      content.addEventListener("focusout", event => { if (!content.contains(event.relatedTarget) && autoplay === null) autoplay = window.setInterval(() => setActive(activeIndex + 1), 5000); });
+      content.addEventListener("focusout", event => { if (!content.contains(event.relatedTarget) && autoplay === null) autoplay = window.setInterval(() => setActive(activeIndex + 1), 10000); });
     }
   } catch (error) {
     console.error("Could not load customer home offers:", error?.message || error);
