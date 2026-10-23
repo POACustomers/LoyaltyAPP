@@ -1,4 +1,5 @@
-const CACHE = "dina-corner-v33-offers-carousel-10s";
+const CACHE_NAMESPACE = "poac-app-";
+const CACHE = CACHE_NAMESPACE + "v35";
 const SHELL = [
   "./",
   "./index.html",
@@ -69,7 +70,7 @@ self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(key => key.startsWith("dina-corner-") && key !== CACHE).map(key => caches.delete(key))
+        keys.filter(key => (key.startsWith(CACHE_NAMESPACE) || key.startsWith("dina-corner-v33-")) && key !== CACHE).map(key => caches.delete(key))
       ))
       .then(() => self.clients.claim())
   );

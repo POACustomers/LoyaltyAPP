@@ -7,15 +7,15 @@
 <meta name="description" content="Dina's Corner — public menu">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Dina's Corner — Our Menu</title>
-<link rel="stylesheet" href="assets/style.css?v=20261022-unified-routing-order-points-v1">
-<link rel="stylesheet" href="assets/menu-display.css?v=20261019-price-optional">
+<link rel="stylesheet" href="assets/style.css?v=20261024-presale-candidate">
+<link rel="stylesheet" href="assets/menu-display.css?v=20261024-presale-candidate">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="assets/tenant-config.js?v=20261019-tenant-config"></script><script src="assets/tenant-branding.js?v=20261019-tenant-branding"></script>
+<script src="assets/tenant-config.js?v=20261024-presale-candidate"></script><script src="assets/tenant-branding.js?v=20261024-presale-candidate"></script>
 </head>
 <body data-menu-standalone>
 <header class="topbar">
   <a class="brand brand-image" href="index.html" aria-label="Dina's Corner home">
-    <img class="brand-logo" src="assets/dina-corner-icon.png" alt="Dina's Corner">
+    <img class="brand-logo" src="assets/dina-corner-icon.png?v=20261024-presale-candidate" alt="Dina's Corner">
   </a>
   <a class="btn soft" href="index.html" style="text-decoration:none">Home</a>
 </header>
@@ -30,8 +30,12 @@
     <div id="menuItemsView" hidden></div>
   </section>
 </main>
-<script src="assets/config.js?v=20261019-currency-egp"></script>
-<script src="assets/menu-display.js?v=20261019-currency-egp"></script>
-
+<script src="assets/config.js?v=20261024-presale-candidate"></script>
+<script src="assets/menu-display.js?v=20261024-presale-candidate"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=20261024-presale-candidate').catch(() => {}));
+}
+</script>
 </body>
 </html>

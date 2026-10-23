@@ -1,23 +1,32 @@
-# POACustomers — Username-only customer registration
+# POACustomers — تسجيل الدخول باسم المستخدم
 
-Customer registration now shows only:
-- Username (required; 3–24 chars: a-z, 0-9, dot, underscore, hyphen)
-- Mobile number (optional)
-- Date of birth (optional)
-- Password (required; minimum 6 chars)
+تستخدم الواجهة `username-login` لربط اسم المستخدم بحساب Supabase Auth، ثم تمرير كلمة المرور إلى المصادقة الرسمية. لا تكشف الوظيفة البريد الداخلي، ولا تمنح دورًا أو صلاحية جديدة. لا تعمل هذه الميزة على الموقع الحي إلا بعد نشر Edge Function وإعداد اسم المستخدم لكل حساب.
 
-Customer sign-in uses username + password. The existing Admin, GM and Staff sign-in pages are unchanged and still use the current email-based management accounts.
+## إعداد قاعدة البيانات
 
-## Required Supabase setup
+1. خذ نسخة احتياطية من قاعدة POACustomers الحالية.
+2. شغّل `supabase_username_setup.sql` بعد مراجعة التكرارات؛ الملف يفحص تعارض الأسماء قبل توحيدها وإنشاء فهرس فريد.
+3. عيّن `profiles.username` فريدًا لكل حساب GM/Admin/Staff موجود. لا تغيّر `role` ضمن هذه الخطوة.
+4. لا تسمح لنموذج التسجيل باختيار دور. الحسابات الجديدة يجب أن تبدأ بدور `customer` عبر trigger الخادم.
 
-1. Open the SQL Editor in the **POACustomers Supabase project**.
-2. Run `supabase_username_setup.sql`.
-3. In Supabase Dashboard, open **Authentication → Sign In / Providers → Email** and turn **Confirm email OFF**. Username-only customers do not have an email inbox for confirmation.
-4. Deploy the updated files to GitHub Pages and hard-refresh the site.
-5. Register a test customer with a unique username.
+## نشر وظيفة الدخول
 
-## Important technical note
+من جذر المستودع، اربط Supabase CLI بالمشروع الصحيح ثم نفّذ:
 
-Supabase Auth internally requires an email identifier for email/password authentication. This implementation generates an internal synthetic address from the username (`username@poacustomers.invalid`) so customers never need to enter or see an email. Do not enable email confirmation for this flow. Do not use the synthetic address for email delivery or password recovery. A future password recovery flow should use a verified phone-based process or a trusted admin reset.
+```bash
+supabase functions deploy username-login
+supabase secrets set ALLOWED_ORIGINS="https://poacustomers.github.io"
+```
 
-The migration adds a `username` column and a unique index for customer usernames. It does not delete customer records, points, rewards, or transactions. Existing customer accounts created with real email addresses are not automatically converted; plan a migration for them before relying on username login for those accounts.
+`ALLOWED_ORIGINS` يجب أن يطابق أصل الموقع المنشور تمامًا. عند نشر نسخة مستقلة لعميل آخر، استخدم نطاقه الفعلي.
+
+**لا تنشئ أسرارًا مخصصة بأسماء `SUPABASE_URL` أو `SUPABASE_SECRET_KEYS` أو `SUPABASE_PUBLISHABLE_KEYS`.** بيئة Edge Functions المستضافة تزوّد الوظيفة بمتغيرات Supabase الافتراضية، و`createSupabaseContext` يجهز عميلًا عاديًا وعميل إدارة على الخادم. مفاتيح `secret` لا توضع مطلقًا في HTML أو JavaScript أو GitHub.
+
+- `supabase/config.toml` ملف TOML لإعداد Supabase CLI؛ **ليس SQL ولا يُلصق في SQL Editor**.
+- `verify_jwt = false` مطلوب هنا لأن الدالة تبدأ المصادقة قبل وجود جلسة مستخدم؛ لذلك تتحقق الدالة بنفسها من اسم المستخدم وكلمة المرور وتعيد جلسة فقط، برسالة خطأ عامة.
+- لأن الدالة تقبل الطلبات العامة، اختبر حماية محاولات الدخول وراقب إساءة الاستخدام قبل التوسع. عند نمو عدد المستخدمين، أضف rate limiting/CAPTCHA مناسبًا قبل الإطلاق الواسع.
+- حسابات العملاء ذات البريد الداخلي `username@poacustomers.invalid` لا تستقبل رسائل؛ يلزم اعتماد طريقة موثوقة لاسترداد كلمة المرور ودعم العملاء قبل البيع.
+
+## الاختبار
+
+اختبر حسابًا واحدًا من كل دور، وحسابًا غير نشط، وكلمة مرور خاطئة. تأكد أن العميل لا يصل لبوابات الإدارة، وأن صفحات الدور تعتمد على `profiles.role` المحفوظ في قاعدة البيانات، مع RLS صحيحة. إخفاء الصفحات وحده ليس أمانًا.
