@@ -6,10 +6,10 @@
 <meta name="theme-color" content="#C65F78">
 <link rel="manifest" href="../manifest.webmanifest">
 <title>Offers Management</title>
-<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/style.css?v=20261024-presale-candidate">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="../assets/tenant-config.js?v=20261023-offers-fix"></script>
-<script src="../assets/tenant-branding.js?v=20261023-offers-fix"></script>
+<script src="../assets/tenant-config.js?v=20261024-presale-candidate"></script>
+<script src="../assets/tenant-branding.js?v=20261024-presale-candidate"></script>
 <style>
 .offer-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 0}
 .offer-admin-row{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
@@ -25,7 +25,7 @@
 </style>
 </head>
 <body data-page="gm-offers">
-<header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" aria-label="Sign out">↪</button></header>
+<header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-presale-candidate" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" aria-label="Sign out">↪</button></header>
 <main class="container">
   <h1 class="title">Offers Management</h1>
   <p class="sub">Create, edit, pause, or delete customer offers.</p>
@@ -48,8 +48,8 @@
   </div>
 </main>
 <nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html"><b>☰</b>Menu</a><a href="gm-settings.html" class="active"><b>⚙</b>Settings</a></div></nav>
-<script src="../assets/config.js?v=20261023-offers-fix"></script>
-<script src="../assets/app.js?v=20261023-offers-fix"></script>
+<script src="../assets/config.js?v=20261024-presale-candidate"></script>
+<script src="../assets/app.js?v=20261024-presale-candidate"></script>
 <script>
 (async function () {
   'use strict';
@@ -241,10 +241,6 @@
   }
 })();
 </script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js').catch(() => {}));
-}
-</script>
+
 </body>
 </html>
