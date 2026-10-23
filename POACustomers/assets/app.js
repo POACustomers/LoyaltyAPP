@@ -29,19 +29,6 @@ const KEYS = {
 
 const $ = (id) => document.getElementById(id);
 
-// The repository has one canonical login at the GitHub Pages project root.
-function getProjectRootPath() {
-  const path = window.location.pathname || '/';
-  const marker = '/POACustomers/';
-  const index = path.toLowerCase().indexOf(marker.toLowerCase());
-  if (index >= 0) return path.slice(0, index + 1);
-  return new URL('./', window.location.href).pathname;
-}
-function getProjectRootUrl(relativePath = 'index.html') {
-  return new URL(relativePath, window.location.origin + getProjectRootPath()).href;
-}
-
-
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, m => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
@@ -188,7 +175,8 @@ async function getStaffProfile() {
 async function guardRole(allowedRoles) {
   const session = await getSession();
   if (!session) {
-    location.replace(getProjectRootUrl());
+    const role = allowedRoles[0];
+    location.href = role === "customer" ? "customer-login.html" : role === "gm" ? "gm-login.html" : role === "admin" ? "admin-login.html" : "staff-login.html";
     return null;
   }
 
@@ -198,7 +186,7 @@ async function guardRole(allowedRoles) {
   if (!profile || (!allowedRoles.includes(profile.role) && !adminPortalAccess)) {
     toast("You do not have access to this portal.", false);
     await sb.auth.signOut();
-    location.replace(getProjectRootUrl());
+    location.href = "../index.html";
     return null;
   }
   return profile;
@@ -460,7 +448,7 @@ async function logout() {
   await sb.auth.signOut();
   localStorage.removeItem(KEYS.customerToken);
   localStorage.removeItem(KEYS.staffCustomer);
-  location.replace(getProjectRootUrl());
+  location.href = "../index.html";
 }
 
 function escapeOfferHtml(value) {
@@ -486,27 +474,52 @@ async function loadCustomerHomeOffers() {
   if (!content) return;
 
   const today = getLocalDateString();
+  const renderNotice = (title, detail, isError = false) => {
+    content.className = "home-offers-content home-offers-notice";
+    content.innerHTML = `
+      <div class="home-offers-head"><div><h3>${escapeOfferHtml(title)}</h3>
+      <p class="sub">${escapeOfferHtml(detail)}</p></div></div>
+      ${isError ? '<button type="button" class="btn soft" id="retryHomeOffers">إعادة تحميل العروض</button>' : ""}`;
+    const retry = $("retryHomeOffers");
+    if (retry) retry.addEventListener("click", () => { void loadCustomerHomeOffers(); }, { once: true });
+  };
+
   try {
+    if (!sb || typeof sb.from !== "function") throw new Error("اتصال قاعدة البيانات غير جاهز على صفحة العميل.");
+
+    // Fetch active offers first. Date eligibility is checked here as well as by RLS,
+    // so a client-side date-format edge case cannot silently hide a valid offer.
     const { data, error } = await sb
       .from("offers")
       .select("id,title,product_name,description,production_date,expiry_date,image_url,status,created_at")
       .eq("status", "active")
-      .lte("production_date", today)
-      .gte("expiry_date", today)
       .order("created_at", { ascending: false })
-      .limit(3);
+      .limit(20);
 
-    // If offers are not configured yet, preserve the approved fallback message.
     if (error) throw error;
-    const offers = Array.isArray(data) ? data : [];
-    if (!offers.length) return;
+    const activeRows = Array.isArray(data) ? data : [];
+    const offers = activeRows.filter(offer => {
+      const production = String(offer.production_date || "").slice(0, 10);
+      const expiry = String(offer.expiry_date || "").slice(0, 10);
+      return (!production || production <= today) && (!expiry || expiry >= today);
+    }).slice(0, 3);
+
+    if (!offers.length) {
+      renderNotice(
+        "العروض الخاصة",
+        activeRows.length
+          ? "لا توجد عروض سارية اليوم. راجع تاريخ الإنتاج والانتهاء وحالة العرض من صفحة GM."
+          : "لا توجد عروض نشطة متاحة لهذا الحساب حاليًا. إذا كان هناك عرض نشط، راجع صلاحيات قراءة العروض في Supabase."
+      );
+      return;
+    }
 
     const cards = offers.map((offer, index) => {
       const title = offer.product_name || offer.title || "Special Offer";
       const description = offer.description || "A special offer is available for customers.";
       const image = safeOfferImageSource(offer.image_url);
       const expiry = offer.expiry_date
-        ? `<span class="home-offer-expiry">Valid through ${escapeOfferHtml(offer.expiry_date)}</span>`
+        ? `<span class="home-offer-expiry">Valid through ${escapeOfferHtml(String(offer.expiry_date).slice(0, 10))}</span>`
         : "";
       return `
         <article class="home-offer-slide${index === 0 ? " is-active" : ""}" data-offer-slide="${index}" aria-label="Offer ${index + 1} of ${offers.length}">
@@ -561,11 +574,14 @@ async function loadCustomerHomeOffers() {
       content.addEventListener("focusout", event => { if (!content.contains(event.relatedTarget) && autoplay === null) autoplay = window.setInterval(() => setActive(activeIndex + 1), 5000); });
     }
   } catch (error) {
-    // Keep the page usable if offer read policies have not been applied yet.
-    console.warn("Could not load customer home offers:", error?.message || error);
+    console.error("Could not load customer home offers:", error?.message || error);
+    renderNotice(
+      "تعذر تحميل العروض",
+      `سبب المشكلة: ${error?.message || "خطأ غير معروف"}. تأكد من اتصال الإنترنت وصلاحيات قراءة العروض في Supabase ثم أعد المحاولة.`,
+      true
+    );
   }
 }
-
 async function loadCustomerHome() {
   const profile = await guardRole(["customer"]);
   if (!profile) return;
@@ -1739,10 +1755,7 @@ async function init() {
   const page = document.body.dataset.page;
   bindCustomerNav(page);
   try {
-    if (["customer-login", "staff-login", "gm-login", "admin-login"].includes(page)) {
-      location.replace(getProjectRootUrl());
-      return;
-    } else if (page === "public-login") {
+    if (page === "public-login") {
       const form = $("unifiedLoginForm");
       if (form) form.onsubmit = async (event) => { event.preventDefault(); await loginAuto(); };
       await redirectRootSession();
@@ -1816,18 +1829,5 @@ async function init() {
 document.addEventListener("DOMContentLoaded", init);
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", async () => {
-    try {
-      const rootPath = getProjectRootPath();
-      const legacyNestedWorkerPath = (rootPath + "POACustomers/sw.js").toLowerCase();
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.filter(reg => {
-        const workers = [reg.active, reg.waiting, reg.installing].filter(Boolean);
-        return reg.scope.toLowerCase().startsWith((rootPath + "POACustomers/").toLowerCase()) &&
-          workers.some(worker => new URL(worker.scriptURL).pathname.toLowerCase() === legacyNestedWorkerPath);
-      }).map(reg => reg.unregister()));
-      const workerUrl = new URL("sw.js?v=20261022-unified-routing-order-points-v1", window.location.origin + rootPath).href;
-      await navigator.serviceWorker.register(workerUrl, { scope: rootPath });
-    } catch (error) { console.warn("Unified service worker registration failed:", error); }
-  });
+  window.addEventListener("load", () => navigator.serviceWorker.register(location.pathname.includes("/customer/") || location.pathname.includes("/gm/") || location.pathname.includes("/staff/") || location.pathname.includes("/admin/") ? "../sw.js" : "./sw.js").catch(() => {}));
 }
