@@ -102,3 +102,26 @@ body.menu-cart-open{overflow:hidden!important}
  .menu-cart-line-total{max-width:80px;font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){.menu-cart-drawer{animation:none}}
+
+
+/* Dina's Corner menu refinement: remove outer page frame, keep individual item cards. */
+body[data-page="customer-menu"]::before{display:none!important;content:none!important}
+body[data-page="customer-menu"] .menu-panel.card{padding:4px 0!important;border:0!important;box-shadow:none!important;background:transparent!important;border-radius:0!important}
+body[data-page="customer-menu"] .menu-icon{font-size:21px!important}
+body[data-page="customer-menu"] .menu-head-icon{width:36px!important;height:36px!important;flex-basis:36px!important;border-radius:11px!important;font-size:17px!important}
+body[data-page="customer-menu"] .menu-back{width:36px!important;height:36px!important;flex-basis:36px!important;min-width:36px!important;border-radius:11px!important;font-size:19px!important}
+body[data-page="customer-menu"] .menu-placeholder{font-size:23px!important}
+body[data-page="customer-menu"] .menu-cart-trigger-icon,body[data-page="customer-menu"] .menu-cart-trigger-icon svg{width:21px!important;height:21px!important}
+body[data-page="customer-menu"] .menu-cart-trigger-icon{flex-basis:21px!important}
+body[data-page="customer-menu"] .customer-menu-icon{width:21px!important;height:21px!important;flex-basis:21px!important;font-size:15px!important}
+body[data-page="customer-menu"] .customer-top-menu-symbol{width:19px!important;height:19px!important;stroke-width:1.8!important}
+@media(max-width:420px){
+  body[data-page="customer-menu"] .menu-panel.card{padding:2px 0!important}
+  body[data-page="customer-menu"] .menu-icon{font-size:20px!important}
+  body[data-page="customer-menu"] .menu-head-icon{width:34px!important;height:34px!important;flex-basis:34px!important;font-size:16px!important}
+  body[data-page="customer-menu"] .menu-back{width:34px!important;height:34px!important;flex-basis:34px!important;min-width:34px!important;font-size:18px!important}
+  body[data-page="customer-menu"] .menu-item-image,body[data-page="customer-menu"] .menu-placeholder{width:60px!important;height:60px!important;flex-basis:60px!important}
+  body[data-page="customer-menu"] .menu-placeholder{font-size:21px!important}
+  body[data-page="customer-menu"] .menu-cart-trigger-icon,body[data-page="customer-menu"] .menu-cart-trigger-icon svg{width:20px!important;height:20px!important}
+  body[data-page="customer-menu"] .menu-cart-trigger-icon{flex-basis:20px!important}
+}
