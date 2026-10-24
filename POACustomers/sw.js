@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v38-offer-order-bottomnav";
+const CACHE = CACHE_NAMESPACE + "v39-points-header-theme";
 const SHELL = [
   "./",
   "./index.html",
