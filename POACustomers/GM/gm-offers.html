@@ -6,10 +6,10 @@
 <meta name="theme-color" content="#C65F78">
 <link rel="manifest" href="../manifest.webmanifest">
 <title>Offers Management</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261024-presale-candidate">
+<link rel="stylesheet" href="../assets/style.css?v=20261024-offer-order-bottomnav-v1">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="../assets/tenant-config.js?v=20261024-presale-candidate"></script>
-<script src="../assets/tenant-branding.js?v=20261024-presale-candidate"></script>
+<script src="../assets/tenant-config.js?v=20261024-offer-order-bottomnav-v1"></script>
+<script src="../assets/tenant-branding.js?v=20261024-offer-order-bottomnav-v1"></script>
 <style>
 .offer-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 0}
 .offer-admin-row{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
@@ -25,14 +25,14 @@
 </style>
 </head>
 <body data-page="gm-offers">
-<header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-presale-candidate" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" aria-label="Sign out">↪</button></header>
+<header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-offer-order-bottomnav-v1" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" aria-label="Sign out">↪</button></header>
 <main class="container">
   <h1 class="title">Offers Management</h1>
   <p class="sub">Create, edit, pause, or delete customer offers.</p>
   <div class="card" id="offerFormCard">
     <h3 id="offerFormHeading">Add Offer</h3>
     <input id="gmOfferId" type="hidden" value="">
-    <div class="field"><label for="gmOfferName">Product Name *</label><input class="input" id="gmOfferName" placeholder="Product name" maxlength="160" required></div>
+    <div class="field"><label for="gmOfferName">Menu Item / Product Name *</label><input class="input" id="gmOfferName" list="gmOfferMenuItemsList" placeholder="Choose or enter the exact menu item name" maxlength="160" required><datalist id="gmOfferMenuItemsList"></datalist><small class="sub">Use the exact item name from Menu. It lets the customer open the offer details and add the correct item to the basket.</small></div>
     <div class="field"><label for="gmOfferDescription">Description</label><input class="input" id="gmOfferDescription" placeholder="Offer description" maxlength="500"></div>
     <div class="field"><label for="gmOfferProduction">Production Date *</label><input class="input" id="gmOfferProduction" type="date" required></div>
     <div class="field"><label for="gmOfferExpiry">Expiry Date *</label><input class="input" id="gmOfferExpiry" type="date" required></div>
@@ -48,8 +48,8 @@
   </div>
 </main>
 <nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html"><b>☰</b>Menu</a><a href="gm-settings.html" class="active"><b>⚙</b>Settings</a></div></nav>
-<script src="../assets/config.js?v=20261024-presale-candidate"></script>
-<script src="../assets/app.js?v=20261024-presale-candidate"></script>
+<script src="../assets/config.js?v=20261024-offer-order-bottomnav-v1"></script>
+<script src="../assets/app.js?v=20261024-offer-order-bottomnav-v1"></script>
 <script>
 (async function () {
   'use strict';
@@ -104,6 +104,22 @@
       return `<article class="offer-admin-row">${image}<div class="offer-admin-content"><strong>${esc(name)}</strong><small>${esc(offer.description || 'No description')}<br>Production: ${esc(offer.production_date || '—')} · Expiry: ${esc(offer.expiry_date || '—')}</small><div style="margin-top:6px"><span class="badge">${esc(offer.status || 'unknown')}</span></div><div class="offer-admin-buttons"><button class="btn soft" type="button" data-offer-action="edit" data-offer-id="${esc(offer.id)}">EDIT</button><button class="btn danger" type="button" data-offer-action="delete" data-offer-id="${esc(offer.id)}">DELETE</button></div></div></article>`;
     }).join('');
   }
+  async function loadMenuItemSuggestions() {
+    const datalist = $('gmOfferMenuItemsList');
+    if (!datalist) return;
+    try {
+      const result = await sb.from('menu_items').select('name,is_active,status').order('name', {ascending:true});
+      if (result.error) throw result.error;
+      const names = [...new Set((Array.isArray(result.data) ? result.data : [])
+        .filter(item => item && String(item.name || '').trim() && item.is_active !== false && String(item.status || 'active').toLowerCase() !== 'inactive')
+        .map(item => String(item.name).trim()))];
+      datalist.innerHTML = names.map(name => `<option value="${esc(name)}"></option>`).join('');
+    } catch (error) {
+      // Suggestions are an enhancement; do not block offer management if menu data is temporarily unavailable.
+      console.warn('Could not load menu item suggestions for offers:', error?.message || error);
+    }
+  }
+
   async function loadOffers() {
     list.innerHTML = '<div class="empty">Loading offers…</div>';
     refreshBtn.disabled = true;
@@ -234,7 +250,7 @@
       list.innerHTML = '<div class="alert">No active GM/Admin profile was returned. Sign in again with a GM/Admin account.</div>';
       return;
     }
-    await loadOffers();
+    await Promise.all([loadOffers(), loadMenuItemSuggestions()]);
   } catch (error) {
     list.innerHTML = `<div class="alert">Could not open offer management: ${esc(error?.message || error)}. Refresh the page; if it continues, check the Supabase login/session and table policies.</div>`;
     setMessage('Offer management did not initialize. See the Current Offers message.', 'error');
