@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v35";
+const CACHE = CACHE_NAMESPACE + "v37-qr-share";
 const SHELL = [
   "./",
   "./index.html",
@@ -18,6 +18,7 @@ const SHELL = [
   "./assets/tenant-config.js",
   "./assets/tenant-branding.js",
   "./assets/customer-navigation.js",
+  "./assets/customer-home-categories.js",
   "./assets/pwa-install.js",
   "./assets/pwa-install.css",
   "./assets/tenant-branding/logo.png",
@@ -36,6 +37,7 @@ const SHELL = [
   "./customer/customer-login.html",
   "./customer/customer-register.html",
   "./customer/customer-home.html",
+  "./customer/customer-card.html",
   "./customer/customer-menu.html",
   "./customer/customer-orders.html",
   "./customer/customer-order-history.html",
@@ -48,6 +50,7 @@ const SHELL = [
   "./GM/gm-menu.html",
   "./GM/gm-offers.html",
   "./GM/gm-locations.html",
+  "./GM/gm-delivery-zones.html",
   "./admin/admin-login.html",
   "./admin/admin-dashboard.html",
   "./admin/admin-settings.html",
