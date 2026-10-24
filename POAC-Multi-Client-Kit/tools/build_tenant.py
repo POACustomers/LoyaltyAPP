@@ -23,6 +23,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("tenant_json", help="Tenant JSON file (relative to the package root or absolute)")
     ap.add_argument("--output", help="Output directory; default: dist/<tenant_id>")
+    ap.add_argument("--force", action="store_true", help="Replace an existing output directory after path safety checks")
     args = ap.parse_args()
     cfg_path = Path(args.tenant_json)
     if not cfg_path.is_absolute(): cfg_path = (PACKAGE_ROOT / cfg_path).resolve()
@@ -57,7 +58,19 @@ def main() -> None:
 
     out = Path(args.output) if args.output else Path("dist") / cfg["tenant_id"]
     if not out.is_absolute(): out = (PACKAGE_ROOT / out).resolve()
-    if out.exists(): shutil.rmtree(out)
+    # Never allow a build to erase source folders or arbitrary existing directories by default.
+    forbidden = {PACKAGE_ROOT.resolve(), KIT.resolve(), SOURCE_APP.resolve(), (KIT / "tenants").resolve()}
+    resolved_out = out.resolve()
+    in_source_app = resolved_out.is_relative_to(SOURCE_APP.resolve())
+    in_kit = resolved_out.is_relative_to(KIT.resolve())
+    would_cover_source = SOURCE_APP.resolve().is_relative_to(resolved_out)
+    if resolved_out in forbidden or in_source_app or in_kit or would_cover_source:
+        fail(f"unsafe output path; choose a new folder outside the source and kit directories: {out}")
+    if out.exists():
+        if not args.force:
+            fail(f"output directory already exists: {out}; choose another path or pass --force to replace it")
+        if not out.is_dir(): fail(f"output path is not a directory: {out}")
+        shutil.rmtree(out)
     shutil.copytree(SOURCE_APP, out)
     assets = out / "assets"
     tenant_assets = assets / "tenant-branding"
@@ -129,12 +142,14 @@ def main() -> None:
     # Give every deployment a cache namespace of its own and list tenant configuration assets.
     sw_path = out / "sw.js"
     sw = sw_path.read_text(encoding="utf-8")
-    source_cache_match = re.search(r'const CACHE = "([^"]+)";', sw)
-    source_cache_name = source_cache_match.group(1) if source_cache_match else "source-v1"
-    # A source revision suffix ensures a newly built tenant deployment gets a fresh cache.
-    revision_match = re.search(r"-v(\d+)", source_cache_name)
-    cache_revision = revision_match.group(1) if revision_match else "1"
-    sw = re.sub(r'const CACHE = "[^"]+";', f'const CACHE = "poac-{cfg["tenant_id"]}-v{cache_revision}";', sw, count=1)
+    source_cache_match = re.search(r'const CACHE = [^;]+;', sw)
+    source_cache_name = source_cache_match.group(0) if source_cache_match else 'const CACHE = "source-v1";'
+    # A new build owns a tenant-specific cache namespace and only cleans that tenant's old versions.
+    cache_namespace = f'poac-tenant-{cfg["tenant_id"]}-'
+    sw = re.sub(r'const CACHE_NAMESPACE = [^;]+;', f'const CACHE_NAMESPACE = "{cache_namespace}";', sw, count=1)
+    sw = re.sub(r'const CACHE = [^;]+;', f'const CACHE = CACHE_NAMESPACE + "v35";', sw, count=1)
+    sw = re.sub(r'keys\.filter\(key => .*?\)\.map\(key => caches\.delete\(key\)\)',
+                'keys.filter(key => key.startsWith(CACHE_NAMESPACE) && key !== CACHE).map(key => caches.delete(key))', sw, count=1)
     if '"./assets/tenant-config.js"' not in sw:
         sw = sw.replace('"./assets/config.js",', '"./assets/config.js",\n  "./assets/tenant-config.js",\n  "./assets/tenant-branding.js",\n  "./assets/tenant-branding/logo.png",\n  "./assets/tenant-branding/icon.png",')
     theme_cache_entry = f'"./assets/{theme_css_name}"'
