@@ -207,10 +207,11 @@
     const areaName = zone.zone_name || zone.name || 'Delivery area';
     const fee = zone.delivery_fee == null ? 0 : Number(zone.delivery_fee);
     const minimum = zone.minimum_order_amount == null ? 0 : Number(zone.minimum_order_amount);
-    const distance = Number.isFinite(Number(distanceKm)) ? '<span class="delivery-zone-chip">Approx. distance: ' + esc(Number(distanceKm).toFixed(2)) + ' km</span>' : '';
-    box.innerHTML = '<strong>' + esc(isError ? 'Delivery area unavailable' : areaName) + '</strong>' +
-      '<span>' + esc(isError ? (zone.message || 'Your location is outside the configured areas.') : ('Your order will be routed to ' + branchName + '.')) + '</span>' +
-      (!isError ? '<div class="delivery-zone-facts"><span class="delivery-zone-chip">Delivery fee: ' + esc(money(fee)) + '</span><span class="delivery-zone-chip">Minimum items total: ' + esc(money(minimum)) + '</span>' + distance + '</div>' : '');
+    const distance = Number.isFinite(Number(distanceKm)) ? '<span class="delivery-zone-chip">Distance ' + esc(Number(distanceKm).toFixed(2)) + ' km</span>' : '';
+    box.innerHTML = '<div class="delivery-zone-heading"><strong>' + esc(isError ? 'Delivery area unavailable' : areaName) + '</strong>' +
+      (!isError ? '<span class="delivery-zone-route">· ' + esc(branchName) + '</span>' : '') + '</div>' +
+      (isError ? '<span class="delivery-zone-route">' + esc(zone.message || 'Outside delivery area.') + '</span>' :
+      '<div class="delivery-zone-facts"><span class="delivery-zone-chip">Fee ' + esc(money(fee)) + '</span><span class="delivery-zone-chip">Min. ' + esc(money(minimum)) + '</span>' + distance + '</div>');
     box.hidden = false;
     box.classList.toggle('error', !!isError);
   }
@@ -275,13 +276,13 @@
     const button = $('useMyLocationBtn');
     if (!navigator.geolocation) { setLocationStatus('Location is not available in this browser. Paste a Google Maps link instead.', 'error'); return; }
     if (button) { button.disabled = true; button.textContent = 'GETTING LOCATION…'; }
-    setLocationStatus('Waiting for your device location permission…');
+    setLocationStatus('Waiting for location permission…');
     navigator.geolocation.getCurrentPosition(async position => {
       const lat = Number(position.coords.latitude), lng = Number(position.coords.longitude);
       $('deliveryLatitude').value = String(lat);
       $('deliveryLongitude').value = String(lng);
       $('deliveryMapUrl').value = 'https://www.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng);
-      setLocationStatus('Your current location is attached. Checking which delivery area covers it…');
+      setLocationStatus('Checking delivery coverage…');
       await resolveDeliveryZoneForCoordinates(lat, lng);
       if (button) { button.disabled = false; button.textContent = '⌖ UPDATE MY LOCATION'; }
     }, error => {
@@ -310,7 +311,7 @@
         select.innerHTML = '<option value="">No saved address yet — add one in My Profile</option>';
         selectedDeliveryInstructions = '';
         selectedSavedAddressText = '';
-        setLocationStatus('No saved map-pin address found. Use your current location or add a map pin in My Profile.', 'error');
+        setLocationStatus('No map pin saved. Update your location or manage saved addresses.', 'error');
         return;
       }
       select.innerHTML = '<option value="">Choose another saved address</option>' + savedDeliveryAddresses.map(row => {
@@ -337,7 +338,7 @@
       });
     } catch (error) {
       select.innerHTML = '<option value="">Saved addresses unavailable</option>';
-      setLocationStatus('Could not load saved addresses. You can add/manage them in My Profile. Details: ' + (error?.message || error), 'error');
+      setLocationStatus('Could not load saved addresses. Try again or manage them in My Profile.', 'error');
     }
   }
 
@@ -350,13 +351,13 @@
     selectedDeliveryInstructions = row.delivery_instructions || '';
     selectedSavedAddressText = row.full_address || '';
     if (row.latitude != null && row.longitude != null) {
-      setLocationStatus((row.label || 'Saved address') + ' selected. Checking delivery coverage…');
+      setLocationStatus('Saved address selected. Checking coverage…');
       await resolveDeliveryZoneForCoordinates(Number(row.latitude), Number(row.longitude));
     } else {
       $('deliveryZone').value = '';
       resolvedZoneDistanceKm = null;
       updateZoneSummary(null);
-      setLocationStatus((row.label || 'Saved address') + ' has no saved map pin. Add a pin in My Profile or use your current location to route automatically.', 'error');
+      setLocationStatus('This address has no map pin. Choose another address or update your location.', 'error');
     }
     updateOrderSummary();
     refreshPlaceButton();
@@ -427,7 +428,7 @@
       deliveryZones = (Array.isArray(data) ? data : []).filter(zone => zone && zone.id && activeIds.has(String(zone.location_id)));
       if (!deliveryZones.length) {
         select.innerHTML = '<option value="">No active delivery areas configured</option>';
-        setLocationStatus('Delivery is not available until the manager configures delivery areas and assigns each one to an active branch.', 'error');
+        setLocationStatus('Delivery areas are not available yet. Please try pickup.', 'error');
         return;
       }
       select.innerHTML = '<option value="">Choose your area</option>' + deliveryZones.map(zone => {
@@ -443,7 +444,7 @@
     } catch (error) {
       deliveryZones = [];
       select.innerHTML = '<option value="">Delivery areas unavailable</option>';
-      setLocationStatus('Could not load delivery areas. The manager may need to run the delivery-zones setup SQL. Details: ' + (error?.message || error), 'error');
+      setLocationStatus('Could not load delivery areas. Please try again later.', 'error');
     }
   }
 
@@ -464,7 +465,7 @@
         $('deliveryZone').value = '';
         resolvedZoneDistanceKm = null;
         updateZoneSummary({ message: result?.message || 'Your location is outside the configured delivery areas.' }, null, true);
-        setLocationStatus(result?.message || 'Your location is outside the configured delivery areas.', 'error');
+        setLocationStatus('Your location is outside the delivery areas.', 'error');
         updateOrderSummary();
         refreshPlaceButton();
         return;
@@ -473,7 +474,7 @@
       if (!zone) {
         $('deliveryZone').value = '';
         updateZoneSummary({ message: 'The matching area is not available for ordering. Ask the manager to check the branch and area settings.' }, null, true);
-        setLocationStatus('The matching area is not available for ordering. Ask the manager to check the branch and area settings.', 'error');
+        setLocationStatus('This delivery area is unavailable. Choose another area.', 'error');
         updateOrderSummary();
         refreshPlaceButton();
         return;
@@ -481,14 +482,14 @@
       $('deliveryZone').value = zone.id;
       resolvedZoneDistanceKm = result.distance_km;
       updateZoneSummary({ ...zone, zone_name: result.zone_name, branch_name: result.branch_name, delivery_fee: result.delivery_fee, minimum_order_amount: result.minimum_order_amount }, result.distance_km, false);
-      setLocationStatus('Delivery area matched: ' + result.zone_name + '. Your order will go to ' + result.branch_name + '.', 'success');
+      setLocationStatus('Location confirmed · ' + result.zone_name + ' · ' + result.branch_name, 'success');
       updateOrderSummary();
       refreshPlaceButton();
     } catch (error) {
       $('deliveryZone').value = '';
       resolvedZoneDistanceKm = null;
       updateZoneSummary({ message: 'Could not check delivery coverage: ' + (error?.message || error) }, null, true);
-      setLocationStatus('Could not check delivery coverage. Confirm the zone setup in Supabase. ' + (error?.message || error), 'error');
+      setLocationStatus('Could not confirm this location. Try again.', 'error');
       updateOrderSummary();
       refreshPlaceButton();
     }

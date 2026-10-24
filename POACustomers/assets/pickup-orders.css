@@ -95,3 +95,33 @@
 .delivery-zone-summary.error{background:#fff4f2;border-color:#efcfca;color:#923e36}
 .delivery-zone-summary[hidden]{display:none!important}
 @media(max-width:560px){.delivery-zone-summary{font-size:11px}.delivery-zone-summary .delivery-zone-chip{font-size:10px}}
+
+
+/* Compact, polished delivery checkout copy and spacing */
+.delivery-details{padding:13px;margin:12px 0;border-radius:15px;background:rgba(255,250,246,.78)}
+.delivery-details h3{margin-bottom:8px;font-size:14px}
+.delivery-details .pickup-field{margin:9px 0;gap:5px}
+.delivery-zone-summary{padding:10px 12px;margin:8px 0;font-size:12px;line-height:1.4}
+.delivery-zone-summary strong{font-size:12px;margin-bottom:2px}
+.delivery-zone-route{display:block;font-size:12px}
+.delivery-zone-summary .delivery-zone-facts{gap:6px;margin-top:8px}
+.delivery-zone-summary .delivery-zone-chip{padding:5px 8px;font-size:10px}
+.delivery-location-tools{gap:8px;margin:10px 0}
+.delivery-location-tools .btn{padding:11px 14px;font-size:12px}
+.delivery-location-status{flex-basis:100%;min-width:0;font-size:11px;line-height:1.35}
+.delivery-address-link{margin:2px 0 8px;font-size:11px;line-height:1.3}
+.delivery-address-link a{color:var(--green);font-weight:800;text-decoration:underline}
+.checkout-payment-note{margin:10px 0 12px;color:var(--muted);font-size:10px;line-height:1.35;text-align:center}
+@media(max-width:560px){.delivery-details{padding:11px}.delivery-zone-summary{font-size:11px}.delivery-zone-summary .delivery-zone-chip{font-size:10px}.delivery-location-tools .btn{width:100%;justify-content:center}}
+
+
+/* Final compact delivery summary: route on one line, charges grouped in one card. */
+.delivery-zone-summary{padding:10px 11px;margin:7px 0;border-radius:11px}
+.delivery-zone-heading{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;line-height:1.35}
+.delivery-zone-summary .delivery-zone-heading strong{display:inline;margin:0;font-size:12px}
+.delivery-zone-route{display:inline;font-size:11px;color:#52614d}
+.delivery-zone-summary .delivery-zone-facts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;padding:7px;border:1px solid #dce7d7;border-radius:9px;background:rgba(255,255,255,.68)}
+.delivery-zone-summary .delivery-zone-chip{padding:4px 7px;font-size:10px;line-height:1.25}
+.delivery-address-link{margin:1px 0 7px}
+.delivery-location-status{font-size:10px}
+@media(max-width:560px){.delivery-zone-summary .delivery-zone-facts{gap:5px;padding:6px}.delivery-zone-summary .delivery-zone-chip{padding:4px 6px}}
