@@ -189,7 +189,7 @@
     'Hello,':'أهلًا،', 'Loyal Customer':'عميلنا العزيز', 'Welcome back':'أهلًا بعودتك', 'Loyal Customer • Welcome back':'عميلنا العزيز • أهلًا بعودتك', 'YOUR POINTS':'نقاطك',
     'Keep earning brighter rewards':'اجمع المزيد من النقاط واستمتع بمكافآت أفضل', 'More Rewards':'مكافآت أكثر', 'Brighter Days':'وأيام أجمل',
     'Earn points with every eligible purchase at Dina\'s Corner.':'اجمع النقاط مع كل عملية شراء مؤهلة في Dina\'s Corner.',
-    'My QR Code':'رمز QR الخاص بي', 'Show this QR code at the counter.':'اعرض رمز QR هذا عند الكاشير.', 'Your current points':'نقاطك الحالية',
+    'My QR Code':'رمز QR الخاص بي', 'Show this QR code at the counter.':'اعرض رمز QR هذا عند الكاشير.', 'Your current points':'نقاطك الحالية', 'Share QR Image':'مشاركة صورة QR', 'Save QR Image':'حفظ صورة QR', 'Show your personal code to the staff member at the counter.':'اعرض الكود الشخصي لموظف الفرع عند الكاشير.', 'Member ID:':'رقم العضوية:', 'Loyalty QR Code':'رمز QR للولاء', 'Show this code to branch staff':'اعرض هذا الكود لموظف الفرع', 'Keep your personal code private':'احتفظ بكودك الشخصي بشكل خاص', 'For account safety, share this QR only with trusted branch staff. Anyone who receives it may be able to identify your loyalty account.':'لحماية حسابك، شارك رمز QR مع موظفي الفرع الموثوقين فقط. قد يتمكن أي شخص يحصل عليه من التعرف على حساب الولاء الخاص بك.', 'Image saved. You can share it from your photos.':'تم حفظ الصورة. يمكنك مشاركتها من الصور.', 'QR image saved.':'تم حفظ صورة QR.', 'Your loyalty QR code could not be loaded. Please contact branch staff.':'تعذر تحميل رمز QR الخاص بك. يرجى التواصل مع موظفي الفرع.', 'This browser cannot create the QR image.':'هذا المتصفح لا يستطيع إنشاء صورة QR.', 'The QR image is not ready yet. Please try again.':'صورة QR غير جاهزة بعد. حاول مرة أخرى.', 'Could not prepare the QR image.':'تعذر تجهيز صورة QR.', 'Could not share the QR image.':'تعذرت مشاركة صورة QR.', 'Could not save the QR image.':'تعذر حفظ صورة QR.',
     'Points':'النقاط', 'Member ID:':'رقم العضوية:', 'Current Points':'النقاط الحالية', 'Today':'اليوم', 'This week':'هذا الأسبوع', 'This month':'هذا الشهر',
     'New customer accounts':'حسابات العملاء الجديدة', 'New customer registrations and hourly activity.':'تسجيلات العملاء الجدد والنشاط بالساعة.',
     'Registrations by hour':'التسجيلات حسب الساعة', 'Customer accounts created during each of the last 24 completed hours.':'عدد حسابات العملاء المنشأة خلال كل ساعة من آخر 24 ساعة مكتملة.',
@@ -201,7 +201,7 @@
     'Loading orders…':'جارٍ تحميل الطلبات…', 'Loading your orders…':'جارٍ تحميل طلباتك…', 'Loading your basket…':'جارٍ تحميل سلة مشترياتك…',
     'Loading categories…':'جارٍ تحميل الأقسام…', 'Loading menu items…':'جارٍ تحميل المنتجات…', 'Loading Staff accounts…':'جارٍ تحميل حسابات الموظفين…',
     'Loading Staff assignments…':'جارٍ تحميل تعيينات الموظفين…', 'Loading Staff accounts…':'جارٍ تحميل حسابات الموظفين…',
-    'Special Offers':'عروض خاصة', 'Exclusive offers and loyalty benefits from Dina\'s Corner.':'عروض حصرية ومزايا ولاء من Dina\'s Corner.',
+    'Browse Categories':'تصفح الأقسام', 'Browse full menu':'تصفح المنيو بالكامل', 'Browse all categories':'تصفح كل الأقسام', 'Loading categories…':'جارٍ تحميل الأقسام…', 'No active menu categories are available yet.':'لا توجد أقسام منيو نشطة حاليًا.', 'Menu categories are temporarily unavailable. Please open the full menu.':'تعذر عرض الأقسام مؤقتًا. افتح المنيو بالكامل.', 'Special Offers':'عروض خاصة', 'Exclusive offers and loyalty benefits from Dina\'s Corner.':'عروض حصرية ومزايا ولاء من Dina\'s Corner.',
     'Exclusive loyalty benefits from Dina\'s Corner.':'مزايا ولاء حصرية من Dina\'s Corner.', 'Free Drink':'مشروب مجاني', 'Birthday Benefit':'ميزة عيد الميلاد',
     'For eligible members with a recorded date of birth.':'للأعضاء المؤهلين المسجّل تاريخ ميلادهم.', '10 visit points':'10 نقاط زيارات', '10 POINTS':'10 نقاط',
     'Choose how you want to use your points.':'اختر كيفية استخدام نقاطك.', 'Available with your points':'متاح مقابل نقاطك', 'Reward available':'المكافأة متاحة',
@@ -331,6 +331,22 @@
     'Location is not available in this browser. Paste a Google Maps link instead.':'الموقع غير متاح في هذا المتصفح. الصق رابط Google Maps بدلًا من ذلك.',
     'Save':'حفظ', 'Cancel':'إلغاء', 'Delete':'حذف', 'Edit':'تعديل', 'Update':'تحديث', 'Add':'إضافة', 'Close':'إغلاق', 'Clear':'مسح',
     'Search':'بحث', 'View':'عرض', 'Continue':'متابعة', 'Confirm':'تأكيد', 'Apply':'تطبيق', 'Open':'فتح', 'Available':'متاح', 'Obtained':'تم الحصول عليه',
+    'Delivery Zones':'مناطق التوصيل', 'Delivery area':'منطقة التوصيل', 'Delivery location':'موقع التوصيل', 'Choose your area':'اختر منطقتك', 'Loading delivery areas…':'جارٍ تحميل مناطق التوصيل…', 'No active delivery areas configured':'لم يتم إعداد مناطق توصيل نشطة', 'Your delivery branch is assigned automatically from the area and map location. You choose the branch only for pickup.':'يتم تحديد فرع التوصيل تلقائيًا من المنطقة والموقع على الخريطة. تختار الفرع بنفسك عند الاستلام فقط.',
+    'Add Delivery Area':'إضافة منطقة توصيل', 'Edit Delivery Area':'تعديل منطقة التوصيل', 'Current Delivery Areas':'مناطق التوصيل الحالية', 'Area / Zone name *':'اسم المنطقة *', 'Serving branch *':'الفرع المسؤول *', 'Area notes (optional)':'ملاحظات المنطقة (اختياري)', 'Coverage radius (km) *':'نطاق التغطية (كم) *', 'Delivery fee (EGP) *':'رسوم التوصيل (جنيه) *', 'Minimum item subtotal (EGP) *':'الحد الأدنى لقيمة الأصناف (جنيه) *', 'Zone center latitude *':'خط عرض مركز المنطقة *', 'Zone center longitude *':'خط طول مركز المنطقة *', 'Click the map to select the center of the delivery area':'اضغط على الخريطة لاختيار مركز منطقة التوصيل',
+    'Click the approximate center of the neighborhood. The circle displays the radius used for automatic routing; it is not a street-by-street boundary.':'اضغط على المركز التقريبي للحي. الدائرة تعرض نطاق التغطية المستخدم لاختيار الفرع تلقائيًا، وليست حدودًا دقيقة لكل شارع.', 'Active and available to customers':'نشطة ومتاحة للعملاء', 'SAVE DELIVERY AREA':'حفظ منطقة التوصيل', 'CLEAR FORM':'مسح النموذج', 'REFRESH LIST':'تحديث القائمة', 'SAVE CHANGES':'حفظ التغييرات', 'ACTIVE':'نشطة', 'INACTIVE':'غير نشطة', 'Serving branch:':'الفرع المسؤول:', 'Center:':'المركز:', 'Radius:':'النطاق:', 'Delivery fee:':'رسوم التوصيل:', 'Minimum item subtotal:':'الحد الأدنى لقيمة الأصناف:', 'No delivery areas yet. Add the first area above.':'لا توجد مناطق توصيل حتى الآن. أضف المنطقة الأولى من الأعلى.',
+    'The minimum order for this area is':'الحد الأدنى للطلب في هذه المنطقة هو', 'Your location is outside the currently configured delivery areas.':'موقعك خارج مناطق التوصيل المحددة حاليًا.', 'Your selected map point is outside the chosen delivery area. Select your location again.':'الموقع المحدد على الخريطة خارج منطقة التوصيل المختارة. حدّد موقعك مرة أخرى.', 'Your order will be routed to':'سيتم توجيه طلبك إلى', 'Approx. distance:':'المسافة التقريبية:', 'Minimum items total:':'الحد الأدنى لقيمة الأصناف:',
+    'The map location is invalid. Select your current location again.':'موقع الخريطة غير صالح. حدّد موقعك الحالي مرة أخرى.',
+    'The delivery map location is incomplete. Choose your location again.':'موقع التوصيل غير مكتمل. اختر موقعك مرة أخرى.',
+    'Automatic branch routing requires a saved map pin. Use your current location or choose an address with a map pin from My Profile. A text address or link alone cannot reliably assign the correct branch.':'يتطلب تحديد الفرع تلقائيًا دبوس موقع محفوظًا. استخدم موقعك الحالي أو اختر عنوانًا يحتوي على دبوس من ملفي الشخصي. العنوان النصي أو الرابط وحده لا يكفي لتحديد الفرع بدقة.',
+    'Choose your current location or select a saved address with a map pin. The correct area and branch will be assigned automatically.':'حدّد موقعك الحالي أو اختر عنوانًا محفوظًا بدبوس خريطة، وسيتم تحديد المنطقة والفرع تلقائيًا.',
+    'No saved map-pin address found. Use your current location or add a map pin in My Profile.':'لا يوجد عنوان محفوظ بدبوس خريطة. استخدم موقعك الحالي أو أضف دبوسًا من ملفي الشخصي.',
+    'Delivery is not available until the manager configures delivery areas and assigns each one to an active branch.':'لن يتوفر التوصيل حتى يضبط المدير مناطق التوصيل ويربط كل منطقة بفرع نشط.',
+    'Could not check delivery coverage. Confirm the zone setup in Supabase. Details:':'تعذر التحقق من تغطية التوصيل. تحقق من إعداد المناطق في Supabase. التفاصيل:',
+    'Could not load delivery areas. The manager may need to run the delivery-zones setup SQL. Details:':'تعذر تحميل مناطق التوصيل. قد يحتاج المدير إلى تشغيل SQL الخاص بإعداد مناطق التوصيل. التفاصيل:',
+    'No active delivery areas configured':'لم يتم إعداد مناطق توصيل نشطة',
+    'Your location is outside the configured delivery areas.':'موقعك خارج مناطق التوصيل المحددة.',
+    'The matching area is not available for ordering. Ask the manager to check the branch and area settings.':'المنطقة المطابقة غير متاحة للطلب. اطلب من المدير مراجعة إعدادات المنطقة والفرع.',
+    'The selected branch does not serve this delivery area.':'الفرع المحدد لا يخدم منطقة التوصيل هذه.',
     'Delivery':'توصيل', 'Pickup':'استلام', 'Pending':'قيد الانتظار', 'Accepted':'مقبول', 'Preparing':'قيد التحضير', 'Completed':'مكتمل', 'Cancelled':'ملغي',
     'READY FOR PICKUP':'جاهز للاستلام', 'MARK DELIVERED':'تأكيد التسليم', 'MARK PICKED UP':'تأكيد الاستلام', 'CANCEL ORDER':'إلغاء الطلب'
   };
@@ -356,8 +372,16 @@
     const direct = lookup[n.toLowerCase()];
     if (direct) return direct;
     // Common dynamic messages that include user, branch, or order values.
-    let m = n.match(/^History for\s+(.+)$/i); if (m) return 'السجل الخاص بـ ' + m[1];
+    let m = n.match(/^Your order will be routed to\s+(.+)\.$/i); if (m) return 'سيتم توجيه طلبك إلى ' + m[1] + '.';
+    m = n.match(/^Delivery fee: (.+)$/i); if (m) return 'رسوم التوصيل: ' + m[1];
+    m = n.match(/^Minimum item subtotal: (.+)$/i); if (m) return 'الحد الأدنى لقيمة الأصناف: ' + m[1];
+    m = n.match(/^Approx\. distance: (.+) km$/i); if (m) return 'المسافة التقريبية: ' + m[1] + ' كم';
+    m = n.match(/^Delivery area matched: (.+)\. Your order will go to (.+)\.$/i); if (m) return 'تم تحديد منطقة التوصيل: ' + m[1] + '. سيتم إرسال طلبك إلى ' + m[2] + '.';
+    m = n.match(/^(.+) selected\. Checking delivery coverage…$/i); if (m) return 'تم اختيار ' + m[1] + '. جارٍ التحقق من تغطية التوصيل…';
+    m = n.match(/^(.+) has no saved map pin\. Add a pin in My Profile or use your current location to route automatically\.$/i); if (m) return 'العنوان ' + m[1] + ' لا يحتوي على دبوس خريطة محفوظ. أضف دبوسًا في ملفي الشخصي أو استخدم موقعك الحالي لتحديد الفرع تلقائيًا.';
+    m = n.match(/^History for\s+(.+)$/i); if (m) return 'السجل الخاص بـ ' + m[1];
     m = n.match(/^Your order\s*[·•]\s*(\d+)\s*items?\s*[·•]\s*Pickup or delivery$/i); if (m) return 'طلبك · ' + m[1] + ' منتجات · استلام أو توصيل';
+    m = n.match(/^Browse all (\d+) categories$/i); if (m) return 'تصفح كل الأقسام (' + m[1] + ')';
     m = n.match(/^(.+?) added to your order\.$/i); if (m) return 'تمت إضافة ' + m[1] + ' إلى طلبك.';
     m = n.match(/^Order sent successfully\. Order number: (.+)\. Method: (.+)\. Branch Staff will update its status\.$/i); if (m) return 'تم إرسال الطلب بنجاح. رقم الطلب: ' + m[1] + '. طريقة الاستلام: ' + (m[2].toLowerCase().includes('delivery') ? 'توصيل' : 'استلام من الفرع') + '. سيحدّث موظفو الفرع حالته.';
     m = n.match(/^Your order · (\d+) item(?:s)?$/i); if (m) return 'طلبك · ' + m[1] + ' منتجات';

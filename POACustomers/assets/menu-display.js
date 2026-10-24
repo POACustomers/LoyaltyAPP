@@ -194,6 +194,11 @@
     window.POACurrentMenuItems=items;
     renderCategories();
     renderCartPanel();
+    const requestedCategory = new URLSearchParams(window.location.search).get('category');
+    if (requestedCategory) {
+      const match = categories.find(category => category.name === requestedCategory);
+      if (match) renderItems(match.name);
+    }
   }
 
   renderCartPanel();

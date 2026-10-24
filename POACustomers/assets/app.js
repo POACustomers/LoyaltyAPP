@@ -601,38 +601,6 @@ async function loadCustomerHome() {
   const avatarUrl = await getOwnAvatarUrl();
   renderAvatar(homeAvatar, profile.full_name, avatarUrl);
 
-  // Home + Card merge: render the customer's personal QR directly below Home.
-  // Some get_my_profile versions do not return loyalty_token, so fetch it directly as a fallback.
-  const homeQr = $("homeQr");
-  if (homeQr) {
-    let loyaltyToken = profile.loyalty_token || null;
-    if (!loyaltyToken) {
-      try {
-        const session = await getSession();
-        const uid = session?.user?.id;
-        if (uid) {
-          const { data: tokenRow } = await sb.from("profiles")
-            .select("loyalty_token")
-            .eq("id", uid)
-            .maybeSingle();
-          loyaltyToken = tokenRow?.loyalty_token || null;
-        }
-      } catch {}
-    }
-    if (loyaltyToken && typeof QRCode !== "undefined") {
-      homeQr.innerHTML = "";
-      new QRCode(homeQr, {
-        text: String(loyaltyToken),
-        width: 230,
-        height: 230,
-        colorDark: "#073d2b",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.M
-      });
-    } else if (!loyaltyToken) {
-      homeQr.innerHTML = '<div class="sub" style="padding:18px">QR code is unavailable for this account.</div>';
-    }
-  }
 }
 
 async function loadCustomerCard() {
@@ -644,27 +612,132 @@ async function loadCustomerCard() {
   document.querySelectorAll("[data-points]").forEach(e => e.textContent = moneyPoints(profile.points));
 
   const qr = $("qr");
+  let loyaltyToken = profile.loyalty_token || null;
+  if (!loyaltyToken) {
+    try {
+      const session = await getSession();
+      const uid = session?.user?.id;
+      if (uid) {
+        const { data: tokenRow } = await sb.from("profiles")
+          .select("loyalty_token")
+          .eq("id", uid)
+          .maybeSingle();
+        loyaltyToken = tokenRow?.loyalty_token || null;
+      }
+    } catch {}
+  }
+  const token = String(loyaltyToken || "").trim();
+  if (!token) {
+    if (qr) qr.innerHTML = '<div class="sub" style="padding:18px">QR code is unavailable for this account.</div>';
+    const status = $("qrShareStatus");
+    if (status) status.textContent = "Your loyalty QR code could not be loaded. Please contact branch staff.";
+    [$("shareQrImage"), $("downloadQrImage")].forEach(button => { if (button) button.disabled = true; });
+    return;
+  }
   if (qr && typeof QRCode !== "undefined") {
     qr.innerHTML = "";
     new QRCode(qr, {
-      text: String(profile.loyalty_token),
+      text: token,
       width: 270,
       height: 270,
       colorDark: "#073d2b",
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.M
     });
+  } else if (qr) {
+    qr.textContent = "QR code library is unavailable. Please check your internet connection.";
   }
 
-  const copyBtn = $("copyToken");
-  if (copyBtn) {
-    copyBtn.onclick = async () => {
-      await navigator.clipboard?.writeText(String(profile.loyalty_token));
-      toast("Customer QR token copied.");
-    };
-  }
+  const makeShareBlob = async () => {
+    const qrElement = $("qr");
+    if (!qrElement) throw new Error("QR code is unavailable.");
+    const sourceCanvas = qrElement.querySelector("canvas");
+    const sourceImage = qrElement.querySelector("img");
+    const side = 720;
+    const canvas = document.createElement("canvas");
+    canvas.width = side;
+    canvas.height = 860;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("This browser cannot create the QR image.");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#073d2b";
+    ctx.fillRect(0, 0, canvas.width, 118);
+    const brandName = String(window.POA_TENANT_CONFIG?.BRAND_NAME || "Loyalty Card");
+    const isArabic = document.documentElement.lang === "ar";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "bold 34px Arial, sans-serif";
+    ctx.fillText(brandName.slice(0, 32), side / 2, 48, side - 48);
+    ctx.font = "24px Arial, sans-serif";
+    ctx.fillText(isArabic ? "رمز QR للولاء" : "Loyalty QR Code", side / 2, 88, side - 48);
+    const qrSize = 490;
+    const qrX = (side - qrSize) / 2;
+    const qrY = 150;
+    if (sourceCanvas) {
+      ctx.drawImage(sourceCanvas, qrX, qrY, qrSize, qrSize);
+    } else if (sourceImage && sourceImage.complete && sourceImage.naturalWidth) {
+      ctx.drawImage(sourceImage, qrX, qrY, qrSize, qrSize);
+    } else {
+      throw new Error("The QR image is not ready yet. Please try again.");
+    }
+    ctx.fillStyle = "#073d2b";
+    ctx.font = "bold 25px Arial, sans-serif";
+    ctx.fillText(isArabic ? "اعرض هذا الكود لموظف الفرع" : "Show this code to branch staff", side / 2, 700, side - 40);
+    ctx.fillStyle = "#66756c";
+    ctx.font = "18px Arial, sans-serif";
+    ctx.fillText(isArabic ? "احتفظ بكودك الشخصي بشكل خاص" : "Keep your personal code private", side / 2, 745, side - 40);
+    return await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Could not prepare the QR image.")), "image/png"));
+  };
+
+  const downloadBlob = (blob) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "loyalty-qr-code.png";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+  };
+
+  const shareButton = $("shareQrImage");
+  if (shareButton) shareButton.onclick = async () => {
+    shareButton.disabled = true;
+    try {
+      const blob = await makeShareBlob();
+      const file = new File([blob], "loyalty-qr-code.png", { type: "image/png" });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: String(window.POA_TENANT_CONFIG?.BRAND_NAME || "Loyalty") + " QR Code",
+          text: "Show this personal loyalty QR code to branch staff.",
+          files: [file]
+        });
+      } else {
+        downloadBlob(blob);
+        toast("Image saved. You can share it from your photos.");
+      }
+    } catch (error) {
+      if (error?.name !== "AbortError") toast(error?.message || "Could not share the QR image.", false);
+    } finally {
+      shareButton.disabled = false;
+    }
+  };
+
+  const downloadButton = $("downloadQrImage");
+  if (downloadButton) downloadButton.onclick = async () => {
+    downloadButton.disabled = true;
+    try {
+      downloadBlob(await makeShareBlob());
+      toast("QR image saved.");
+    } catch (error) {
+      toast(error?.message || "Could not save the QR image.", false);
+    } finally {
+      downloadButton.disabled = false;
+    }
+  };
 }
-
 async function loadCustomerProfile() {
   const profile = await guardRole(["customer"]);
   if (!profile) return;
@@ -1849,7 +1922,7 @@ if ("serviceWorker" in navigator) {
       // Standalone tenant deployments publish POACustomers as their root.
       workerPath = "../sw.js";
     }
-    navigator.serviceWorker.register(workerPath + "?v=20261024-presale-candidate")
+    navigator.serviceWorker.register(workerPath + "?v=20261024-qr-share-v1")
       .catch(error => console.warn("Service worker registration failed:", error));
   });
 }
