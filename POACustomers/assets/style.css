@@ -357,22 +357,19 @@ html[dir="rtl"] .customer-loyalty-balance strong{direction:rtl;text-align:left}
 }
 
 
-/* Customer home: compact single-offer card with real menu categories directly below. */
-.home-offers-card{margin-top:14px!important}
-.home-offers-content{padding:12px}
-.home-offers-head{align-items:center;margin-bottom:9px}
-.home-offers-head h3{font-size:16px}
-.home-offers-head .sub{font-size:11px}
-.home-offer-stage{border-radius:13px}
-.home-offer-item{display:grid;grid-template-columns:118px minmax(0,1fr);direction:rtl;min-height:128px;border-radius:13px}
-.home-offer-image-wrap{width:100%;height:100%;min-height:128px;max-height:none;aspect-ratio:auto;align-self:stretch;border-radius:0 12px 12px 0}
-.home-offer-no-image{width:100%;height:100%;min-height:128px;aspect-ratio:auto;border-radius:0 12px 12px 0}
-.home-offer-no-image span{font-size:26px}
-.home-offer-body{justify-content:center;gap:5px;min-height:128px;padding:9px 12px}
-.home-offer-title{font-size:15px;line-height:1.35}
-.home-offer-description{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;line-height:1.4}
-.home-offer-expiry{font-size:10px;padding:4px 7px;margin-top:0}
-.home-offer-controls{gap:10px;margin-top:7px;min-height:28px}
+/* Customer home: large, image-only offer banner followed by real menu categories. */
+.home-offers-card{margin-top:14px!important;padding:0;overflow:hidden}
+.home-offers-content{padding:10px}
+.home-offers-head{align-items:center;justify-content:flex-start;margin:0 2px 9px}
+.home-offers-head h3{margin:0;font-size:16px;color:var(--green)}
+.home-offers-head .sub{display:none!important}
+.home-offer-stage{width:100%;min-width:0;overflow:hidden;border-radius:12px}
+.home-offer-item{display:block;width:100%;min-width:0;min-height:0;margin:0;padding:0;overflow:hidden;border:0;border-radius:12px;background:var(--paper,#fffaf5);box-shadow:none}
+.home-offer-image-wrap{display:block;width:100%;height:clamp(132px,19vw,220px);min-height:132px;max-height:220px;aspect-ratio:auto;margin:0;padding:0;overflow:hidden;border:0;border-radius:12px;background:#f8e9e4}
+.home-offer-image{display:block;width:100%;height:100%;min-height:0;max-height:none;object-fit:cover;object-position:center;border:0;border-radius:0}
+.home-offer-no-image{display:block;width:100%;height:clamp(132px,19vw,220px);min-height:132px;max-height:220px;aspect-ratio:auto;border:0;border-radius:12px;background:linear-gradient(110deg,#f6e8e2,#f9f2ea 48%,#f4e0df)}
+.home-offer-body{display:none!important}
+.home-offer-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:8px;min-height:28px}
 .home-offer-arrow{width:28px;height:28px;flex-basis:28px;font-size:19px}
 .home-offer-dot{width:6px;height:6px}
 .home-offer-dot.is-active{width:18px}
@@ -392,6 +389,6 @@ html[dir="rtl"] .customer-loyalty-balance strong{direction:rtl;text-align:left}
 .home-category-message{padding:14px 10px;border-radius:10px;background:#fbf6f1;color:var(--muted);font-size:12px;line-height:1.6;text-align:center}
 .home-category-message.is-error{color:var(--danger,#a33)}
 .home-category-browse-link{justify-content:center;width:100%;padding:12px 8px 2px;white-space:normal}
-@media(min-width:640px){.home-menu-category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.home-offer-item{grid-template-columns:140px minmax(0,1fr)}.home-offer-image-wrap,.home-offer-no-image{min-height:140px}.home-offer-body{min-height:140px}}
-@media(max-width:380px){.home-offer-item{grid-template-columns:98px minmax(0,1fr);min-height:116px}.home-offer-image-wrap,.home-offer-no-image{min-height:116px}.home-offer-body{min-height:116px;padding:8px 9px}.home-offer-description{font-size:11px}.home-offers-content{padding:10px}.home-categories-card{padding:13px 10px}.home-menu-category-grid{gap:8px}}
-@media(prefers-reduced-motion:reduce){.home-menu-category{transition:none}}
+@media(min-width:640px){.home-menu-category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:380px){.home-offers-content{padding:8px}.home-offer-image-wrap,.home-offer-no-image{height:132px;min-height:132px}.home-categories-card{padding:13px 10px}.home-menu-category-grid{gap:8px}}
+@media(prefers-reduced-motion:reduce){.home-menu-category{transition:none}.home-offer-slide.is-active{animation:none}}

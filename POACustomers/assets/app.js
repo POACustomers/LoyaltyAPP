@@ -516,24 +516,17 @@ async function loadCustomerHomeOffers() {
       return;
     }
 
+    // The offer is an image-only, full-width banner. Text such as the offer name,
+    // discount and validity can be designed into the uploaded banner image itself.
     const cards = offers.map((offer, index) => {
-      const title = offer.product_name || offer.title || "Special Offer";
-      const description = offer.description || "A special offer is available for customers.";
+      const title = offer.product_name || offer.title || `Offer ${index + 1}`;
       const image = safeOfferImageSource(offer.image_url);
-      const expiry = offer.expiry_date
-        ? `<span class="home-offer-expiry">Valid through ${escapeOfferHtml(String(offer.expiry_date).slice(0, 10))}</span>`
-        : "";
       return `
-        <article class="home-offer-slide${index === 0 ? " is-active" : ""}" data-offer-slide="${index}" aria-label="Offer ${index + 1} of ${offers.length}">
+        <article class="home-offer-slide${index === 0 ? " is-active" : ""}" data-offer-slide="${index}" aria-label="Offer ${index + 1} of ${offers.length}: ${escapeOfferHtml(title)}">
           <div class="home-offer-item">
             ${image
-              ? `<div class="home-offer-image-wrap"><img class="home-offer-image" src="${escapeOfferHtml(image)}" alt="${escapeOfferHtml(title)}" loading="${index === 0 ? "eager" : "lazy"}"></div>`
-              : `<div class="home-offer-no-image" role="img" aria-label="Offer image unavailable"><span>★</span><small>Special Offer</small></div>`}
-            <div class="home-offer-body">
-              <strong class="home-offer-title">${escapeOfferHtml(title)}</strong>
-              <p class="home-offer-description">${escapeOfferHtml(description)}</p>
-              ${expiry}
-            </div>
+              ? `<div class="home-offer-image-wrap"><img class="home-offer-image" src="${escapeOfferHtml(image)}" alt="" loading="${index === 0 ? "eager" : "lazy"}"></div>`
+              : `<div class="home-offer-no-image" role="img" aria-label="Offer banner image has not been added yet"></div>`}
           </div>
         </article>`;
     }).join("");
@@ -541,7 +534,7 @@ async function loadCustomerHomeOffers() {
 
     content.className = "home-offers-content home-offers-carousel";
     content.innerHTML = `
-      <div class="home-offers-head"><div><h3>Special Offers</h3><p class="sub">Current offers from Dina's Corner.</p></div></div>
+      <div class="home-offers-head"><div><h3>Special Offers</h3></div></div>
       <div class="home-offer-stage" data-offer-stage>${cards}</div>
       ${offers.length > 1 ? `<div class="home-offer-controls" aria-label="Offer slideshow controls"><button type="button" class="home-offer-arrow" data-offer-prev aria-label="Previous offer">‹</button><div class="home-offer-dots">${dots}</div><button type="button" class="home-offer-arrow" data-offer-next aria-label="Next offer">›</button></div>` : ""}`;
     if (offers.length > 1) {
