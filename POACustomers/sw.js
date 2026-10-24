@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v37-qr-share";
+const CACHE = CACHE_NAMESPACE + "v38-offer-order-bottomnav";
 const SHELL = [
   "./",
   "./index.html",
