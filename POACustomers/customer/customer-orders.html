@@ -6,23 +6,24 @@
 <meta name="theme-color" content="#C65F78">
 <meta name="description" content="Place and track orders">
 <link rel="manifest" href="../manifest.webmanifest">
-<link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261024-presale-candidate">
+<link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261024-delivery-zones">
 <title>My Orders</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261024-presale-candidate">
-<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261024-presale-candidate"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261024-presale-candidate">
-<script defer src="../assets/pwa-install.js?v=20261024-presale-candidate"></script>
+<link rel="stylesheet" href="../assets/style.css?v=20261024-delivery-zones">
+<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261024-delivery-zones"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261024-delivery-zones">
+<script defer src="../assets/pwa-install.js?v=20261024-delivery-zones"></script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
 </head>
 <body data-page="customer-orders">
 <header class="topbar customer-topbar">
-<a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-presale-candidate" alt="DINA'S CORNER"></a>
+<a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-delivery-zones" alt="DINA'S CORNER"></a>
 <details class="customer-top-menu" data-customer-top-menu>
   <summary aria-label="Open customer navigation" title="Open customer navigation"><svg class="customer-top-menu-symbol" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 6h16M4 12h16M4 18h16" /></svg></summary>
   <nav class="customer-menu-popup" aria-label="Customer menu">
     <a href="customer-home.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">⌂</span><span>Home</span></a>
-    <a href="customer-menu.html#menu-cart" data-customer-link><span aria-hidden="true" class="customer-menu-icon">☰</span><span>Menu &amp; Basket</span></a>
+    <a href="customer-menu.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">☰</span><span>Menu &amp; Basket</span></a>
+    <a href="customer-card.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">▦</span><span>My QR Code</span></a>
     <a href="customer-rewards.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">★</span><span>Rewards</span></a>
     <a href="customer-locations.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">⌖</span><span>Branches</span></a>
     <a href="customer-order-history.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">▣</span><span>Order History</span></a>
@@ -38,7 +39,7 @@
     <div class="pickup-empty-icon" aria-hidden="true">＋</div>
     <h2>Your basket is empty</h2>
     <p>Choose the items you want from the menu first.</p>
-    <a class="btn" href="customer-menu.html#menu-cart">Open menu</a>
+    <a class="btn" href="customer-menu.html">Open menu</a>
   </section>
 
   <section id="pickupOrderSuccess" class="card pickup-success-state" hidden aria-live="polite">
@@ -49,7 +50,7 @@
     <p id="pickupOrderSuccessMethod" class="pickup-success-method"></p>
     <div class="pickup-success-actions">
       <a class="btn" href="customer-order-history.html">View order history</a>
-      <a class="pickup-success-link" href="customer-menu.html#menu-cart">Continue shopping</a>
+      <a class="pickup-success-link" href="customer-menu.html">Continue shopping</a>
     </div>
   </section>
 
@@ -70,13 +71,18 @@
             <option value="delivery">Delivery to my location</option>
           </select>
         </label>
-        <label class="pickup-field" for="pickupBranch">Branch handling your order <span class="required-mark">*</span>
+        <label class="pickup-field" id="pickupBranchField" for="pickupBranch">Branch handling your pickup order <span class="required-mark">*</span>
           <select id="pickupBranch" class="input" required><option value="">Loading branches…</option></select>
         </label>
       </div>
 
       <section id="deliveryDetails" class="delivery-details" hidden aria-labelledby="deliveryDetailsTitle">
         <h3 id="deliveryDetailsTitle">Delivery location</h3>
+        <label class="pickup-field" for="deliveryZone">Delivery area <span class="required-mark">*</span>
+          <select id="deliveryZone" class="input" required><option value="">Loading delivery areas…</option></select>
+        </label>
+        <div id="deliveryZoneSummary" class="delivery-zone-summary" hidden aria-live="polite"></div>
+        <p class="pickup-note delivery-zone-help">Your delivery branch is assigned automatically from the area and map location. You choose the branch only for pickup.</p>
         <label class="pickup-field" for="deliverySavedAddress">Choose a saved address
           <select id="deliverySavedAddress" class="input"><option value="">Loading your saved addresses…</option></select>
         </label>
@@ -90,10 +96,8 @@
         </div>
         <input id="deliveryLatitude" type="hidden">
         <input id="deliveryLongitude" type="hidden">
-        <label class="pickup-field" for="deliveryMapUrl">Google Maps link (alternative to GPS) <span class="optional-mark">optional if GPS is selected</span>
-          <input id="deliveryMapUrl" class="input" type="url" inputmode="url" autocomplete="url" placeholder="Paste your Google Maps share link">
-        </label>
-        <p class="pickup-note">Written address details are optional. For delivery, choose your map location or paste a Google Maps link so the branch can find you.</p>
+        <input id="deliveryMapUrl" type="hidden">
+        <p class="pickup-note">The map pin is required to route your order to the correct branch. Use your current location, or choose a saved address with a map pin from My Profile. Written address details are optional.</p>
       </section>
 
       <label class="pickup-field" for="pickupOrderNotes">Order note (optional)
@@ -107,12 +111,12 @@
 
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="../assets/tenant-config.js?v=20261024-presale-candidate"></script>
-<script src="../assets/tenant-branding.js?v=20261024-presale-candidate"></script>
-<script src="../assets/customer-navigation.js?v=20261024-presale-candidate"></script>
-<script src="../assets/config.js?v=20261024-presale-candidate"></script>
-<script src="../assets/app.js?v=20261024-presale-candidate"></script>
-<script src="../assets/pickup-orders.js?v=20261024-presale-candidate"></script>
+<script src="../assets/tenant-config.js?v=20261024-delivery-zones"></script>
+<script src="../assets/tenant-branding.js?v=20261024-delivery-zones"></script>
+<script src="../assets/customer-navigation.js?v=20261024-delivery-zones"></script>
+<script src="../assets/config.js?v=20261024-delivery-zones"></script>
+<script src="../assets/app.js?v=20261024-delivery-zones"></script>
+<script src="../assets/pickup-orders.js?v=20261024-delivery-zones"></script>
 
 </body>
 </html>
