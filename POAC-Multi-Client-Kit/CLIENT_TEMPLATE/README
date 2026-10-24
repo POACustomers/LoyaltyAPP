@@ -1,7 +1,7 @@
 To add another company:
 1. Copy this folder and rename it to a unique tenant ID, e.g. acme-cafe.
 2. Rename tenant.json.example to tenant.json and edit every field.
-3. Add that client's own logo.png and icon.png to this folder.
+3. Replace the generic placeholder logo.png and icon.png with that client's own assets.
 4. Put the client's custom CSS in theme.css (or point theme_css_file to another CSS file).
 5. Create a separate Supabase project for the client and fill its project URL and publishable key. Never put service_role or secret keys here.
 6. Run the build command in the kit README.
