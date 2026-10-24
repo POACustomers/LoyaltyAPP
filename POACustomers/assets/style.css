@@ -483,3 +483,23 @@ html[dir="rtl"] .customer-loyalty-balance strong{direction:rtl;text-align:left}
 /* Permanently disable the legacy fixed bottom navigation. */
 .customer-bottom-nav{display:none!important}
 body.has-customer-bottom-nav{padding-bottom:0!important}
+
+
+/* Home redesign: remove category grid; use branded image tiles for the five customer shortcuts. */
+.customer-home-quick-actions--images{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:13px}
+.customer-home-quick-action--image{display:flex;flex-direction:column;align-items:stretch;gap:0;min-height:0;padding:0;overflow:hidden;border-radius:15px;background:var(--paper,#fffdf8);border:1px solid rgba(180,130,116,.28);box-shadow:0 4px 14px rgba(120,72,59,.07)}
+.customer-home-quick-action--image .customer-home-quick-action__image{display:block;width:100%;aspect-ratio:4/3;overflow:hidden;background:#f4e2dc}
+.customer-home-quick-action--image .customer-home-quick-action__image img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;transition:transform .22s ease}
+.customer-home-quick-action--image:hover .customer-home-quick-action__image img{transform:scale(1.035)}
+.customer-home-quick-action__body{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;padding:11px 12px 12px}
+.customer-home-quick-action--image .customer-home-quick-action__copy{gap:4px}
+.customer-home-quick-action--image .customer-home-quick-action__copy strong{font-size:13px;color:var(--green,#56382d)}
+.customer-home-quick-action--image .customer-home-quick-action__copy small{font-size:10px;line-height:1.35;color:var(--muted,#82695d)}
+.customer-home-quick-action--image .customer-home-quick-action__arrow{font-size:22px;color:var(--rose-dark,#a8435d)}
+@media(min-width:640px){.customer-home-quick-actions--images{grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.customer-home-quick-action--image .customer-home-quick-action__image{aspect-ratio:5/3}}
+@media(min-width:1080px){.customer-home-quick-actions--images{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:380px){.customer-home-quick-actions--images{gap:8px}.customer-home-quick-action__body{padding:9px 9px 10px}.customer-home-quick-action--image .customer-home-quick-action__copy strong{font-size:12px}.customer-home-quick-action--image .customer-home-quick-action__copy small{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.customer-home-quick-action--image .customer-home-quick-action__image img{transition:none}}
+
+.home-shortcuts-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 2px 12px}
+.home-shortcuts-heading h3{margin:0;color:var(--green,#56382d);font-size:17px;font-weight:900}
