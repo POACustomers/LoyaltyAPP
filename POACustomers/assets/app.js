@@ -818,18 +818,10 @@ async function loadCustomerHome() {
   const profile = await guardRole(["customer"]);
   if (!profile) return;
 
-  // Offers are independent of the customer's profile. Start their request, but do
-  // not hold back the name/points/avatar while the offers table responds.
+  // Offers are independent of the customer's profile. Start their request without
+  // holding back the compact points balance shown in the top bar.
   void loadCustomerHomeOffers();
-
-  document.querySelectorAll("[data-name]").forEach(e => e.textContent = profile.full_name || "Customer");
   document.querySelectorAll("[data-points]").forEach(e => e.textContent = Math.min(50, Number(profile.points || 0)));
-  document.querySelectorAll("[data-id]").forEach(e => e.textContent = profile.member_id || "—");
-
-  // Keep the approved avatar inside the green points panel.
-  const homeAvatar = $("homeAvatar");
-  const avatarUrl = await getOwnAvatarUrl();
-  renderAvatar(homeAvatar, profile.full_name, avatarUrl);
 
 }
 
