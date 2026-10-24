@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFF4ED">
 <link rel="manifest" href="../manifest.webmanifest">
-<link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261024-header-points-v2">
+<link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261024-no-bottom-nav-home-cards-v1">
 <title>Customer Home</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261024-header-points-v2">
+<link rel="stylesheet" href="../assets/style.css?v=20261024-no-bottom-nav-home-cards-v1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
@@ -15,7 +15,7 @@
 <body data-page="customer-home">
 
 <header class="topbar customer-topbar">
-<a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-header-points-v2" alt="DINA'S CORNER"></a>
+<a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-no-bottom-nav-home-cards-v1" alt="DINA'S CORNER"></a>
 <a class="customer-header-points" href="customer-card.html" title="Open your loyalty card" aria-label="Open your loyalty card">
   <svg class="customer-header-points__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m12 2.8 2.75 5.57 6.15.89-4.45 4.34 1.05 6.12L12 16.83l-5.5 2.89 1.05-6.12L3.1 9.26l6.15-.89L12 2.8Z"/></svg>
   <strong><span data-points>0</span><span class="customer-header-points__divider">/</span>50</strong>
@@ -54,14 +54,47 @@
   </div>
 </section>
 
+<section class="card customer-home-shortcuts" aria-labelledby="homeShortcutsTitle">
+  <div class="home-categories-heading">
+    <h3 id="homeShortcutsTitle">Quick Access</h3>
+  </div>
+  <div class="customer-home-quick-actions">
+    <a class="customer-home-quick-action" href="customer-menu.html">
+      <span class="customer-home-quick-action__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5"/></svg></span>
+      <span class="customer-home-quick-action__copy"><strong>Menu</strong><small>Browse all items</small></span>
+      <span class="customer-home-quick-action__arrow" aria-hidden="true">›</span>
+    </a>
+    <a class="customer-home-quick-action" href="customer-profile.html">
+      <span class="customer-home-quick-action__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+      <span class="customer-home-quick-action__copy"><strong>My Profile</strong><small>Personal details</small></span>
+      <span class="customer-home-quick-action__arrow" aria-hidden="true">›</span>
+    </a>
+    <a class="customer-home-quick-action" href="customer-locations.html">
+      <span class="customer-home-quick-action__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+      <span class="customer-home-quick-action__copy"><strong>Locations</strong><small>Find a branch</small></span>
+      <span class="customer-home-quick-action__arrow" aria-hidden="true">›</span>
+    </a>
+    <a class="customer-home-quick-action" href="customer-card.html">
+      <span class="customer-home-quick-action__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v2M17 20h4M20 18v3"/></svg></span>
+      <span class="customer-home-quick-action__copy"><strong>My QR Code</strong><small>Share loyalty code</small></span>
+      <span class="customer-home-quick-action__arrow" aria-hidden="true">›</span>
+    </a>
+    <a class="customer-home-quick-action" href="customer-home.html#homeOffersCard">
+      <span class="customer-home-quick-action__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 12 12 20 3.5 11.5V4H12z"/><circle cx="8" cy="8" r="1.2"/></svg></span>
+      <span class="customer-home-quick-action__copy"><strong>Offers</strong><small>See special offers</small></span>
+      <span class="customer-home-quick-action__arrow" aria-hidden="true">›</span>
+    </a>
+  </div>
+</section>
+
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="../assets/tenant-config.js?v=20261024-header-points-v2"></script>
-<script src="../assets/tenant-branding.js?v=20261024-header-points-v2"></script>
-<script src="../assets/customer-navigation.js?v=20261024-header-points-v2"></script>
-<script src="../assets/config.js?v=20261024-header-points-v2"></script>
-<script src="../assets/app.js?v=20261024-header-points-v2"></script>
-<script src="../assets/customer-home-categories.js?v=20261024-header-points-v2"></script>
+<script src="../assets/tenant-config.js?v=20261024-no-bottom-nav-home-cards-v1"></script>
+<script src="../assets/tenant-branding.js?v=20261024-no-bottom-nav-home-cards-v1"></script>
+<script src="../assets/customer-navigation.js?v=20261024-no-bottom-nav-home-cards-v1"></script>
+<script src="../assets/config.js?v=20261024-no-bottom-nav-home-cards-v1"></script>
+<script src="../assets/app.js?v=20261024-no-bottom-nav-home-cards-v1"></script>
+<script src="../assets/customer-home-categories.js?v=20261024-no-bottom-nav-home-cards-v1"></script>
 
 
 </body>
