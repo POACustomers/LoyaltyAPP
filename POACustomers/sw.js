@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v40-home-image-cards";
+const CACHE = CACHE_NAMESPACE + "v40-menu-page-compact-icons";
 const SHELL = [
   "./",
   "./index.html",
@@ -18,11 +18,7 @@ const SHELL = [
   "./assets/tenant-config.js",
   "./assets/tenant-branding.js",
   "./assets/customer-navigation.js",
-  "./assets/home-cards/menu.jpg",
-  "./assets/home-cards/profile.jpg",
-  "./assets/home-cards/locations.jpg",
-  "./assets/home-cards/loyalty-qr.jpg",
-  "./assets/home-cards/offers.jpg",
+  "./assets/customer-home-categories.js",
   "./assets/pwa-install.js",
   "./assets/pwa-install.css",
   "./assets/tenant-branding/logo.png",
