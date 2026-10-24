@@ -148,13 +148,20 @@ h2{color:var(--green);margin-bottom:8px}
 .home-avatar-bottom .avatar{width:82px;height:82px;border-radius:50%;overflow:hidden}
 .home-avatar-bottom .avatar img{width:100%;height:100%;object-fit:cover;display:block}
 
-/* Customer Home approved layout: remove the four center shortcut buttons. */
-.customer-home-quick-actions,
-.home-quick-actions,
-.quick-actions,
-.home-shortcuts {
-  display: none !important;
-}
+/* Customer home quick-access cards: keep these as normal page content, not bottom navigation. */
+.customer-home-shortcuts{margin-top:14px;padding:15px 14px}
+.customer-home-quick-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:11px}
+.customer-home-quick-action{display:flex;align-items:center;gap:9px;min-width:0;min-height:68px;padding:10px 9px;border:1px solid var(--line,#e5dfd2);border-radius:13px;background:var(--paper,#fffdf8);color:var(--ink,#1e2a24);text-decoration:none;box-shadow:0 3px 10px rgba(151,78,89,.05);transition:transform .15s ease,border-color .15s ease}
+.customer-home-quick-action:focus-visible{outline:2px solid var(--rose,#c65f78);outline-offset:2px}
+.customer-home-quick-action:active{transform:scale(.99)}
+.customer-home-quick-action__icon{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:11px;background:var(--rose-soft,#f9dfe1);color:var(--rose-dark,#a8435d)}
+.customer-home-quick-action__icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.customer-home-quick-action__copy{display:grid;gap:3px;min-width:0;flex:1}
+.customer-home-quick-action__copy strong{font-size:12px;line-height:1.25;overflow-wrap:anywhere;color:var(--green,#0b4a36)}
+.customer-home-quick-action__copy small{font-size:10px;line-height:1.3;color:var(--muted,#718078);overflow-wrap:anywhere}
+.customer-home-quick-action__arrow{font-size:20px;line-height:1;color:var(--rose-dark,#a8435d);flex:0 0 auto}
+@media(min-width:640px){.customer-home-quick-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.customer-home-shortcuts{padding:17px}}
+@media(max-width:360px){.customer-home-quick-actions{gap:7px}.customer-home-quick-action{gap:7px;padding:9px 7px}.customer-home-quick-action__icon{width:32px;height:32px;flex-basis:32px}.customer-home-quick-action__copy strong{font-size:11px}.customer-home-quick-action__copy small{font-size:9px}}
 
 /* Approved customer-home avatar placement: inside the green points panel. */
 .points{position:relative;padding-right:125px;}
@@ -394,15 +401,6 @@ html[dir="rtl"] .customer-loyalty-balance strong{direction:rtl;text-align:left}
 @media(prefers-reduced-motion:reduce){.home-menu-category{transition:none}.home-offer-slide.is-active{animation:none}}
 
 /* Customer experience release: persistent mobile-first navigation, image-only offer banner, and offer details. */
-body[data-page^="customer-"].has-customer-bottom-nav{padding-bottom:calc(92px + env(safe-area-inset-bottom))!important}
-.customer-bottom-nav{position:fixed;inset-inline:0;bottom:0;z-index:50;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:8px max(8px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-right));background:color-mix(in srgb,var(--paper,#fffdf8) 96%,transparent);border-top:1px solid var(--line,#e5dfd2);box-shadow:0 -7px 24px rgba(51,36,25,.07);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-.customer-bottom-nav__item{display:flex;min-width:0;min-height:54px;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:5px 2px;border-radius:13px;color:var(--muted,#718078);font-size:10px;line-height:1.2;font-weight:800;text-decoration:none;transition:background .15s,color .15s}
-.customer-bottom-nav__item:focus-visible{outline:2px solid var(--rose,#c65f78);outline-offset:2px}
-.customer-bottom-nav__item.is-active{background:var(--rose-soft,#f9dfe1);color:var(--rose-dark,#a8435d)}
-.customer-bottom-nav__icon{display:block;width:22px;height:22px;flex:0 0 22px}
-.customer-bottom-nav__item span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-body[data-page="customer-menu"] .pickup-cart-dock{bottom:calc(78px + env(safe-area-inset-bottom))!important}
-body[data-page^="customer-"] #toast{bottom:calc(88px + env(safe-area-inset-bottom))!important}
 #homeOffersCard{scroll-margin-top:86px}
 .home-loyalty-compact{margin-top:14px;min-height:0;padding:13px 16px;border-radius:17px}
 .home-loyalty-compact .customer-loyalty-balance strong{font-size:clamp(24px,4.4vw,29px)}
@@ -445,18 +443,12 @@ body[data-page^="customer-"] #toast{bottom:calc(88px + env(safe-area-inset-botto
 .home-offer-detail-status{min-height:0;margin:8px 0 0;color:var(--muted,#718078);font-size:11px;line-height:1.5}
 .home-offer-modal-open{overflow:hidden}
 @media(min-width:760px){
-  .customer-bottom-nav{inset-inline:auto;left:50%;transform:translateX(-50%);width:min(720px,calc(100% - 32px));padding:8px 12px max(8px,env(safe-area-inset-bottom));border:1px solid var(--line,#e5dfd2);border-bottom:0;border-radius:19px 19px 0 0}
-  .customer-bottom-nav__item{min-height:58px;font-size:11px}
   .home-offer-detail-info{padding:22px 24px 24px}
 }
 @media(max-width:360px){
-  .customer-bottom-nav{gap:1px;padding-inline:4px}
-  .customer-bottom-nav__item{font-size:9px}
-  .customer-bottom-nav__icon{width:20px;height:20px;flex-basis:20px}
   .home-offer-detail-info{padding:17px 14px 18px}
   .home-offer-detail-actions{grid-template-columns:1fr}
 }
-@media(prefers-reduced-motion:reduce){.customer-bottom-nav__item,.home-offer-item{transition:none}}
 
 
 /* Customer home: a small, horizontal points chip that belongs to the header rather than looking like a separate card. */
@@ -487,3 +479,7 @@ body[data-page^="customer-"] #toast{bottom:calc(88px + env(safe-area-inset-botto
   .customer-topbar .brand-logo{width:49px;height:41px}
   .customer-top-menu>summary{width:38px;min-width:38px;height:38px;min-height:38px}
 }
+
+/* Permanently disable the legacy fixed bottom navigation. */
+.customer-bottom-nav{display:none!important}
+body.has-customer-bottom-nav{padding-bottom:0!important}
