@@ -486,11 +486,236 @@ async function loadCustomerHomeOffers() {
     if (retry) retry.addEventListener("click", () => { void loadCustomerHomeOffers(); }, { once: true });
   };
 
-  try {
-    if (!sb || typeof sb.from !== "function") throw new Error("اتصال قاعدة البيانات غير جاهز على صفحة العميل.");
+  let autoplayHandle = null;
+  let userPaused = false;
+  let modalOpen = false;
+  let currentIndex = 0;
+  let restoreFocus = null;
+  let menuItemsPromise = null;
+  let activeOffers = [];
+  let openedOfferKey = null;
+  const cartKey = "poa_pickup_cart_v1";
 
-    // Fetch active offers first. Date eligibility is checked here as well as by RLS,
-    // so a client-side date-format edge case cannot silently hide a valid offer.
+  const normalizeName = value => String(value ?? "")
+    .normalize("NFKC")
+    .toLocaleLowerCase()
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+
+  const isActiveMenuItem = item => !!item && item.id && String(item.name || "").trim() &&
+    item.is_active !== false && String(item.status || "active").toLowerCase() !== "inactive";
+
+  async function getActiveMenuItems() {
+    if (!menuItemsPromise) {
+      menuItemsPromise = (async () => {
+        if (typeof sb === "undefined" || !sb || typeof sb.from !== "function") {
+          throw new Error("The menu is not available right now.");
+        }
+        const [itemResult, categoryResult] = await Promise.all([
+          sb.from("menu_items").select("*"),
+          sb.from("menu_categories").select("id,is_active,status")
+        ]);
+        if (itemResult.error) throw itemResult.error;
+        if (categoryResult.error) throw categoryResult.error;
+        const activeCategoryIds = new Set((Array.isArray(categoryResult.data) ? categoryResult.data : [])
+          .filter(category => category && category.is_active !== false && String(category.status || "active").toLowerCase() !== "inactive")
+          .map(category => String(category.id)));
+        return (Array.isArray(itemResult.data) ? itemResult.data : []).filter(item =>
+          isActiveMenuItem(item) && (!item.category_id || activeCategoryIds.has(String(item.category_id)))
+        );
+      })();
+    }
+    return menuItemsPromise;
+  }
+
+  async function findLinkedMenuItem(offer) {
+    const items = await getActiveMenuItems();
+    // Prefer the dedicated product name. Match exactly so a customer can never
+    // be sent to a different item because of a loose/fuzzy name comparison.
+    const labels = [offer.product_name, offer.title]
+      .map(normalizeName)
+      .filter((value, index, array) => value && array.indexOf(value) === index);
+    for (const label of labels) {
+      const matches = items.filter(item => normalizeName(item.name) === label);
+      if (matches.length === 1) return matches[0];
+      if (matches.length > 1) return null;
+    }
+    return null;
+  }
+
+  function formatOfferDate(value) {
+    const raw = String(value || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return "";
+    const date = new Date(raw + "T00:00:00");
+    return Number.isNaN(date.getTime()) ? raw : date.toLocaleDateString();
+  }
+
+  function menuItemPriceText(item) {
+    const value = item?.price;
+    if (value !== null && value !== undefined && String(value).trim() !== "") {
+      const number = Number(value);
+      if (Number.isFinite(number) && number >= 0) {
+        return window.POA_FORMAT_CURRENCY ? window.POA_FORMAT_CURRENCY(number) : "EGP " + number.toFixed(2);
+      }
+    }
+    if (item && item.price_display && String(item.price_display).trim()) return String(item.price_display).trim();
+    return "Price to be confirmed by the branch";
+  }
+
+  function closeDetails(modal, trigger) {
+    if (!modal) return;
+    modal.hidden = true;
+    modalOpen = false;
+    openedOfferKey = null;
+    document.body.classList.remove("home-offer-modal-open");
+    const target = trigger || restoreFocus;
+    restoreFocus = null;
+    if (target && typeof target.focus === "function") target.focus();
+    // Resume after focus has returned to the originating offer button.
+    window.setTimeout(() => { userPaused = false; startAutoplay(); }, 0);
+  }
+
+  function addOfferItemToCart(item, addButton, statusNode, modal, trigger) {
+    if (!item || !item.id || !String(item.name || "").trim()) {
+      if (statusNode) statusNode.textContent = "This offer is not linked to an available menu item yet.";
+      return;
+    }
+    let cart;
+    try {
+      const parsed = JSON.parse(localStorage.getItem(cartKey) || "[]");
+      cart = Array.isArray(parsed) ? parsed.filter(row => row && row.id && Number(row.quantity) > 0) : [];
+    } catch (_) {
+      cart = [];
+    }
+    const existing = cart.find(row => String(row.id) === String(item.id));
+    if (existing) {
+      if (Number(existing.quantity) >= 50) {
+        if (statusNode) statusNode.textContent = "Maximum quantity for this item is 50.";
+        return;
+      }
+      existing.quantity = Number(existing.quantity) + 1;
+      existing.name = String(item.name);
+      existing.description = item.description || "";
+      existing.image_url = item.image_url || null;
+      existing.price = item.price === null || item.price === undefined || String(item.price).trim() === "" ? null : Number(item.price);
+    } else {
+      cart.push({
+        id: String(item.id),
+        name: String(item.name),
+        description: item.description || "",
+        image_url: item.image_url || null,
+        price: item.price === null || item.price === undefined || String(item.price).trim() === "" ? null : Number(item.price),
+        quantity: 1
+      });
+    }
+    try {
+      localStorage.setItem(cartKey, JSON.stringify(cart));
+    } catch (_) {
+      if (statusNode) statusNode.textContent = "Your basket could not be saved. Please check available device storage and try again.";
+      return;
+    }
+    if (addButton) { addButton.disabled = true; addButton.textContent = "Added — opening basket…"; }
+    if (statusNode) statusNode.textContent = "Added to your basket. Opening it now.";
+    closeDetails(modal, trigger);
+    window.location.href = "customer-menu.html#menu-cart";
+  }
+
+  function stopAutoplay() {
+    if (autoplayHandle !== null) window.clearInterval(autoplayHandle);
+    autoplayHandle = null;
+  }
+
+  function setActiveSlide(nextIndex) {
+    if (!activeOffers.length) return;
+    currentIndex = (nextIndex + activeOffers.length) % activeOffers.length;
+    content.querySelectorAll("[data-offer-slide]").forEach((slide, index) => {
+      const active = index === currentIndex;
+      slide.classList.toggle("is-active", active);
+      slide.setAttribute("aria-hidden", active ? "false" : "true");
+    });
+    content.querySelectorAll("[data-offer-dot]").forEach((dot, index) => {
+      const active = index === currentIndex;
+      dot.classList.toggle("is-active", active);
+      dot.setAttribute("aria-current", active ? "true" : "false");
+    });
+    const count = content.querySelector("[data-offer-count]");
+    if (count) count.textContent = `${currentIndex + 1} / ${activeOffers.length}`;
+  }
+
+  function startAutoplay() {
+    stopAutoplay();
+    if (activeOffers.length > 1 && !userPaused && !modalOpen && !document.hidden) {
+      autoplayHandle = window.setInterval(() => setActiveSlide(currentIndex + 1), 10000);
+    }
+  }
+
+  function openOfferDetails(index, trigger, modal, modalBody) {
+    const offer = activeOffers[index];
+    if (!offer || !modal || !modalBody) return;
+    modalOpen = true;
+    openedOfferKey = String(offer.id || index);
+    restoreFocus = trigger || null;
+    stopAutoplay();
+    document.body.classList.add("home-offer-modal-open");
+    const offerTitle = offer.title || offer.product_name || "Special offer";
+    const image = safeOfferImageSource(offer.image_url);
+    const expiry = formatOfferDate(offer.expiry_date);
+    const production = formatOfferDate(offer.production_date);
+    const dateLine = expiry
+      ? `<p class="home-offer-detail-validity">Available until ${escapeOfferHtml(expiry)}${production ? ` · Starts ${escapeOfferHtml(production)}` : ""}</p>`
+      : "";
+    modalBody.innerHTML = `
+      ${image
+        ? `<div class="home-offer-detail-media"><img src="${escapeOfferHtml(image)}" alt="${escapeOfferHtml(offer.product_name || offerTitle)}"></div>`
+        : '<div class="home-offer-detail-media home-offer-detail-media--empty" aria-hidden="true"><span>★</span></div>'}
+      <div class="home-offer-detail-info">
+        <p class="home-offer-detail-kicker">Special offer</p>
+        <h2 id="homeOfferDetailTitle">${escapeOfferHtml(offerTitle)}</h2>
+        ${offer.product_name && normalizeName(offer.product_name) !== normalizeName(offerTitle) ? `<p class="home-offer-detail-product">${escapeOfferHtml(offer.product_name)}</p>` : ""}
+        ${offer.description ? `<p class="home-offer-detail-description">${escapeOfferHtml(offer.description)}</p>` : ""}
+        ${dateLine}
+        <div class="home-offer-detail-menu-match" data-offer-menu-match role="status" aria-live="polite">Checking the matching menu item…</div>
+        <div class="home-offer-detail-actions" data-offer-detail-actions></div>
+        <p class="home-offer-detail-status" data-offer-detail-status aria-live="polite"></p>
+      </div>`;
+    modal.hidden = false;
+    const closeButton = modal.querySelector("[data-offer-detail-close]");
+    if (closeButton) closeButton.focus();
+
+    const keyForThisOpen = openedOfferKey;
+    findLinkedMenuItem(offer).then(item => {
+      if (modal.hidden || openedOfferKey !== keyForThisOpen) return;
+      const matchNode = modalBody.querySelector("[data-offer-menu-match]");
+      const actions = modalBody.querySelector("[data-offer-detail-actions]");
+      const statusNode = modalBody.querySelector("[data-offer-detail-status]");
+      if (!matchNode || !actions) return;
+      if (item) {
+        const priceText = menuItemPriceText(item);
+        matchNode.innerHTML = `<span>Menu item</span><strong>${escapeOfferHtml(item.name)}</strong><span class="home-offer-detail-price-label">Menu price</span><strong class="home-offer-detail-price">${escapeOfferHtml(priceText)}</strong>`;
+        actions.innerHTML = '<button type="button" class="btn primary home-offer-add-button" data-add-offer-item>Add to basket</button><a class="btn soft" href="customer-menu.html">View menu</a>';
+        actions.querySelector("[data-add-offer-item]")?.addEventListener("click", event => {
+          addOfferItemToCart(item, event.currentTarget, statusNode, modal, restoreFocus);
+        });
+      } else {
+        matchNode.innerHTML = '<p class="home-offer-detail-not-linked">This offer has no exact match in the active menu yet. Browse the menu and select the right item.</p>';
+        actions.innerHTML = '<a class="btn primary" href="customer-menu.html">Browse full menu</a>';
+      }
+    }).catch(error => {
+      if (modal.hidden || openedOfferKey !== keyForThisOpen) return;
+      const matchNode = modalBody.querySelector("[data-offer-menu-match]");
+      const actions = modalBody.querySelector("[data-offer-detail-actions]");
+      if (matchNode) matchNode.innerHTML = '<p class="home-offer-detail-not-linked">The menu item could not be verified right now.</p>';
+      if (actions) actions.innerHTML = '<a class="btn primary" href="customer-menu.html">Browse full menu</a>';
+      console.warn("Could not link offer to a menu item:", error?.message || error);
+    });
+  }
+
+  try {
+    if (typeof sb === "undefined" || !sb || typeof sb.from !== "function") throw new Error("اتصال قاعدة البيانات غير جاهز على صفحة العميل.");
     const { data, error } = await sb
       .from("offers")
       .select("id,title,product_name,description,production_date,expiry_date,image_url,status,created_at")
@@ -500,79 +725,91 @@ async function loadCustomerHomeOffers() {
 
     if (error) throw error;
     const activeRows = Array.isArray(data) ? data : [];
-    const offers = activeRows.filter(offer => {
+    activeOffers = activeRows.filter(offer => {
       const production = String(offer.production_date || "").slice(0, 10);
       const expiry = String(offer.expiry_date || "").slice(0, 10);
       return (!production || production <= today) && (!expiry || expiry >= today);
     });
 
-    if (!offers.length) {
+    if (!activeOffers.length) {
       renderNotice(
-        "العروض الخاصة",
+        "Special Offers",
         activeRows.length
-          ? "لا توجد عروض سارية اليوم. راجع تاريخ الإنتاج والانتهاء وحالة العرض من صفحة GM."
-          : "لا توجد عروض نشطة متاحة لهذا الحساب حاليًا. إذا كان هناك عرض نشط، راجع صلاحيات قراءة العروض في Supabase."
+          ? "There are no offers valid today. Check offer dates and status in the GM page."
+          : "There are no active offers available for this account right now. If an active offer exists, check Supabase offer read permissions."
       );
       return;
     }
 
-    // The offer is an image-only, full-width banner. Text such as the offer name,
-    // discount and validity can be designed into the uploaded banner image itself.
-    const cards = offers.map((offer, index) => {
+    const cards = activeOffers.map((offer, index) => {
       const title = offer.product_name || offer.title || `Offer ${index + 1}`;
       const image = safeOfferImageSource(offer.image_url);
       return `
-        <article class="home-offer-slide${index === 0 ? " is-active" : ""}" data-offer-slide="${index}" aria-label="Offer ${index + 1} of ${offers.length}: ${escapeOfferHtml(title)}">
-          <div class="home-offer-item">
+        <article class="home-offer-slide${index === 0 ? " is-active" : ""}" data-offer-slide="${index}" aria-label="Offer ${index + 1} of ${activeOffers.length}: ${escapeOfferHtml(title)}" aria-hidden="${index === 0 ? "false" : "true"}">
+          <button type="button" class="home-offer-item" data-open-offer="${index}" aria-label="View details for ${escapeOfferHtml(title)}">
             ${image
-              ? `<div class="home-offer-image-wrap"><img class="home-offer-image" src="${escapeOfferHtml(image)}" alt="" loading="${index === 0 ? "eager" : "lazy"}"></div>`
-              : `<div class="home-offer-no-image" role="img" aria-label="Offer banner image has not been added yet"></div>`}
-          </div>
+              ? `<span class="home-offer-image-wrap"><img class="home-offer-image" src="${escapeOfferHtml(image)}" alt="" loading="${index === 0 ? "eager" : "lazy"}"></span>`
+              : '<span class="home-offer-image-wrap home-offer-no-image" aria-hidden="true"><span>★</span></span>'}
+          </button>
         </article>`;
     }).join("");
-    const dots = offers.map((_, index) => `<button type="button" class="home-offer-dot${index === 0 ? " is-active" : ""}" data-offer-dot="${index}" aria-label="Show offer ${index + 1}" aria-current="${index === 0 ? "true" : "false"}"></button>`).join("");
+    const dots = activeOffers.map((_, index) => `<button type="button" class="home-offer-dot${index === 0 ? " is-active" : ""}" data-offer-dot="${index}" aria-label="Show offer ${index + 1}" aria-current="${index === 0 ? "true" : "false"}"></button>`).join("");
 
     content.className = "home-offers-content home-offers-carousel";
     content.innerHTML = `
-      <div class="home-offers-head"><div><h3>Special Offers</h3></div></div>
+      <div class="home-offers-head"><div><h3>Special Offers</h3></div><span class="home-offer-count" data-offer-count>1 / ${activeOffers.length}</span></div>
       <div class="home-offer-stage" data-offer-stage>${cards}</div>
-      ${offers.length > 1 ? `<div class="home-offer-controls" aria-label="Offer slideshow controls"><button type="button" class="home-offer-arrow" data-offer-prev aria-label="Previous offer">‹</button><div class="home-offer-dots">${dots}</div><button type="button" class="home-offer-arrow" data-offer-next aria-label="Next offer">›</button></div>` : ""}`;
-    if (offers.length > 1) {
-      let activeIndex = 0;
-      const setActive = nextIndex => {
-        activeIndex = (nextIndex + offers.length) % offers.length;
-        content.querySelectorAll("[data-offer-slide]").forEach((slide, index) => {
-          slide.classList.toggle("is-active", index === activeIndex);
-          slide.setAttribute("aria-hidden", index === activeIndex ? "false" : "true");
-        });
-        content.querySelectorAll("[data-offer-dot]").forEach((dot, index) => {
-          dot.classList.toggle("is-active", index === activeIndex);
-          dot.setAttribute("aria-current", index === activeIndex ? "true" : "false");
-        });
-      };
-      content.querySelector("[data-offer-prev]")?.addEventListener("click", () => setActive(activeIndex - 1));
-      content.querySelector("[data-offer-next]")?.addEventListener("click", () => setActive(activeIndex + 1));
-      content.querySelectorAll("[data-offer-dot]").forEach(dot => dot.addEventListener("click", () => setActive(Number(dot.dataset.offerDot))));
-      let touchStartX = null;
-      const stage = content.querySelector("[data-offer-stage]");
-      stage?.addEventListener("touchstart", event => { touchStartX = event.changedTouches[0]?.clientX ?? null; }, { passive: true });
-      stage?.addEventListener("touchend", event => {
-        if (touchStartX === null) return;
-        const delta = (event.changedTouches[0]?.clientX ?? touchStartX) - touchStartX;
-        if (Math.abs(delta) > 40) setActive(activeIndex + (delta < 0 ? 1 : -1));
-        touchStartX = null;
-      }, { passive: true });
-      let autoplay = window.setInterval(() => setActive(activeIndex + 1), 10000);
-      content.addEventListener("mouseenter", () => { window.clearInterval(autoplay); autoplay = null; });
-      content.addEventListener("mouseleave", () => { if (autoplay === null) autoplay = window.setInterval(() => setActive(activeIndex + 1), 10000); });
-      content.addEventListener("focusin", () => { if (autoplay !== null) window.clearInterval(autoplay); autoplay = null; });
-      content.addEventListener("focusout", event => { if (!content.contains(event.relatedTarget) && autoplay === null) autoplay = window.setInterval(() => setActive(activeIndex + 1), 10000); });
-    }
+      ${activeOffers.length > 1 ? `<div class="home-offer-controls" aria-label="Offer slideshow controls"><button type="button" class="home-offer-arrow" data-offer-prev aria-label="Previous offer">‹</button><div class="home-offer-dots">${dots}</div><button type="button" class="home-offer-arrow" data-offer-next aria-label="Next offer">›</button></div>` : ""}
+      <div class="home-offer-detail-backdrop" data-offer-detail-modal hidden>
+        <section class="home-offer-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="homeOfferDetailTitle" tabindex="-1">
+          <button class="home-offer-detail-close" data-offer-detail-close type="button" aria-label="Close offer details">×</button>
+          <div class="home-offer-detail-body" data-offer-detail-body></div>
+        </section>
+      </div>`;
+
+    const modal = content.querySelector("[data-offer-detail-modal]");
+    const modalBody = content.querySelector("[data-offer-detail-body]");
+    // Keep the full-screen dialog outside the carousel card so it is never clipped by its overflow.
+    if (modal) document.body.appendChild(modal);
+
+    content.querySelectorAll("[data-open-offer]").forEach(button => {
+      button.addEventListener("click", () => openOfferDetails(Number(button.dataset.openOffer), button, modal, modalBody));
+    });
+    content.querySelector("[data-offer-prev]")?.addEventListener("click", () => setActiveSlide(currentIndex - 1));
+    content.querySelector("[data-offer-next]")?.addEventListener("click", () => setActiveSlide(currentIndex + 1));
+    content.querySelectorAll("[data-offer-dot]").forEach(dot => dot.addEventListener("click", () => setActiveSlide(Number(dot.dataset.offerDot))));
+
+    let touchStartX = null;
+    const stage = content.querySelector("[data-offer-stage]");
+    stage?.addEventListener("touchstart", event => { touchStartX = event.changedTouches[0]?.clientX ?? null; }, { passive: true });
+    stage?.addEventListener("touchend", event => {
+      if (touchStartX === null || activeOffers.length < 2) return;
+      const delta = (event.changedTouches[0]?.clientX ?? touchStartX) - touchStartX;
+      if (Math.abs(delta) > 40) setActiveSlide(currentIndex + (delta < 0 ? 1 : -1));
+      touchStartX = null;
+    }, { passive: true });
+
+    content.addEventListener("mouseenter", () => { userPaused = true; stopAutoplay(); });
+    content.addEventListener("mouseleave", () => { userPaused = false; startAutoplay(); });
+    content.addEventListener("focusin", () => { if (!modalOpen) { userPaused = true; stopAutoplay(); } });
+    content.addEventListener("focusout", event => {
+      if (!content.contains(event.relatedTarget) && !modalOpen) { userPaused = false; startAutoplay(); }
+    });
+    modal?.querySelector("[data-offer-detail-close]")?.addEventListener("click", () => closeDetails(modal, restoreFocus));
+    modal?.addEventListener("click", event => {
+      if (event.target === modal) closeDetails(modal, restoreFocus);
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && modal && !modal.hidden) closeDetails(modal, restoreFocus);
+    });
+    document.addEventListener("visibilitychange", () => document.hidden ? stopAutoplay() : startAutoplay());
+    setActiveSlide(0);
+    startAutoplay();
   } catch (error) {
     console.error("Could not load customer home offers:", error?.message || error);
     renderNotice(
-      "تعذر تحميل العروض",
-      `سبب المشكلة: ${error?.message || "خطأ غير معروف"}. تأكد من اتصال الإنترنت وصلاحيات قراءة العروض في Supabase ثم أعد المحاولة.`,
+      "Offers are temporarily unavailable",
+      `Reason: ${error?.message || "Unknown error"}. Check internet and Supabase offer read permissions, then try again.`,
       true
     );
   }

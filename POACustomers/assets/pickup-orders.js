@@ -10,6 +10,9 @@
   let savedDeliveryAddresses = [];
   let selectedDeliveryInstructions = '';
   let selectedSavedAddressText = '';
+  let activeBranches = [];
+  let deliveryZones = [];
+  let resolvedZoneDistanceKm = null;
 
   function readCart() {
     try {
@@ -79,7 +82,10 @@
   function deliveryDetailsHtml(order, staffView) {
     if (order.fulfillment_type !== 'delivery') return '';
     const map = mapUrlForOrder(order);
-    return '<div class="pickup-delivery-details"><span class="fulfillment-badge">⌖ DELIVERY</span><br><strong>Delivery address:</strong> ' + esc(order.delivery_address || 'Address not recorded') +
+    return '<div class="pickup-delivery-details"><span class="fulfillment-badge">⌖ DELIVERY</span>' +
+      (order.delivery_zone_name ? '<br><strong>Delivery area:</strong> ' + esc(order.delivery_zone_name) : '') +
+      '<br><strong>Delivery address / area:</strong> ' + esc(order.delivery_address || 'Address not recorded') +
+      (order.delivery_fee != null ? '<br><strong>Delivery fee:</strong> ' + esc(money(order.delivery_fee)) : '') +
       (map ? '<br><a class="delivery-location-link" href="' + esc(map) + '" target="_blank" rel="noopener noreferrer">↗ Open delivery location in Google Maps</a>' : '<br><small>Map location not available.</small>') + '</div>';
   }
 
@@ -125,12 +131,12 @@
     if (success) success.hidden = mode !== 'success';
   }
 
-  function showOrderSuccess(orderNumber, fulfillment) {
+  function showOrderSuccess(orderNumber, fulfillment, result = {}) {
     const number = $('pickupOrderSuccessNumber');
     const method = $('pickupOrderSuccessMethod');
     if (number) number.textContent = String(orderNumber || '—');
     if (method) method.textContent = fulfillment === 'delivery'
-      ? 'Delivery to your location. Branch Staff will update the order status.'
+      ? 'Area: ' + String(result.delivery_zone_name || 'Selected delivery area') + '. Routed to ' + String(result.branch_name || 'the assigned branch') + '. Delivery fee: ' + money(result.delivery_fee ?? 0) + '. Branch Staff will update the order status.'
       : 'Pickup from the selected branch. Branch Staff will update the order status.';
     $('pickupCheckoutMessage')?.setAttribute('hidden', '');
     setCheckoutView('success');
@@ -169,10 +175,7 @@
     list.querySelectorAll('[data-qty-minus]').forEach(button => button.addEventListener('click', () => changeQuantity(button.dataset.qtyMinus, -1)));
     list.querySelectorAll('[data-qty-plus]').forEach(button => button.addEventListener('click', () => changeQuantity(button.dataset.qtyPlus, 1)));
     list.querySelectorAll('[data-remove-item]').forEach(button => button.addEventListener('click', () => { writeCart(readCart().filter(row => String(row.id) !== String(button.dataset.removeItem))); renderCart(); }));
-    const calc = calculate(cart);
-    if (summary) summary.innerHTML = '<div class="pickup-summary-row"><span>Items</span><strong>' + quantityCount(cart) + '</strong></div>' +
-      '<div class="pickup-summary-row"><span>Order total</span><strong>' + (calc.known ? money(calc.total) : 'To be confirmed by branch') + '</strong></div>' +
-      (!calc.known ? '<div class="pickup-note">One or more items do not have a published price. You can still send the order; branch Staff will confirm the final amount.</div>' : '<div class="pickup-note">Choose pickup or delivery at checkout. No online payment is taken in this flow.</div>');
+    updateOrderSummary();
     refreshPlaceButton();
   }
 
@@ -186,9 +189,64 @@
     renderCart();
   }
 
+  function selectedZone() {
+    const id = $('deliveryZone')?.value || '';
+    return deliveryZones.find(zone => String(zone.id) === String(id)) || null;
+  }
+  function updateZoneSummary(zone, distanceKm, isError) {
+    const box = $('deliveryZoneSummary');
+    if (!box) return;
+    if (!zone) {
+      box.hidden = true;
+      box.innerHTML = '';
+      box.classList.remove('error');
+      return;
+    }
+    const branch = activeBranches.find(row => String(row.id) === String(zone.location_id));
+    const branchName = zone.branch_name || branch?.name || 'Assigned branch';
+    const areaName = zone.zone_name || zone.name || 'Delivery area';
+    const fee = zone.delivery_fee == null ? 0 : Number(zone.delivery_fee);
+    const minimum = zone.minimum_order_amount == null ? 0 : Number(zone.minimum_order_amount);
+    const distance = Number.isFinite(Number(distanceKm)) ? '<span class="delivery-zone-chip">Approx. distance: ' + esc(Number(distanceKm).toFixed(2)) + ' km</span>' : '';
+    box.innerHTML = '<strong>' + esc(isError ? 'Delivery area unavailable' : areaName) + '</strong>' +
+      '<span>' + esc(isError ? (zone.message || 'Your location is outside the configured areas.') : ('Your order will be routed to ' + branchName + '.')) + '</span>' +
+      (!isError ? '<div class="delivery-zone-facts"><span class="delivery-zone-chip">Delivery fee: ' + esc(money(fee)) + '</span><span class="delivery-zone-chip">Minimum items total: ' + esc(money(minimum)) + '</span>' + distance + '</div>' : '');
+    box.hidden = false;
+    box.classList.toggle('error', !!isError);
+  }
+  function updateOrderSummary() {
+    const summary = $('pickupCartSummary');
+    if (!summary) return;
+    const cart = readCart(), calc = calculate(cart), delivery = fulfillmentType() === 'delivery', zone = delivery ? selectedZone() : null;
+    const subtotalText = calc.known ? money(calc.total) : 'To be confirmed by branch';
+    let html = '<div class="pickup-summary-row"><span>Items</span><strong>' + quantityCount(cart) + '</strong></div>' +
+      '<div class="pickup-summary-row"><span>Items subtotal</span><strong>' + subtotalText + '</strong></div>';
+    if (delivery && !zone) {
+      html += '<div class="pickup-note">Choose your current location or select a saved address with a map pin. The correct area and branch will be assigned automatically.</div>';
+    }
+    if (delivery && zone) {
+      const fee = Number(zone.delivery_fee || 0), minimum = Number(zone.minimum_order_amount || 0);
+      html += '<div class="pickup-summary-row"><span>Delivery fee · ' + esc(zone.name) + '</span><strong>' + esc(money(fee)) + '</strong></div>' +
+        '<div class="pickup-summary-row"><span>Estimated total</span><strong>' + (calc.known ? esc(money(calc.total + fee)) : 'To be confirmed by branch') + '</strong></div>';
+      if (calc.known && calc.total < minimum) html += '<div class="pickup-error">Minimum item subtotal for this area is ' + esc(money(minimum)) + '. Add ' + esc(money(minimum - calc.total)) + ' more to continue.</div>';
+      else if (!calc.known && minimum > 0) html += '<div class="pickup-error">This area has a minimum order, but one or more menu items have no published price. The minimum cannot be verified. Ask the branch to confirm prices before delivery.</div>';
+    } else if (!delivery) {
+      html += '<div class="pickup-summary-row"><span>Order total</span><strong>' + subtotalText + '</strong></div>';
+    }
+    html += !calc.known
+      ? '<div class="pickup-note">One or more items do not have a published price. The branch will confirm the final amount before preparation.</div>'
+      : '<div class="pickup-note">No online payment is taken in this flow. The branch will confirm and process the order.</div>';
+    summary.innerHTML = html;
+  }
   function refreshPlaceButton() {
     const btn = $('placePickupOrderBtn');
-    if (btn && !btn.dataset.sending) btn.disabled = !readCart().length || !$('pickupBranch')?.value;
+    if (!btn || btn.dataset.sending) return;
+    const cart = readCart(), delivery = fulfillmentType() === 'delivery', zone = delivery ? selectedZone() : null;
+    const calc = calculate(cart);
+    const minimumValue = Number(zone?.minimum_order_amount || 0);
+    const minimumNotMet = !!(delivery && zone && (calc.known ? calc.total < minimumValue : minimumValue > 0));
+    btn.disabled = !cart.length || (delivery ? !zone : !$('pickupBranch')?.value) || minimumNotMet;
+    updateOrderSummary();
   }
   function setLocationStatus(text, kind) {
     const el = $('deliveryLocationStatus');
@@ -200,12 +258,17 @@
   function updateFulfillmentUI() {
     const type = fulfillmentType(), delivery = type === 'delivery';
     const panel = $('deliveryDetails');
+    const branchField = $('pickupBranchField');
     if (panel) panel.hidden = !delivery;
+    if (branchField) branchField.hidden = delivery;
+    if ($('pickupBranch')) $('pickupBranch').required = !delivery;
+    if ($('deliveryZone')) $('deliveryZone').required = delivery;
     const address = $('deliveryAddress');
-    // Written address details are optional when a usable delivery location is supplied.
+    // Written address details are optional when GPS or a valid map link is supplied.
     if (address) address.required = false;
     const btn = $('placePickupOrderBtn');
     if (btn && !btn.dataset.sending) btn.textContent = delivery ? 'PLACE DELIVERY ORDER' : 'PLACE PICKUP ORDER';
+    updateOrderSummary();
     refreshPlaceButton();
   }
   function useMyLocation() {
@@ -213,12 +276,13 @@
     if (!navigator.geolocation) { setLocationStatus('Location is not available in this browser. Paste a Google Maps link instead.', 'error'); return; }
     if (button) { button.disabled = true; button.textContent = 'GETTING LOCATION…'; }
     setLocationStatus('Waiting for your device location permission…');
-    navigator.geolocation.getCurrentPosition(position => {
+    navigator.geolocation.getCurrentPosition(async position => {
       const lat = Number(position.coords.latitude), lng = Number(position.coords.longitude);
       $('deliveryLatitude').value = String(lat);
       $('deliveryLongitude').value = String(lng);
       $('deliveryMapUrl').value = 'https://www.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng);
-      setLocationStatus('Your current location is attached to this order.', 'success');
+      setLocationStatus('Your current location is attached. Checking which delivery area covers it…');
+      await resolveDeliveryZoneForCoordinates(lat, lng);
       if (button) { button.disabled = false; button.textContent = '⌖ UPDATE MY LOCATION'; }
     }, error => {
       const message = error && error.code === 1 ? 'Location permission was denied. Paste a Google Maps link instead.' : 'Could not get location. Check device location and try again, or paste a Maps link.';
@@ -246,7 +310,7 @@
         select.innerHTML = '<option value="">No saved address yet — add one in My Profile</option>';
         selectedDeliveryInstructions = '';
         selectedSavedAddressText = '';
-        setLocationStatus('No saved delivery address found. Add one in My Profile, or enter an address and map location for this order.', 'error');
+        setLocationStatus('No saved map-pin address found. Use your current location or add a map pin in My Profile.', 'error');
         return;
       }
       select.innerHTML = '<option value="">Choose another saved address</option>' + savedDeliveryAddresses.map(row => {
@@ -257,13 +321,18 @@
       }).join('');
       const preferred = savedDeliveryAddresses.find(row => row.is_default) || savedDeliveryAddresses[0];
       select.value = preferred.id;
-      applySavedDeliveryAddress(preferred);
-      select.addEventListener('change', () => {
+      await applySavedDeliveryAddress(preferred);
+      select.addEventListener('change', async () => {
         const row = savedDeliveryAddresses.find(item => item.id === select.value);
-        if (row) applySavedDeliveryAddress(row);
+        if (row) await applySavedDeliveryAddress(row);
         else {
           selectedDeliveryInstructions = '';
           selectedSavedAddressText = '';
+          $('deliveryZone').value = '';
+          resolvedZoneDistanceKm = null;
+          updateZoneSummary(null);
+          updateOrderSummary();
+          refreshPlaceButton();
         }
       });
     } catch (error) {
@@ -272,7 +341,7 @@
     }
   }
 
-  function applySavedDeliveryAddress(row) {
+  async function applySavedDeliveryAddress(row) {
     if (!row) return;
     if ($('deliveryAddress')) $('deliveryAddress').value = row.full_address || '';
     if ($('deliveryLatitude')) $('deliveryLatitude').value = row.latitude == null ? '' : String(row.latitude);
@@ -280,11 +349,23 @@
     if ($('deliveryMapUrl')) $('deliveryMapUrl').value = row.map_url || (row.latitude != null && row.longitude != null && Number.isFinite(Number(row.latitude)) && Number.isFinite(Number(row.longitude)) ? 'https://www.google.com/maps?q=' + encodeURIComponent(row.latitude + ',' + row.longitude) : '');
     selectedDeliveryInstructions = row.delivery_instructions || '';
     selectedSavedAddressText = row.full_address || '';
-    setLocationStatus((row.label || 'Saved address') + ' selected. The saved map location will be sent with your order.', 'success');
+    if (row.latitude != null && row.longitude != null) {
+      setLocationStatus((row.label || 'Saved address') + ' selected. Checking delivery coverage…');
+      await resolveDeliveryZoneForCoordinates(Number(row.latitude), Number(row.longitude));
+    } else {
+      $('deliveryZone').value = '';
+      resolvedZoneDistanceKm = null;
+      updateZoneSummary(null);
+      setLocationStatus((row.label || 'Saved address') + ' has no saved map pin. Add a pin in My Profile or use your current location to route automatically.', 'error');
+    }
+    updateOrderSummary();
+    refreshPlaceButton();
   }
 
   function deliveryPayloadOrError() {
-    if (fulfillmentType() !== 'delivery') return { type: 'pickup', address: null, mapUrl: null, latitude: null, longitude: null, instructions: null };
+    if (fulfillmentType() !== 'delivery') return { type: 'pickup', address: null, mapUrl: null, latitude: null, longitude: null, instructions: null, zoneId: null };
+    const zone = selectedZone();
+    if (!zone) { showMessage('pickupCheckoutMessage', 'Choose a delivery area or use your GPS location to find the area serving you.', true); $('deliveryZone')?.focus(); return null; }
     const address = $('deliveryAddress')?.value.trim() || '';
     const mapInput = $('deliveryMapUrl')?.value.trim() || '';
     const latText = $('deliveryLatitude')?.value || '', lngText = $('deliveryLongitude')?.value || '';
@@ -294,11 +375,15 @@
     if (latitude !== null && (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)) {
       showMessage('pickupCheckoutMessage', 'The map coordinates are invalid. Select your current location or paste a valid map link.', true); return null;
     }
+    if (latitude === null || longitude === null) {
+      showMessage('pickupCheckoutMessage', 'Automatic branch routing requires a saved map pin. Use your current location or choose an address with a map pin from My Profile. A text address or link alone cannot reliably assign the correct branch.', true);
+      $('useMyLocationBtn')?.focus();
+      return null;
+    }
     const mapUrl = validMapUrl(mapInput);
-    if (mapInput && !mapUrl) { showMessage('pickupCheckoutMessage', 'Paste a valid Google Maps link starting with https://.', true); $('deliveryMapUrl')?.focus(); return null; }
-    if (latitude === null && !mapUrl) { showMessage('pickupCheckoutMessage', 'For delivery, select your map location or paste a Google Maps link. Written address details are optional.', true); $('useMyLocationBtn')?.focus(); return null; }
-    const resolvedMapUrl = mapUrl || (latitude !== null ? 'https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude) : null);
-    return { type: 'delivery', address: address || null, mapUrl: resolvedMapUrl, latitude, longitude, instructions: address === selectedSavedAddressText ? selectedDeliveryInstructions : null };
+    if (mapInput && !mapUrl) { showMessage('pickupCheckoutMessage', 'The saved map link is invalid. Re-select the location or update the saved address.', true); return null; }
+    const resolvedMapUrl = mapUrl || 'https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude);
+    return { type: 'delivery', address: address || null, mapUrl: resolvedMapUrl, latitude, longitude, instructions: address === selectedSavedAddressText ? selectedDeliveryInstructions : null, zoneId: zone.id };
   }
 
   async function loadBranches() {
@@ -312,6 +397,7 @@
       return;
     }
     const branches = Array.isArray(data) ? data.filter(row => row && row.id && row.name) : [];
+    activeBranches = branches;
     if (!branches.length) {
       select.innerHTML = '<option value="">No active branches available</option>';
       showMessage('pickupCheckoutMessage', 'No active branches are available yet. A branch must be added before placing orders.', true);
@@ -327,6 +413,87 @@
     refreshPlaceButton();
   }
 
+  async function loadDeliveryZones() {
+    const select = $('deliveryZone');
+    if (!select) return;
+    select.innerHTML = '<option value="">Loading delivery areas…</option>';
+    select.disabled = true;
+    try {
+      const { data, error } = await sb.from('delivery_zones')
+        .select('id,name,area_description,location_id,center_latitude,center_longitude,radius_km,delivery_fee,minimum_order_amount,is_active')
+        .eq('is_active', true).order('name');
+      if (error) throw error;
+      const activeIds = new Set(activeBranches.map(row => String(row.id)));
+      deliveryZones = (Array.isArray(data) ? data : []).filter(zone => zone && zone.id && activeIds.has(String(zone.location_id)));
+      if (!deliveryZones.length) {
+        select.innerHTML = '<option value="">No active delivery areas configured</option>';
+        setLocationStatus('Delivery is not available until the manager configures delivery areas and assigns each one to an active branch.', 'error');
+        return;
+      }
+      select.innerHTML = '<option value="">Choose your area</option>' + deliveryZones.map(zone => {
+        const branch = activeBranches.find(row => String(row.id) === String(zone.location_id));
+        const area = zone.area_description ? ' — ' + zone.area_description : '';
+        const label = zone.name + area + ' · ' + (branch?.name || 'Branch') + ' · fee ' + money(zone.delivery_fee);
+        return '<option value="' + esc(zone.id) + '">' + esc(label) + '</option>';
+      }).join('');
+      // This is an informational field, not a customer-controlled branch selector.
+      // The server resolves the matching zone from coordinates and fills the field automatically.
+      updateOrderSummary();
+      refreshPlaceButton();
+    } catch (error) {
+      deliveryZones = [];
+      select.innerHTML = '<option value="">Delivery areas unavailable</option>';
+      setLocationStatus('Could not load delivery areas. The manager may need to run the delivery-zones setup SQL. Details: ' + (error?.message || error), 'error');
+    }
+  }
+
+  async function resolveDeliveryZoneForCoordinates(latitude, longitude) {
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      setLocationStatus('The map location is invalid. Select your current location again.', 'error');
+      $('deliveryZone').value = '';
+      updateZoneSummary(null);
+      updateOrderSummary();
+      refreshPlaceButton();
+      return;
+    }
+    try {
+      const { data, error } = await sb.rpc('resolve_delivery_zone', { p_lat: latitude, p_lng: longitude });
+      if (error) throw error;
+      const result = Array.isArray(data) ? data[0] : data;
+      if (!result || result.covered !== true) {
+        $('deliveryZone').value = '';
+        resolvedZoneDistanceKm = null;
+        updateZoneSummary({ message: result?.message || 'Your location is outside the configured delivery areas.' }, null, true);
+        setLocationStatus(result?.message || 'Your location is outside the configured delivery areas.', 'error');
+        updateOrderSummary();
+        refreshPlaceButton();
+        return;
+      }
+      const zone = deliveryZones.find(row => String(row.id) === String(result.zone_id));
+      if (!zone) {
+        $('deliveryZone').value = '';
+        updateZoneSummary({ message: 'The matching area is not available for ordering. Ask the manager to check the branch and area settings.' }, null, true);
+        setLocationStatus('The matching area is not available for ordering. Ask the manager to check the branch and area settings.', 'error');
+        updateOrderSummary();
+        refreshPlaceButton();
+        return;
+      }
+      $('deliveryZone').value = zone.id;
+      resolvedZoneDistanceKm = result.distance_km;
+      updateZoneSummary({ ...zone, zone_name: result.zone_name, branch_name: result.branch_name, delivery_fee: result.delivery_fee, minimum_order_amount: result.minimum_order_amount }, result.distance_km, false);
+      setLocationStatus('Delivery area matched: ' + result.zone_name + '. Your order will go to ' + result.branch_name + '.', 'success');
+      updateOrderSummary();
+      refreshPlaceButton();
+    } catch (error) {
+      $('deliveryZone').value = '';
+      resolvedZoneDistanceKm = null;
+      updateZoneSummary({ message: 'Could not check delivery coverage: ' + (error?.message || error) }, null, true);
+      setLocationStatus('Could not check delivery coverage. Confirm the zone setup in Supabase. ' + (error?.message || error), 'error');
+      updateOrderSummary();
+      refreshPlaceButton();
+    }
+  }
+
   function showMessage(id, text, isError) {
     const box = $(id);
     if (!box) return;
@@ -337,34 +504,49 @@
 
   async function submitCustomerOrder(event) {
     event.preventDefault();
-    const cart = readCart(), branchId = $('pickupBranch')?.value;
+    const cart = readCart();
     if (!cart.length) { setCheckoutView('empty'); return; }
-    if (!branchId) { showMessage('pickupCheckoutMessage', 'Choose the branch that will handle your order.', true); $('pickupBranch')?.focus(); return; }
     const delivery = deliveryPayloadOrError();
     if (!delivery) return;
+    const branchId = $('pickupBranch')?.value;
+    if (delivery.type === 'pickup' && !branchId) { showMessage('pickupCheckoutMessage', 'Choose the branch that will handle your pickup order.', true); $('pickupBranch')?.focus(); return; }
+    if (delivery.type === 'delivery' && !delivery.zoneId) { showMessage('pickupCheckoutMessage', 'Choose your delivery area first.', true); $('deliveryZone')?.focus(); return; }
 
     const button = $('placePickupOrderBtn');
     button.dataset.sending = 'true'; button.disabled = true; button.textContent = 'SENDING ORDER…';
     showMessage('pickupCheckoutMessage', '', false);
     try {
-      const { data, error } = await sb.rpc('place_customer_order', {
-        p_location_id: branchId,
-        p_items: cart.map(row => ({ item_id: row.id, quantity: Number(row.quantity) })),
-        p_fulfillment_type: delivery.type,
-        p_delivery_address: delivery.address,
-        p_delivery_map_url: delivery.mapUrl,
-        p_delivery_latitude: delivery.latitude,
-        p_delivery_longitude: delivery.longitude,
-        p_notes: [delivery.instructions ? 'Delivery instructions: ' + delivery.instructions : '', $('pickupOrderNotes')?.value?.trim() ? 'Order note: ' + $('pickupOrderNotes').value.trim() : ''].filter(Boolean).join(' | ').slice(0, 500) || null
-      });
+      const notes = [delivery.instructions ? 'Delivery instructions: ' + delivery.instructions : '', $('pickupOrderNotes')?.value?.trim() ? 'Order note: ' + $('pickupOrderNotes').value.trim() : ''].filter(Boolean).join(' | ').slice(0, 500) || null;
+      const orderItems = cart.map(row => ({ item_id: row.id, quantity: Number(row.quantity) }));
+      const rpc = delivery.type === 'delivery'
+        ? await sb.rpc('place_delivery_order_in_zone', {
+            p_delivery_zone_id: delivery.zoneId,
+            p_items: orderItems,
+            p_delivery_address: delivery.address,
+            p_delivery_map_url: delivery.mapUrl,
+            p_delivery_latitude: delivery.latitude,
+            p_delivery_longitude: delivery.longitude,
+            p_notes: notes
+          })
+        : await sb.rpc('place_customer_order', {
+            p_location_id: branchId,
+            p_items: orderItems,
+            p_fulfillment_type: 'pickup',
+            p_delivery_address: null,
+            p_delivery_map_url: null,
+            p_delivery_latitude: null,
+            p_delivery_longitude: null,
+            p_notes: notes
+          });
+      const { data, error } = rpc;
       if (error) throw error;
       const result = Array.isArray(data) ? data[0] : data;
-      if (!result || !result.order_number) throw new Error('The branch did not return an order number. Refresh your order history before trying again.');
+      if (!result || !result.order_number) throw new Error('The order system did not return an order number. Refresh your order history before trying again.');
       localStorage.removeItem(CART_KEY);
       if ($('pickupOrderNotes')) $('pickupOrderNotes').value = '';
       const fulfillment = result.fulfillment_type === 'delivery' ? 'delivery' : 'pickup';
       renderCart();
-      showOrderSuccess(result.order_number, fulfillment);
+      showOrderSuccess(result.order_number, fulfillment, result);
       // Past orders are shown only on customer-order-history.html. Keep checkout focused on the current order.
       // Ask about adding the app only after a successful order, never on the landing page.
       window.setTimeout(() => {
@@ -396,7 +578,7 @@
     if (!box) return;
     box.innerHTML = '<div class="pickup-empty">Loading your orders…</div>';
     const { data, error } = await sb.from('pickup_orders')
-      .select('id,order_number,customer_name,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,status,notes,subtotal,currency,created_at,updated_at')
+      .select('id,order_number,customer_name,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_fee,total_amount,status,notes,subtotal,currency,created_at,updated_at')
       .order('created_at', { ascending: false }).limit(50);
     if (error) {
       box.innerHTML = '<div class="pickup-error">Could not load orders. Run the order setup SQL in Supabase. Details: ' + esc(error.message) + '</div>';
@@ -407,33 +589,16 @@
     const orderIds = orders.map(row => row.id);
     const { data: items, error: itemsError } = await sb.from('pickup_order_items').select('id,order_id,item_name,quantity,unit_price,line_total').in('order_id', orderIds).order('created_at', { ascending: true });
     if (itemsError) { box.innerHTML = '<div class="pickup-error">Your orders loaded, but their items could not be loaded: ' + esc(itemsError.message) + '</div>'; return; }
-    // Award rows are customer-scoped by RLS; failure to read them must not hide order history.
-    let awardRows = [], awardQueryFailed = false;
-    try {
-      const awardsResult = await sb.from('pickup_order_point_awards').select('order_id,points_awarded').in('order_id', orderIds);
-      if (awardsResult.error) awardQueryFailed = true;
-      else awardRows = Array.isArray(awardsResult.data) ? awardsResult.data : [];
-    } catch (_) { awardQueryFailed = true; }
-    const awardsByOrder = Object.fromEntries(awardRows.map(row => [String(row.order_id), Number(row.points_awarded || 0)]));
     const grouped = {};
     (items || []).forEach(item => (grouped[item.order_id] ||= []).push(item));
     box.innerHTML = orders.map(order => {
       const rows = grouped[order.id] || [], type = order.fulfillment_type || 'pickup', canCancel = order.status === 'placed';
       const itemHtml = rows.map(row => '<div>• ' + esc(row.item_name) + ' × ' + Number(row.quantity) + (row.unit_price === null ? ' — price to be confirmed' : ' — ' + money(row.line_total)) + '</div>').join('');
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
-      const awardedPoints = awardsByOrder[String(order.id)] || 0;
-      let loyaltyLine = '';
-      if (!awardQueryFailed && awardedPoints > 0) {
-        loyaltyLine = '<div class="pickup-order-loyalty">★ You earned 1 loyalty point for this order.</div>';
-      } else if (!awardQueryFailed && order.status === 'completed') {
-        loyaltyLine = '<div class="pickup-order-loyalty muted">No point was added. The balance may be at the 50-point limit, or the order was completed before points were enabled.</div>';
-      } else if (!awardQueryFailed && order.status !== 'cancelled') {
-        loyaltyLine = '<div class="pickup-order-loyalty pending">You will earn 1 loyalty point when this order is completed. Delivery orders count when delivered.</div>';
-      }
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>Branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + '<br>' + esc(statusHint(order.status, type)) +
         deliveryDetailsHtml(order, false) + (order.notes ? '<br>Note: ' + esc(order.notes) : '') + '</div>' +
-        '<div class="pickup-order-items">' + itemHtml + '</div>' + loyaltyLine + '<div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.subtotal === null ? 'To be confirmed by branch' : money(order.subtotal)) + '</strong></div>' +
+        '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'To be confirmed by branch' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div>' +
         (canCancel ? '<button class="btn danger" type="button" data-cancel-order="' + esc(order.id) + '">Cancel order</button>' : '') + '</div></article>';
     }).join('');
     box.querySelectorAll('[data-cancel-order]').forEach(button => button.addEventListener('click', () => cancelCustomerOrder(button.dataset.cancelOrder)));
@@ -468,7 +633,7 @@
     }
     box.innerHTML = '<div class="pickup-empty">Loading branch orders…</div>';
     const { data, error } = await sb.from('pickup_orders')
-      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,status,notes,subtotal,currency,created_at')
+      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_fee,total_amount,status,notes,subtotal,currency,created_at')
       .eq('location_id', assignedStaffLocationId).order('created_at', { ascending: false }).limit(100);
     if (error) { box.innerHTML = '<div class="pickup-error">Could not load branch orders. Run the order setup SQL in Supabase. Details: ' + esc(error.message) + '</div>'; return; }
     const orders = Array.isArray(data) ? data : [];
@@ -485,7 +650,7 @@
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>Handling branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + (order.branch_address ? '<br>Branch address: ' + esc(order.branch_address) : '') +
         deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + '</div>' +
-        '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.subtotal === null ? 'Confirm with customer' : money(order.subtotal)) + '</strong></div></div>' +
+        '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'Confirm with customer' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div></div>' +
         '<div class="pickup-next-actions">' + (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
         (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '') + '</div></article>';
     }).join('');
@@ -505,7 +670,9 @@
     // Draw the local basket immediately. If it is empty, do not fetch checkout-only data.
     renderCart();
     if (readCart().length) {
-      await Promise.all([loadBranches(), loadSavedDeliveryAddresses()]);
+      await loadBranches();
+      await loadDeliveryZones();
+      await loadSavedDeliveryAddresses();
       renderCart();
     }
     $('pickupOrderForm')?.addEventListener('submit', submitCustomerOrder);
@@ -513,14 +680,6 @@
     $('useMyLocationBtn')?.addEventListener('click', useMyLocation);
     $('deliveryAddress')?.addEventListener('input', () => {
       if ($('deliveryAddress').value.trim() !== selectedSavedAddressText) selectedDeliveryInstructions = '';
-    });
-    $('deliveryMapUrl')?.addEventListener('input', () => {
-      const value = $('deliveryMapUrl').value.trim();
-      if (value) {
-        $('deliveryLatitude').value = '';
-        $('deliveryLongitude').value = '';
-        setLocationStatus(validMapUrl(value) ? 'Google Maps link added. The branch can open this location.' : 'Paste a valid Google Maps share link.', validMapUrl(value) ? 'success' : 'error');
-      } else setLocationStatus('Choose your map location so the branch can find you.');
     });
     updateFulfillmentUI();
     // Order history is loaded separately on customer-order-history.html, not on checkout.
