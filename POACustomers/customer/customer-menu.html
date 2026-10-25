@@ -8,9 +8,9 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
 <title>Dina's Corner Menu</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261024-no-bottom-nav-home-cards-v1">
-<link rel="stylesheet" href="../assets/menu-display.css?v=20261026-category-image-speed-v1">
-<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261024-offer-order-bottomnav-v1">
+<link rel="stylesheet" href="../assets/style.css?v=20261026-offers-page-v1">
+<link rel="stylesheet" href="../assets/menu-display.css?v=20261026-text-categories-offers-v2">
+<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261026-offers-large-image-v1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
@@ -31,6 +31,7 @@
   <nav class="customer-menu-popup" aria-label="Customer menu">
     <a href="customer-home.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">⌂</span><span>Home</span></a>
     <a href="customer-menu.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">☰</span><span>Menu &amp; Basket</span></a>
+    <a href="customer-offers.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">★</span><span>Offers</span></a>
     <a href="customer-card.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">▦</span><span>My QR Code</span></a>
     <a href="customer-rewards.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">★</span><span>Rewards</span></a>
     <a href="customer-locations.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">⌖</span><span>Branches</span></a>
@@ -60,16 +61,16 @@
   </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="../assets/tenant-config.js?v=20261024-offer-order-bottomnav-v1"></script>
-<script src="../assets/tenant-branding.js?v=20261024-offer-order-bottomnav-v1"></script>
-<script src="../assets/customer-navigation.js?v=20261024-no-bottom-nav-home-cards-v1"></script>
-<script src="../assets/config.js?v=20261024-offer-order-bottomnav-v1"></script>
-<script src="../assets/app.js?v=20261024-offer-order-bottomnav-v1"></script>
-<script src="../assets/pickup-orders.js?v=20261024-offer-order-bottomnav-v1"></script>
+<script src="../assets/tenant-config.js?v=20261026-offers-large-image-v1"></script>
+<script src="../assets/tenant-branding.js?v=20261026-offers-large-image-v1"></script>
+<script src="../assets/customer-navigation.js?v=20261026-offers-large-image-v1"></script>
+<script src="../assets/config.js?v=20261026-offers-large-image-v1"></script>
+<script src="../assets/app.js?v=20261026-offers-large-image-v1"></script>
+<script src="../assets/pickup-orders.js?v=20261026-offers-large-image-v1"></script>
 
 
 
-<script src="../assets/menu-display.js?v=20261026-category-image-speed-v1"></script>
+<script src="../assets/menu-display.js?v=20261026-text-categories-offers-v2"></script>
 
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}
