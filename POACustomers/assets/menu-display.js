@@ -13,6 +13,8 @@
 
   let categories=[];
   let items=[];
+  let itemsLoaded=false;
+  let itemsLoading=null;
   let activeCategoryName=null;
   let anchorScrollDone=false;
   const CART_KEY='poa_pickup_cart_v1';
@@ -141,12 +143,43 @@
     itemsView.hidden=true;
     categoriesView.hidden=false;
     if(!categories.length){categoriesView.innerHTML='<div class="menu-empty">No menu categories have been added yet.</div>';return;}
-    categoriesView.innerHTML='<div class="menu-grid">'+categories.map(cat=>
-      '<button class="menu-category" type="button" data-category="'+esc(cat.name)+'"><div class="menu-category-media">'+
-      (cat.image_url?'<img class="menu-category-image" src="'+esc(cat.image_url)+'" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">':'')+
-      '<div class="menu-icon" aria-hidden="true"'+(cat.image_url?' hidden':'')+'>'+esc(cat.icon||'☕')+'</div></div><span class="menu-name">'+esc(cat.name)+'</span></button>'
-    ).join('')+'</div>';
-    categoriesView.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>renderItems(btn.dataset.category)));
+    categoriesView.innerHTML='<div class="menu-grid">'+categories.map((cat,index)=>{
+      const imageLoading=index<2?'eager':'lazy';
+      const imagePriority=index===0?'high':'auto';
+      const image=cat.image_url
+        ?'<img class="menu-category-image" src="'+esc(cat.image_url)+'" alt="" width="600" height="600" loading="'+imageLoading+'" decoding="async" fetchpriority="'+imagePriority+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'
+        :'';
+      return '<button class="menu-category" type="button" data-category="'+esc(cat.name)+'"><div class="menu-category-media">'+image+
+        '<div class="menu-icon" aria-hidden="true"'+(cat.image_url?' hidden':'')+'>'+esc(cat.icon||'☕')+'</div></div><span class="menu-name">'+esc(cat.name)+'</span></button>';
+    }).join('')+'</div>';
+    categoriesView.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>openCategory(btn.dataset.category)));
+  }
+
+  async function ensureItemsLoaded(){
+    if(itemsLoaded)return;
+    if(itemsLoading)return itemsLoading;
+    itemsLoading=(async()=>{
+      const result=await sb.from('menu_items').select('*').order('created_at',{ascending:true});
+      if(result.error)throw result.error;
+      items=Array.isArray(result.data)?result.data:[];
+      window.POACurrentMenuItems=items;
+      itemsLoaded=true;
+    })().finally(()=>{itemsLoading=null;});
+    return itemsLoading;
+  }
+
+  async function openCategory(name){
+    activeCategoryName=name;
+    categoriesView.hidden=true;
+    itemsView.hidden=false;
+    itemsView.innerHTML='<div class="menu-loading">Loading menu items…</div>';
+    try{
+      await ensureItemsLoaded();
+      renderItems(name);
+    }catch(error){
+      itemsView.innerHTML='<div class="menu-error"><strong>Menu items could not be loaded.</strong><br>'+esc(error?.message||'Please check your connection and try again.')+'<br><button class="menu-back" type="button" data-return-categories>Back to categories</button></div>';
+      itemsView.querySelector('[data-return-categories]')?.addEventListener('click',renderCategories);
+    }
   }
 
   function renderItems(name){
@@ -183,21 +216,17 @@
 
   async function loadMenu(){
     if(!window.sb)throw new Error('Supabase configuration is not available.');
-    const [categoryResult,itemResult]=await Promise.all([
-      sb.from('menu_categories').select('*').order('sort_order',{ascending:true}),
-      sb.from('menu_items').select('*').order('created_at',{ascending:true})
-    ]);
+    // Render categories as soon as their query returns. Menu items are fetched only
+    // when a category is opened, so a large catalogue does not hold back the first screen.
+    const categoryResult=await sb.from('menu_categories').select('*').order('sort_order',{ascending:true});
     if(categoryResult.error)throw categoryResult.error;
-    if(itemResult.error)throw itemResult.error;
     categories=normalizeCategoryRows(Array.isArray(categoryResult.data)?categoryResult.data:[]);
-    items=Array.isArray(itemResult.data)?itemResult.data:[];
-    window.POACurrentMenuItems=items;
     renderCategories();
     renderCartPanel();
     const requestedCategory = new URLSearchParams(window.location.search).get('category');
     if (requestedCategory) {
       const match = categories.find(category => category.name === requestedCategory);
-      if (match) renderItems(match.name);
+      if (match) void openCategory(match.name);
     }
   }
 
