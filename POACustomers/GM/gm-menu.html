@@ -1,22 +1,22 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#C65F78"><meta name="description" content="DINA'S CORNER GM Menu Management"><link rel="manifest" href="../manifest.webmanifest"><title>Dina's Corner — Menu Management</title><link rel="stylesheet" href="../assets/style.css?v=20261024-presale-candidate"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#C65F78"><meta name="description" content="DINA'S CORNER GM Menu Management"><link rel="manifest" href="../manifest.webmanifest"><title>Dina's Corner — Menu Management</title><link rel="stylesheet" href="../assets/style.css?v=20261026-offers-large-image-v1"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <style>
 .menu-management-main{padding-bottom:116px}.menu-management-heading{margin-bottom:18px}.menu-form-grid{display:grid;grid-template-columns:1fr;gap:0}.menu-management-preview{margin-top:8px}.menu-management-preview img{display:block;width:100%;max-width:220px;height:130px;object-fit:cover;border-radius:12px;border:1px solid var(--line);background:#f4eee3}.menu-management-list{display:grid;gap:12px}.menu-management-item{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid var(--line);border-radius:15px;background:var(--surface,#fffdf8)}.menu-management-item .reward-product-image,.menu-management-item .menu-item-fallback{width:76px;height:76px;flex:0 0 76px;border-radius:14px;object-fit:cover;background:#f2ebdf;display:grid;place-items:center;font-size:27px}.menu-management-item .menu-item-details{flex:1;min-width:0}.menu-management-item .menu-item-details strong{display:block;color:var(--green)}.menu-management-item .menu-item-details small{display:block;margin-top:4px;color:var(--muted);font-size:11px;line-height:1.45}.menu-management-item .menu-item-price{display:block;margin-top:5px;color:var(--green);font-weight:900;font-size:13px}.menu-management-actions{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}.menu-management-actions .btn{padding:8px 10px;font-size:10px}.menu-management-note{white-space:pre-wrap;line-height:1.5;margin-top:10px}.menu-management-empty{padding:22px;border:1px dashed var(--line);border-radius:14px;text-align:center;color:var(--muted)}@media(max-width:540px){.menu-management-item{align-items:flex-start;flex-wrap:wrap}.menu-management-item .menu-item-details{flex:1 1 calc(100% - 100px)}.menu-management-actions{margin-left:88px}}
-</style><script src="../assets/tenant-config.js?v=20261024-presale-candidate"></script><script src="../assets/tenant-branding.js?v=20261024-presale-candidate"></script>
+</style><script src="../assets/tenant-config.js?v=20261026-offers-large-image-v1"></script><script src="../assets/tenant-branding.js?v=20261026-offers-large-image-v1"></script>
 </head>
-<body data-page="gm-menu"><header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-presale-candidate" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
+<body data-page="gm-menu"><header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261026-offers-large-image-v1" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
 <main class="container menu-management-main"><header class="menu-management-heading"><p class="eyebrow">GM MANAGEMENT</p><h1 class="title">Menu Management</h1><p class="sub">Manage menu items, prices, pictures, and availability. Create categories from Settings → Categories.</p></header>
 <section class="card"><h3 id="menuFormTitle">Add Menu Item</h3><input type="hidden" id="gmMenuId"><div class="menu-form-grid">
 <div class="field"><label for="gmItemCategory">Category *</label><select class="input" id="gmItemCategory" required><option value="">Loading categories…</option></select></div>
 <div class="field"><label for="gmMenuName">Item Name *</label><input class="input" id="gmMenuName" maxlength="160" placeholder="e.g. Spanish Latte" required></div>
 <div class="field"><label for="gmMenuDescription">Description</label><input class="input" id="gmMenuDescription" maxlength="500" placeholder="Short product description"></div>
 <div class="field"><label for="gmMenuPrice">Price (EGP) (optional)</label><input class="input" id="gmMenuPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Leave blank if price is not set"></div>
-<div class="field"><label for="gmMenuImage">Item Image (optional)</label><input class="input" id="gmMenuImage" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/svg+xml"><small class="sub">Choose an image from your device (max 5 MB). No image URL is required.</small><div class="menu-management-preview" id="gmItemPreviewWrap" hidden><img id="gmItemPreview" alt="Selected menu item image preview"></div></div>
+<div class="field"><label for="gmMenuImage">Item Image (optional)</label><input class="input" id="gmMenuImage" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/svg+xml"><small class="sub">Choose an image up to 30 MB. It is resized and compressed before upload; no image URL is required.</small><div class="menu-management-preview" id="gmItemPreviewWrap" hidden><img id="gmItemPreview" alt="Selected menu item image preview"></div></div>
 <div class="field"><label for="gmMenuStatus">Status</label><select class="input" id="gmMenuStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
 </div><div class="g2"><button class="btn primary" id="saveMenuBtn" type="button">SAVE MENU ITEM</button><button class="btn" id="cancelEditBtn" type="button" hidden>CANCEL EDIT</button></div><div id="menuMsg" class="note menu-management-note" role="status" aria-live="polite"></div></section>
 <section class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h3 style="margin:0">Current Menu</h3><button class="btn soft" id="refreshMenuBtn" type="button">REFRESH</button></div><div class="menu-management-list" id="gmMenuList" style="margin-top:14px"><div class="menu-management-empty">Loading menu items…</div></div></section></main>
 <nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html" class="active"><b>☰</b>Menu</a><a href="gm-settings.html"><b>⚙</b>Settings</a></div></nav>
-<script src="../assets/config.js?v=20261024-presale-candidate"></script><script src="../assets/app.js?v=20261024-presale-candidate"></script>
+<script src="../assets/config.js?v=20261026-offers-large-image-v1"></script><script src="../assets/app.js?v=20261026-offers-large-image-v1"></script>
 <script>
 (function(){
  const $=id=>document.getElementById(id);
@@ -27,14 +27,14 @@
  const message=(text,bad=false)=>{const el=$('menuMsg');el.textContent=text;el.style.color=bad?'#a33':'';};
  async function uploadMenuImage(file){
    if(!file)return null;
-   const allowed=['image/jpeg','image/png','image/webp','image/gif','image/avif','image/svg+xml'];
-   if(!allowed.includes(file.type))throw new Error('Choose a JPG, PNG, WEBP, GIF, AVIF, or SVG image.');
-   if(file.size>5*1024*1024)throw new Error('Image must be 5 MB or smaller.');
+   const allowed=['image/jpeg','image/png','image/webp','image/gif','image/avif','image/svg+xml','image/heic','image/heif'];
+   if(!allowed.includes(file.type))throw new Error('Choose a JPG, PNG, WEBP, GIF, AVIF, SVG, or HEIC image.');
+   if(file.size>30*1024*1024)throw new Error('Image must be 30 MB or smaller. It will be compressed automatically before upload.');
    const {data:userData,error:userError}=await sb.auth.getUser();if(userError)throw userError;
    const uid=userData?.user?.id;if(!uid)throw new Error('Please sign in again.');
-   const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
-   const path=uid+'/items/'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.'+ext;
-   const {error}=await sb.storage.from('poac-menu-images').upload(path,file,{upsert:false,contentType:file.type,cacheControl:'3600'});
+   const compressed=await window.POA_PREPARE_IMAGE(file,{maxInputMB:30,maxDimension:1200,quality:0.82,maxOutputMB:1.2});
+   const path=uid+'/items/'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.jpg';
+   const {error}=await sb.storage.from('poac-menu-images').upload(path,compressed,{upsert:false,contentType:'image/jpeg',cacheControl:'31536000'});
    if(error)throw new Error(error.message+'. Run the menu setup SQL in Supabase to configure image storage.');
    return sb.storage.from('poac-menu-images').getPublicUrl(path).data.publicUrl;
  }
@@ -43,7 +43,7 @@
    if(!file){if(!$('gmMenuId').value){$('gmItemPreviewWrap').hidden=true;$('gmItemPreview').removeAttribute('src')}return;}
    const allowed=['image/jpeg','image/png','image/webp','image/gif','image/avif','image/svg+xml'];
    if(!allowed.includes(file.type)){message('Choose a supported image file.',true);$('gmMenuImage').value='';return;}
-   if(file.size>5*1024*1024){message('Image must be 5 MB or smaller.',true);$('gmMenuImage').value='';return;}
+   if(file.size>30*1024*1024){message('Image must be 30 MB or smaller. It will be compressed automatically before upload.',true);$('gmMenuImage').value='';return;}
    $('gmItemPreview').src=URL.createObjectURL(file);$('gmItemPreviewWrap').hidden=false;
  }
  async function loadCategories(){
