@@ -1,9 +1,11 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v41-category-image-speed";
+const CACHE = CACHE_NAMESPACE + "v44-offers-page-30mb-image-compression";
 const SHELL = [
   "./",
   "./index.html",
   "./menu.html",
+  "./customer-offers.html",
+  "./offers.html",
   "./manifest.webmanifest",
   "./assets/style.css",
   "./assets/dina-theme.css",
@@ -37,6 +39,7 @@ const SHELL = [
   "./customer/customer-login.html",
   "./customer/customer-register.html",
   "./customer/customer-home.html",
+  "./customer/customer-offers.html",
   "./customer/customer-card.html",
   "./customer/customer-menu.html",
   "./customer/customer-orders.html",

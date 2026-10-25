@@ -3,10 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#C65F78">
-<meta http-equiv="refresh" content="0; url=./index.html">
-<title>Dina's Corner — Customer Portal</title>
-<script>location.replace("./index.html" + location.search + location.hash);</script>
+<meta name="theme-color" content="#FFF4ED">
+<title>Dina's Corner — Offers</title>
+<script>
+  const target = new URL("customer/customer-offers.html", window.location.href);
+  target.search = window.location.search;
+  target.hash = window.location.hash;
+  window.location.replace(target.href);
+</script>
 </head>
-<body><p>Opening the customer portal… <a href="./index.html">Continue</a></p></body>
+<body><p>Opening Dina’s Corner offers… <a href="customer/customer-offers.html">Continue to Offers</a></p></body>
 </html>
