@@ -122,7 +122,7 @@
   function normalizeCategoryRows(rows){
     return (Array.isArray(rows)?rows:[])
       .filter(r=>r && String(r.name||'').trim() && r.is_active!==false && String(r.status||'active').toLowerCase()!=='inactive')
-      .map((r,i)=>({id:r.id,name:String(r.name).trim(),icon:r.icon||'☕',order:Number(r.sort_order??i),active:true,image_url:r.image_url||null}))
+      .map((r,i)=>({id:r.id,name:String(r.name).trim(),order:Number(r.sort_order??i),active:true}))
       .sort((a,b)=>a.order-b.order || a.name.localeCompare(b.name));
   }
   function isActiveItem(item){
@@ -143,15 +143,11 @@
     itemsView.hidden=true;
     categoriesView.hidden=false;
     if(!categories.length){categoriesView.innerHTML='<div class="menu-empty">No menu categories have been added yet.</div>';return;}
-    categoriesView.innerHTML='<div class="menu-grid">'+categories.map((cat,index)=>{
-      const imageLoading=index<2?'eager':'lazy';
-      const imagePriority=index===0?'high':'auto';
-      const image=cat.image_url
-        ?'<img class="menu-category-image" src="'+esc(cat.image_url)+'" alt="" width="600" height="600" loading="'+imageLoading+'" decoding="async" fetchpriority="'+imagePriority+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'
-        :'';
-      return '<button class="menu-category" type="button" data-category="'+esc(cat.name)+'"><div class="menu-category-media">'+image+
-        '<div class="menu-icon" aria-hidden="true"'+(cat.image_url?' hidden':'')+'>'+esc(cat.icon||'☕')+'</div></div><span class="menu-name">'+esc(cat.name)+'</span></button>';
-    }).join('')+'</div>';
+    // Category thumbnails/icons are intentionally omitted: they are not needed for browsing
+    // and can create empty placeholder blocks when a category image is unavailable.
+    categoriesView.innerHTML='<div class="menu-grid menu-grid--text-only">'+categories.map(cat=>
+      '<button class="menu-category menu-category--text-only" type="button" data-category="'+esc(cat.name)+'"><span class="menu-name">'+esc(cat.name)+'</span></button>'
+    ).join('')+'</div>';
     categoriesView.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>openCategory(btn.dataset.category)));
   }
 
@@ -200,7 +196,7 @@
         :'<button type="button" class="menu-add-order" data-add-to-order="'+esc(item.id)+'">+ Add</button>';
       return '<article class="menu-item">'+image+'<div class="menu-item-copy"><strong class="menu-item-name">'+esc(item.name||'Menu item')+'</strong>'+desc+(price?'<span class="menu-item-price">'+esc(price)+'</span>':'')+pickupAction+'</div></article>';
     }).join(''):'<div class="menu-empty">No items in this category yet.</div>';
-    itemsView.innerHTML='<div class="menu-head"><button class="menu-back" type="button" aria-label="Back to categories">‹</button><div class="menu-head-icon" aria-hidden="true">'+esc(cat?.icon||'☕')+'</div><div class="menu-head-copy"><h2>'+esc(name)+'</h2><p>'+filtered.length+' item'+(filtered.length===1?'':'s')+'</p></div></div><p class="menu-small-note">Tap the back arrow to return to all categories.</p><div class="menu-list">'+rows+'</div>';
+    itemsView.innerHTML='<div class="menu-head menu-head--no-icon"><button class="menu-back" type="button" aria-label="Back to categories">‹</button><div class="menu-head-copy"><h2>'+esc(name)+'</h2><p>'+filtered.length+' item'+(filtered.length===1?'':'s')+'</p></div></div><p class="menu-small-note">Tap the back arrow to return to all categories.</p><div class="menu-list">'+rows+'</div>';
     itemsView.querySelector('.menu-back').addEventListener('click',renderCategories);
     itemsView.querySelectorAll('[data-menu-minus]').forEach(btn=>btn.addEventListener('click',()=>{
       if(typeof window.POAChangeItemQuantity==='function')window.POAChangeItemQuantity(btn.dataset.menuMinus,-1);
@@ -218,7 +214,7 @@
     if(!window.sb)throw new Error('Supabase configuration is not available.');
     // Render categories as soon as their query returns. Menu items are fetched only
     // when a category is opened, so a large catalogue does not hold back the first screen.
-    const categoryResult=await sb.from('menu_categories').select('*').order('sort_order',{ascending:true});
+    const categoryResult=await sb.from('menu_categories').select('id,name,sort_order,is_active,status').order('sort_order',{ascending:true});
     if(categoryResult.error)throw categoryResult.error;
     categories=normalizeCategoryRows(Array.isArray(categoryResult.data)?categoryResult.data:[]);
     renderCategories();

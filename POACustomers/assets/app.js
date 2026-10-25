@@ -40,6 +40,72 @@ function initials(name) {
     .map(x => x[0]).join("").toUpperCase() || "AN";
 }
 
+// Accept large original image files, then resize and compress them in-browser.
+// The compact output improves page speed and avoids storing full camera originals.
+window.POA_PREPARE_IMAGE = async function (file, options = {}) {
+  if (!file || !String(file.type || "").startsWith("image/")) {
+    throw new Error("Please choose a valid image file.");
+  }
+  const maxInputMB = Number(options.maxInputMB || 30);
+  if (file.size > maxInputMB * 1024 * 1024) {
+    throw new Error(`Image must be ${maxInputMB} MB or smaller. It will be automatically resized and compressed before saving.`);
+  }
+  const maxDimension = Math.max(320, Number(options.maxDimension || 1000));
+  const maxOutputMB = Math.max(0.1, Number(options.maxOutputMB || 1));
+  const maxOutputBytes = maxOutputMB * 1024 * 1024;
+  const initialQuality = Math.min(0.95, Math.max(0.45, Number(options.quality || 0.82)));
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("The selected image could not be opened. Try a JPG or PNG image."));
+      el.src = objectUrl;
+    });
+    const originalWidth = Number(image.naturalWidth || image.width);
+    const originalHeight = Number(image.naturalHeight || image.height);
+    if (!originalWidth || !originalHeight) throw new Error("The selected image has invalid dimensions.");
+    const scale = Math.min(1, maxDimension / Math.max(originalWidth, originalHeight));
+    let width = Math.max(1, Math.round(originalWidth * scale));
+    let height = Math.max(1, Math.round(originalHeight * scale));
+    let quality = initialQuality;
+    let blob = null;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Image processing is unavailable in this browser.");
+    for (let attempt = 0; attempt < 12; attempt++) {
+      canvas.width = width;
+      canvas.height = height;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(image, 0, 0, width, height);
+      blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(result => result ? resolve(result) : reject(new Error("Could not compress the selected image.")), "image/jpeg", quality);
+      });
+      if (blob.size <= maxOutputBytes) break;
+      if (quality > 0.5) {
+        quality = Math.max(0.48, quality - 0.08);
+      } else if (Math.max(width, height) > 360) {
+        width = Math.max(1, Math.round(width * 0.82));
+        height = Math.max(1, Math.round(height * 0.82));
+        quality = initialQuality;
+      } else break;
+    }
+    if (!blob) throw new Error("Could not compress the selected image.");
+    if (options.asDataUrl) {
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Could not prepare the compressed image."));
+        reader.readAsDataURL(blob);
+      });
+    }
+    return blob;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+};
+
 function moneyPoints(n) {
   if (n === null || n === undefined || n === "") return "—";
   return Number(n || 0).toLocaleString();
@@ -117,16 +183,9 @@ function bindCustomerNav(page) {
 }
 
 async function saveCustomerPhoto(file) {
-  if (!file || !file.type.startsWith("image/")) throw new Error("Please choose an image file.");
-  if (file.size > 5 * 1024 * 1024) throw new Error("Photo must be 5 MB or smaller.");
-  const dataUrl = await new Promise((resolve, reject) => {
-    const fr = new FileReader(); fr.onload=()=>resolve(fr.result); fr.onerror=()=>reject(new Error("Could not read the photo.")); fr.readAsDataURL(file);
+  const compressed = await window.POA_PREPARE_IMAGE(file, {
+    maxInputMB: 30, maxDimension: 512, quality: 0.78, maxOutputMB: 0.35, asDataUrl: true
   });
-  const img = await new Promise((resolve, reject) => { const i=new Image(); i.onload=()=>resolve(i); i.onerror=()=>reject(new Error("Invalid image.")); i.src=dataUrl; });
-  const max=512, scale=Math.min(1,max/Math.max(img.width,img.height));
-  const c=document.createElement("canvas"); c.width=Math.max(1,Math.round(img.width*scale)); c.height=Math.max(1,Math.round(img.height*scale));
-  c.getContext("2d").drawImage(img,0,0,c.width,c.height);
-  const compressed=c.toDataURL("image/jpeg",0.78);
   const { data:userData } = await sb.auth.getUser();
   const uid=userData?.user?.id; if(!uid) throw new Error("Please sign in again.");
   const { error } = await sb.from("profiles").update({avatar_url:compressed}).eq("id",uid);
@@ -746,7 +805,7 @@ async function loadCustomerHomeOffers() {
       const image = safeOfferImageSource(offer.image_url);
       return `
         <article class="home-offer-slide${index === 0 ? " is-active" : ""}" data-offer-slide="${index}" aria-label="Offer ${index + 1} of ${activeOffers.length}: ${escapeOfferHtml(title)}" aria-hidden="${index === 0 ? "false" : "true"}">
-          <button type="button" class="home-offer-item" data-open-offer="${index}" aria-label="View details for ${escapeOfferHtml(title)}">
+          <button type="button" class="home-offer-item" data-open-offer="${index}" aria-label="Open offers page for ${escapeOfferHtml(title)}">
             ${image
               ? `<span class="home-offer-image-wrap"><img class="home-offer-image" src="${escapeOfferHtml(image)}" alt="" loading="${index === 0 ? "eager" : "lazy"}"></span>`
               : '<span class="home-offer-image-wrap home-offer-no-image" aria-hidden="true"><span>★</span></span>'}
@@ -773,7 +832,25 @@ async function loadCustomerHomeOffers() {
     if (modal) document.body.appendChild(modal);
 
     content.querySelectorAll("[data-open-offer]").forEach(button => {
-      button.addEventListener("click", () => openOfferDetails(Number(button.dataset.openOffer), button, modal, modalBody));
+      button.addEventListener("click", () => {
+        const offer = activeOffers[Number(button.dataset.openOffer)];
+        // Resolve the offers page from the actual deployed app base. This works
+        // both on GitHub Pages (/LoyaltyAPP/POACustomers/...) and on a standalone
+        // tenant where POACustomers is the site root.
+        const currentPath = window.location.pathname || "/";
+        const appMarker = "/POACustomers/";
+        const markerIndex = currentPath.toLowerCase().indexOf(appMarker.toLowerCase());
+        let offersUrl;
+        if (markerIndex >= 0) {
+          const appBase = currentPath.slice(0, markerIndex + appMarker.length);
+          offersUrl = new URL(appBase + "customer/customer-offers.html", window.location.origin);
+        } else {
+          const inCustomerFolder = /\/customer\/[^/]+$/i.test(currentPath);
+          offersUrl = new URL(inCustomerFolder ? "customer-offers.html" : "customer/customer-offers.html", window.location.href);
+        }
+        if (offer?.id) offersUrl.searchParams.set("offer", String(offer.id));
+        window.location.assign(offersUrl.href);
+      });
     });
     content.querySelector("[data-offer-prev]")?.addEventListener("click", () => setActiveSlide(currentIndex - 1));
     content.querySelector("[data-offer-next]")?.addEventListener("click", () => setActiveSlide(currentIndex + 1));
@@ -814,6 +891,71 @@ async function loadCustomerHomeOffers() {
     );
   }
 }
+async function loadCustomerOffersPage() {
+  const root = $("customerOffersList");
+  if (!root) return;
+  const today = getLocalDateString();
+  const formatPageOfferDate = value => {
+    const raw = String(value || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return "";
+    const date = new Date(raw + "T00:00:00");
+    return Number.isNaN(date.getTime()) ? raw : date.toLocaleDateString();
+  };
+  const params = new URLSearchParams(window.location.search);
+  const targetOfferId = params.get("offer");
+  const renderMessage = (title, detail, isError = false) => {
+    root.className = "customer-offers-list customer-offers-list--notice";
+    root.innerHTML = `<section class="customer-offers-notice"><h2>${escapeOfferHtml(title)}</h2><p>${escapeOfferHtml(detail)}</p>${isError ? '<button class="btn soft" id="retryCustomerOffers" type="button">Retry</button>' : ''}</section>`;
+    root.querySelector("#retryCustomerOffers")?.addEventListener("click", () => { void loadCustomerOffersPage(); }, { once: true });
+  };
+
+  try {
+    if (typeof sb === "undefined" || !sb || typeof sb.from !== "function") throw new Error("Database connection is not ready.");
+    const { data, error } = await sb.from("offers")
+      .select("id,title,product_name,description,production_date,expiry_date,image_url,status,created_at")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    const rows = (Array.isArray(data) ? data : []).filter(offer => {
+      const production = String(offer.production_date || "").slice(0, 10);
+      const expiry = String(offer.expiry_date || "").slice(0, 10);
+      return (!production || production <= today) && (!expiry || expiry >= today);
+    });
+    if (!rows.length) {
+      renderMessage("No current offers", "There are no active offers available right now. Please check again later.");
+      return;
+    }
+    root.className = "customer-offers-list";
+    root.innerHTML = rows.map((offer, index) => {
+      const title = offer.title || offer.product_name || `Offer ${index + 1}`;
+      const image = safeOfferImageSource(offer.image_url);
+      const production = formatPageOfferDate(offer.production_date);
+      const expiry = formatPageOfferDate(offer.expiry_date);
+      const dates = production || expiry ? `<p class="customer-offer-dates">${production ? `Starts ${escapeOfferHtml(production)}` : ""}${production && expiry ? " · " : ""}${expiry ? `Available until ${escapeOfferHtml(expiry)}` : ""}</p>` : "";
+      const id = String(offer.id || index);
+      return `<article class="customer-offer-card" id="offer-${escapeOfferHtml(id)}" data-offer-id="${escapeOfferHtml(id)}">
+        ${image ? `<img class="customer-offer-card__image" src="${escapeOfferHtml(image)}" alt="${escapeOfferHtml(offer.product_name || title)}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async">` : ""}
+        <div class="customer-offer-card__content"><p class="customer-offer-card__eyebrow">Special offer</p><h2>${escapeOfferHtml(title)}</h2>
+        ${offer.product_name && String(offer.product_name).trim() !== String(title).trim() ? `<p class="customer-offer-card__product">${escapeOfferHtml(offer.product_name)}</p>` : ""}
+        ${offer.description ? `<p class="customer-offer-card__description">${escapeOfferHtml(offer.description)}</p>` : ""}${dates}
+        <a class="btn soft customer-offer-card__menu-link" href="customer-menu.html">Browse menu</a></div></article>`;
+    }).join("");
+    if (targetOfferId) {
+      requestAnimationFrame(() => {
+        const target = Array.from(root.querySelectorAll("[data-offer-id]")).find(card => card.dataset.offerId === targetOfferId);
+        if (target) {
+          target.classList.add("is-highlighted");
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Could not load customer offers page:", error?.message || error);
+    renderMessage("Offers are temporarily unavailable", error?.message || "Please check your connection and try again.", true);
+  }
+}
+
 async function loadCustomerHome() {
   const profile = await guardRole(["customer"]);
   if (!profile) return;
@@ -2080,6 +2222,9 @@ async function init() {
       if (window.POACustomerAddresses?.initRegistration) await window.POACustomerAddresses.initRegistration();
     } else if (page === "customer-home") {
       await loadCustomerHome();
+    } else if (page === "customer-offers") {
+      const profile = await guardRole(["customer"]);
+      if (profile) await loadCustomerOffersPage();
     } else if (page === "customer-card") {
       await loadCustomerCard();
     } else if (page === "customer-profile") {
@@ -2123,9 +2268,17 @@ async function init() {
     }
   } catch (e) {
     console.error(e);
+    if (page === "customer-offers") {
+      const root = $("customerOffersList");
+      if (root) {
+        root.className = "customer-offers-list customer-offers-list--notice";
+        root.innerHTML = `<section class="customer-offers-notice"><h2>Offers could not be opened</h2><p>${escapeOfferHtml(e?.message || "Please check your connection and customer sign-in, then try again.")}</p><button class="btn soft" id="retryCustomerOffersInit" type="button">Retry</button><a class="btn soft" href="customer-login.html">Customer sign in</a></section>`;
+        root.querySelector("#retryCustomerOffersInit")?.addEventListener("click", () => window.location.reload(), { once: true });
+      }
+    }
     const msg = $("msg");
     if (msg) msg.textContent = e.message || "Something went wrong.";
-    else toast(e.message || "Something went wrong.", false);
+    else if (page !== "customer-offers") toast(e.message || "Something went wrong.", false);
   }
 }
 
@@ -2144,7 +2297,7 @@ if ("serviceWorker" in navigator) {
       // Standalone tenant deployments publish POACustomers as their root.
       workerPath = "../sw.js";
     }
-    navigator.serviceWorker.register(workerPath + "?v=20261024-qr-share-v1")
+    navigator.serviceWorker.register(workerPath + "?v=20261026-offers-route-fix-v2")
       .catch(error => console.warn("Service worker registration failed:", error));
   });
 }

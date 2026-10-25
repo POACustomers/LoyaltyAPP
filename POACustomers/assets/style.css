@@ -503,3 +503,32 @@ body.has-customer-bottom-nav{padding-bottom:0!important}
 
 .home-shortcuts-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 2px 12px}
 .home-shortcuts-heading h3{margin:0;color:var(--green,#56382d);font-size:17px;font-weight:900}
+
+
+/* Dina's Corner: no category thumbnails; keep navigation compact and fast. */
+.home-menu-category-grid--text-only{align-items:stretch}
+.home-menu-category--text-only{min-height:58px;justify-content:center;padding:10px 12px;background:var(--paper,#fffaf5)}
+.home-menu-category--text-only .home-menu-category-name{min-height:0;font-size:14px;padding:4px 6px}
+.home-menu-category--text-only .home-menu-category-media{display:none!important}
+.customer-offers-page{padding-top:16px;padding-bottom:34px}
+.customer-offers-page__heading{margin:0 0 16px;padding:6px 2px}
+.customer-offers-page__heading .title{margin:0 0 6px;color:var(--green,#073a2b);font-size:26px}
+.customer-offers-page__heading .sub{margin:0;color:var(--muted,#66756c);font-size:13px}
+.customer-offers-list{display:grid;grid-template-columns:1fr;gap:14px;min-width:0}
+.customer-offer-card{overflow:hidden;border:1px solid var(--line,#eadbd3);border-radius:16px;background:var(--paper,#fffaf5);box-shadow:0 4px 14px rgba(151,78,89,.055);scroll-margin-top:18px}
+.customer-offer-card.is-highlighted{outline:3px solid rgba(198,95,120,.35);outline-offset:2px}
+.customer-offer-card__image{display:block;width:100%;max-height:240px;aspect-ratio:16/8;object-fit:cover;background:#f8e9e4}
+.customer-offer-card__content{padding:15px 16px 16px}
+.customer-offer-card__eyebrow{margin:0 0 5px;color:var(--rose,#c65f78);font-size:11px;font-weight:900;letter-spacing:.03em}
+.customer-offer-card__content h2{margin:0 0 8px;color:var(--green,#073a2b);font-size:19px;line-height:1.35;overflow-wrap:anywhere}
+.customer-offer-card__product{margin:0 0 7px;font-weight:800}
+.customer-offer-card__description{margin:0 0 9px;line-height:1.65;white-space:pre-line;overflow-wrap:anywhere}
+.customer-offer-dates{margin:0 0 12px;color:var(--muted,#66756c);font-size:12px}
+.customer-offer-card__menu-link{display:inline-flex;text-decoration:none;align-items:center;justify-content:center}
+.customer-offers-list--notice{display:block}
+.customer-offers-notice{padding:22px 16px;border:1px solid var(--line,#eadbd3);border-radius:14px;background:var(--paper,#fffaf5);text-align:center}
+.customer-offers-notice h2{margin:0 0 8px;font-size:18px}
+.customer-offers-notice p{margin:0 0 14px;line-height:1.6;color:var(--muted,#66756c)}
+.customer-offers-loading{padding:20px;text-align:center;color:var(--muted,#66756c)}
+.customer-offers-back{display:flex;width:max-content;max-width:100%;margin:18px auto 0;text-decoration:none;justify-content:center}
+@media(min-width:720px){.customer-offers-list{grid-template-columns:repeat(2,minmax(0,1fr))}.customer-offer-card__image{max-height:210px}}
