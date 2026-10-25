@@ -1,0 +1,26 @@
+تحديث حجم صور أقسام المنيو — Dina's Corner
+
+سبب عدم ظهور التغيير السابق:
+- ملف dina-theme.css كان يفرض object-fit: contain !important، فيمنع الصورة من ملء الكارت.
+- رابط ملف الثيم كان يحتفظ بنفس رقم الكاش، وكذلك روابط CSS/JS في صفحة المنيو.
+
+الملفات داخل الحزمة تحت مجلد POACustomers هي ملفات الاستبدال بمساراتها نفسها:
+1) assets/menu-display.css
+2) assets/dina-theme.css
+3) assets/tenant-config.js
+4) assets/tenant-branding.js
+5) customer/customer-menu.html
+
+طريقة التركيب:
+- في GitHub افتح مستودع LoyaltyAPP.
+- استبدل كل ملف من الملفات الخمسة في مساره نفسه. لا ترفع ZIP إلى GitHub.
+- اعمل Commit changes وانتظر نجاح GitHub Pages.
+- افتح هذا الرابط مباشرة: https://poacustomers.github.io/LoyaltyAPP/POACustomers/customer/customer-menu.html?refresh=20261022v2
+- اضغط Ctrl+F5.
+
+ما الذي سيتغير؟
+- صورة الكاتيجوري ستملأ مساحة الكارت من الحواف (object-fit: cover) مع قصّ الأطراف عند الحاجة بدل تصغير الصورة داخل مساحة فارغة.
+- اسم القسم سيبقى واضحًا فوق شريط فاتح أسفل الصورة.
+- تم تغيير أرقام النسخ/الكاش حتى لا يعيد المتصفح استخدام ملفات CSS القديمة.
+
+ملاحظة: هذه الحزمة تخص عرض صورة الكاتيجوري في صفحة customer-menu فقط ولا تغير Supabase أو بيانات الأقسام.
