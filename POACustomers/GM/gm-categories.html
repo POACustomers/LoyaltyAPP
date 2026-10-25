@@ -4,7 +4,7 @@
 <body data-page="gm-categories"><header class="topbar"><a class="brand brand-image" href="gm-settings.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-presale-candidate" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" title="Sign out">↪</button></header>
 <main class="container" style="padding-bottom:110px"><p class="eyebrow">GM MANAGEMENT</p><h1 class="title">Categories</h1><p class="sub">Add, edit, and organize the menu categories shown to customers.</p>
 <section class="card"><h3 id="formTitle">Add Category</h3><input id="categoryId" type="hidden"><div class="field"><label for="categoryName">Category name *</label><input id="categoryName" class="input" maxlength="80" placeholder="e.g. Hot Coffee" required></div><div class="field"><label for="categoryImage">Category image (optional)</label><input id="categoryImage" class="input" type="file" accept="image/*"><small class="sub">Choose an image from your device (max 5 MB).</small></div><div id="imagePreviewWrap" hidden style="margin:10px 0"><img id="imagePreview" alt="Category image preview" style="width:100%;max-width:220px;height:120px;object-fit:contain;border-radius:14px;background:#f4eee3"><p id="imagePreviewError" class="note" hidden>Image unavailable; choose another image from your device.</p></div><div class="g2"><button id="saveCategory" class="btn primary">SAVE CATEGORY</button><button id="resetCategory" class="btn">CLEAR FORM</button></div><div id="categoryMsg" class="note" role="status" aria-live="polite"></div></section>
-<section class="card"><div class="row" style="justify-content:space-between;align-items:center"><h3>Current Categories</h3><button id="refreshCategories" class="btn">REFRESH</button></div><div id="categoriesList"><div class="empty">Loading categories…</div></div></section></main>
+<section class="card"><div class="row" style="justify-content:space-between;align-items:center"><h3>Current Categories</h3><button id="refreshCategories" class="btn">REFRESH</button></div><p class="sub" style="margin:4px 0 10px">Images uploaded from now on are automatically resized and compressed. Use the next button once to optimize existing category images.</p><button id="optimizeCategoryImages" class="btn" type="button">OPTIMIZE EXISTING IMAGES</button><div id="categoriesList"><div class="empty">Loading categories…</div></div></section></main>
 <nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html"><b>☰</b>Menu</a><a href="gm-settings.html" class="active"><b>⚙</b>Settings</a></div></nav>
 <script src="../assets/config.js?v=20261024-presale-candidate"></script><script src="../assets/app.js?v=20261024-presale-candidate"></script>
 <script>
@@ -12,6 +12,109 @@
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
   let rows = [];
+
+  const MAX_CATEGORY_IMAGE_EDGE = 960;
+  const CATEGORY_IMAGE_QUALITY = 0.80;
+  const STORAGE_CACHE_SECONDS = '31536000';
+
+  function extensionForMime(type, fallbackName = '') {
+    const mime = String(type || '').toLowerCase();
+    if (mime === 'image/webp') return 'webp';
+    if (mime === 'image/jpeg' || mime === 'image/jpg') return 'jpg';
+    if (mime === 'image/png') return 'png';
+    if (mime === 'image/gif') return 'gif';
+    if (mime === 'image/avif') return 'avif';
+    if (mime === 'image/heic' || mime === 'image/heif') return 'heic';
+    if (mime === 'image/bmp') return 'bmp';
+    if (mime === 'image/tiff') return 'tiff';
+    if (mime === 'image/svg+xml') return 'svg';
+    const parts = String(fallbackName).split('.');
+    const candidate = parts.length > 1 ? parts.pop() : 'jpg';
+    const fallback = candidate.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return fallback || 'jpg';
+  }
+
+  function canvasBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+      try {
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('The browser could not prepare this image.')), type, quality);
+      } catch (error) { reject(error); }
+    });
+  }
+
+  async function compressCategoryImage(sourceBlob, fallbackName = 'category-image.jpg') {
+    const sourceType = sourceBlob.type || 'application/octet-stream';
+    const original = {
+      blob: sourceBlob,
+      contentType: sourceType,
+      extension: extensionForMime(sourceType, fallbackName),
+      changed: false
+    };
+    // Avoid flattening animated GIFs into a still image.
+    if (sourceType === 'image/gif') return original;
+    const objectUrl = URL.createObjectURL(sourceBlob);
+    try {
+      const image = await new Promise((resolve, reject) => {
+        const element = new Image();
+        element.onload = () => resolve(element);
+        element.onerror = () => reject(new Error('This image format could not be decoded in this browser.'));
+        element.src = objectUrl;
+      });
+      const originalWidth = Number(image.naturalWidth || image.width);
+      const originalHeight = Number(image.naturalHeight || image.height);
+      if (!originalWidth || !originalHeight) throw new Error('The selected file is not a supported image.');
+      const scale = Math.min(1, MAX_CATEGORY_IMAGE_EDGE / Math.max(originalWidth, originalHeight));
+      const width = Math.max(1, Math.round(originalWidth * scale));
+      const height = Math.max(1, Math.round(originalHeight * scale));
+      const webpCanvas = document.createElement('canvas');
+      webpCanvas.width = width;
+      webpCanvas.height = height;
+      const webpContext = webpCanvas.getContext('2d');
+      if (!webpContext) throw new Error('Image processing is unavailable in this browser.');
+      webpContext.drawImage(image, 0, 0, width, height);
+      let resultBlob = null;
+      try { resultBlob = await canvasBlob(webpCanvas, 'image/webp', CATEGORY_IMAGE_QUALITY); } catch (_) {}
+      if (resultBlob && resultBlob.type === 'image/webp' && resultBlob.size < sourceBlob.size) {
+        return { blob: resultBlob, contentType: 'image/webp', extension: 'webp', changed: true };
+      }
+      // Preserve transparency if the browser cannot encode WebP and the source is PNG.
+      if (sourceBlob.type === 'image/png') {
+        try {
+          const pngBlob = await canvasBlob(webpCanvas, 'image/png');
+          if (pngBlob && pngBlob.type === 'image/png' && pngBlob.size < sourceBlob.size) {
+            return { blob: pngBlob, contentType: 'image/png', extension: 'png', changed: true };
+          }
+        } catch (_) {}
+        // Do not flatten a transparent PNG if a smaller alpha-preserving version is unavailable.
+        return original;
+      }
+      // JPEG fallback for browsers that cannot encode WebP. Paint white first to keep transparent sources readable.
+      const jpegCanvas = document.createElement('canvas');
+      jpegCanvas.width = width;
+      jpegCanvas.height = height;
+      const jpegContext = jpegCanvas.getContext('2d');
+      if (!jpegContext) return original;
+      jpegContext.fillStyle = '#ffffff';
+      jpegContext.fillRect(0, 0, width, height);
+      jpegContext.drawImage(image, 0, 0, width, height);
+      const jpegBlob = await canvasBlob(jpegCanvas, 'image/jpeg', CATEGORY_IMAGE_QUALITY);
+      if (jpegBlob && jpegBlob.size < sourceBlob.size) {
+        return { blob: jpegBlob, contentType: 'image/jpeg', extension: 'jpg', changed: true };
+      }
+      return original;
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
+  function formatBytes(value) {
+    const bytes = Math.max(0, Number(value) || 0);
+    return bytes < 1024 * 1024 ? Math.round(bytes / 1024) + ' KB' : (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  function newCategoryImagePath(profileId, extension) {
+    return profileId + '/categories/' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.' + extension;
+  }
 
   function message(text, bad = false) {
     $('categoryMsg').textContent = text;
@@ -112,6 +215,68 @@
   $('categoryImage').addEventListener('change', preview);
   $('resetCategory').onclick = reset;
   $('refreshCategories').onclick = load;
+
+  $('optimizeCategoryImages').onclick = async () => {
+    const candidates = rows.filter(row => row && row.id && row.image_url);
+    if (!candidates.length) {
+      message('There are no category images to optimize.');
+      return;
+    }
+    const accepted = confirm('Optimize the existing category images now? Images are processed one at a time. The category record will point to a new compressed copy only after its upload succeeds. Original storage files are not deleted.');
+    if (!accepted) return;
+
+    const button = $('optimizeCategoryImages');
+    button.disabled = true;
+    $('saveCategory').disabled = true;
+    $('refreshCategories').disabled = true;
+    let completed = 0;
+    let skipped = 0;
+    let bytesSaved = 0;
+    try {
+      const profile = await getProfile();
+      if (!profile?.id) throw new Error('Please sign in again before optimizing category images.');
+      for (let index = 0; index < candidates.length; index++) {
+        const row = candidates[index];
+        message('Optimizing image ' + (index + 1) + ' of ' + candidates.length + ': ' + row.name + '…');
+        try {
+          const response = await fetch(row.image_url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+          if (!response.ok) throw new Error('The image server returned HTTP ' + response.status + '.');
+          const sourceBlob = await response.blob();
+          if (!sourceBlob.type.startsWith('image/')) throw new Error('The URL did not return an image.');
+          const compressed = await compressCategoryImage(sourceBlob, 'category-image');
+          if (!compressed.changed || compressed.blob.size >= sourceBlob.size) {
+            skipped++;
+            continue;
+          }
+          const path = newCategoryImagePath(profile.id, compressed.extension);
+          const upload = await sb.storage.from('poac-menu-images').upload(path, compressed.blob, {
+            upsert: false,
+            contentType: compressed.contentType,
+            cacheControl: STORAGE_CACHE_SECONDS
+          });
+          if (upload.error) throw new Error(upload.error.message);
+          const nextUrl = sb.storage.from('poac-menu-images').getPublicUrl(path).data.publicUrl;
+          const update = await sb.from('menu_categories').update({ image_url: nextUrl }).eq('id', row.id);
+          if (update.error) throw new Error(update.error.message);
+          row.image_url = nextUrl;
+          completed++;
+          bytesSaved += sourceBlob.size - compressed.blob.size;
+        } catch (error) {
+          skipped++;
+          console.warn('Category image optimization skipped:', row.name, error?.message || error);
+        }
+      }
+      await load();
+      message('Finished: ' + completed + ' image(s) optimized; about ' + formatBytes(bytesSaved) + ' less image data. ' + skipped + ' image(s) were skipped or could not be optimized. Original Storage files were kept.', skipped > 0 && completed === 0);
+    } catch (error) {
+      message(error.message || 'Could not optimize category images.', true);
+    } finally {
+      button.disabled = false;
+      $('saveCategory').disabled = false;
+      $('refreshCategories').disabled = false;
+    }
+  };
+
   $('saveCategory').onclick = async () => {
     const name = $('categoryName').value.trim();
     if (!name) {
@@ -129,10 +294,19 @@
         if (file.size > 5 * 1024 * 1024) throw new Error('Image must be 5 MB or smaller.');
         const profile = await getProfile();
         if (!profile?.id) throw new Error('Please sign in again.');
-        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
-        const path = profile.id + '/categories/' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.' + ext;
-        const uploaded = await sb.storage.from('poac-menu-images').upload(path, file, {
-          upsert: false, contentType: file.type, cacheControl: '3600'
+        message('Optimizing category image before upload…');
+        let optimized;
+        try {
+          optimized = await compressCategoryImage(file, file.name);
+        } catch (compressionError) {
+          console.warn('Image compression unavailable; original will be uploaded:', compressionError?.message || compressionError);
+          optimized = { blob: file, contentType: file.type || 'application/octet-stream', extension: extensionForMime(file.type, file.name), changed: false };
+        }
+        const path = newCategoryImagePath(profile.id, optimized.extension);
+        const uploaded = await sb.storage.from('poac-menu-images').upload(path, optimized.blob, {
+          upsert: false,
+          contentType: optimized.contentType,
+          cacheControl: STORAGE_CACHE_SECONDS
         });
         if (uploaded.error) throw new Error(uploaded.error.message + '. If the bucket is not configured, run POACustomers-menu-categories-setup.sql in Supabase.');
         image_url = sb.storage.from('poac-menu-images').getPublicUrl(path).data.publicUrl;
