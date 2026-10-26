@@ -777,7 +777,7 @@ async function loadCustomerHomeOffers() {
     if (typeof sb === "undefined" || !sb || typeof sb.from !== "function") throw new Error("اتصال قاعدة البيانات غير جاهز على صفحة العميل.");
     const { data, error } = await sb
       .from("offers")
-      .select("id,title,product_name,description,production_date,expiry_date,image_url,status,created_at")
+      .select("*")
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(20);
@@ -938,7 +938,7 @@ async function loadCustomerOffersPage() {
   try {
     if (typeof sb === "undefined" || !sb || typeof sb.from !== "function") throw new Error("Database connection is not ready.");
     const { data, error } = await sb.from("offers")
-      .select("id,title,product_name,description,production_date,expiry_date,image_url,status,created_at")
+      .select("*")
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(50);
@@ -988,7 +988,11 @@ async function loadCustomerOffersPage() {
           if (candidates.length > 1) break;
         }
       }
-      const discountPct = parseOfferDiscount(offer.description);
+      const explicitDiscount = offer.discount_percent !== null && offer.discount_percent !== undefined && String(offer.discount_percent).trim() !== "";
+      const explicitPct = explicitDiscount ? Number(offer.discount_percent) : null;
+      const discountPct = explicitDiscount
+        ? (Number.isFinite(explicitPct) && explicitPct > 0 && explicitPct <= 100 ? explicitPct : null)
+        : parseOfferDiscount(offer.description);
       const originalPrice = match && match.price !== null && match.price !== undefined && String(match.price).trim() !== "" ? Number(match.price) : null;
       const priceKnown = Number.isFinite(originalPrice) && originalPrice >= 0;
       const valid = !!match && discountPct !== null && priceKnown;
@@ -1008,7 +1012,7 @@ async function loadCustomerOffersPage() {
       const info = matches.get(id);
       const discountMarkup = info?.valid
         ? `<div class="customer-offer-pricing"><p><span>Original product price</span><del>${escapeOfferHtml(formatMoney(info.originalPrice))}</del></p><p><span>Discount (${escapeOfferHtml(info.discountPct)}%)</span><strong class="customer-offer-savings">−${escapeOfferHtml(formatMoney(info.discountAmount))}</strong></p><p class="customer-offer-final-price"><span>Price after discount</span><strong>${escapeOfferHtml(formatMoney(info.salePrice))}</strong></p><small>Discount applies to the product only. Delivery fee is calculated separately.</small></div>`
-        : `<p class="customer-offer-unavailable">${escapeOfferHtml(menuLookupError ? "The menu could not be verified right now. Refresh to try again." : (!info?.item ? "This offer needs an exact match with an active menu item." : (info.discountPct === null ? "Add a valid percentage such as 30% to the offer description." : "The linked menu item has no published price.")))}</p>`;
+        : `<p class="customer-offer-unavailable">${escapeOfferHtml(menuLookupError ? "The menu could not be verified right now. Refresh to try again." : (!info?.item ? "This offer needs an exact match with an active menu item." : (info.discountPct === null ? "Set a valid discount percentage in GM Offer Management (0.01–100%)." : "The linked menu item has no published price.")))}</p>`;
       const button = info?.valid
         ? `<button class="btn primary customer-offer-add" type="button" data-add-offer="${escapeOfferHtml(id)}">Add to Cart · ${escapeOfferHtml(info.discountPct)}% off</button>`
         : `<button class="btn soft customer-offer-add" type="button" disabled>Add to Cart unavailable</button>`;
