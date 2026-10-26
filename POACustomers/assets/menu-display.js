@@ -95,7 +95,7 @@
       '<button type="button" class="menu-cart-close" data-cart-close aria-label="Close basket">×</button></div>'+ 
       '<div class="menu-cart-order-total"><span>Items subtotal</span><strong>'+(known?esc(money(total)):'To be confirmed')+'</strong></div>'+ 
       '<div class="menu-cart-lines">'+rows+'</div>'+ 
-      '<div class="menu-cart-footer"><small>'+(cart.some(row=>row.offer_id&&Number(row.offer_discount_pct)>0)?'Offer prices apply to products only. Delivery fees are calculated separately. '+(known?'Choose pickup or delivery at checkout.':'The branch will confirm the final price for items without a published price.'):known?'Choose pickup or delivery at checkout.':'The branch will confirm the final price for items without a published price.')+'</small>'+ 
+      '<div class="menu-cart-footer"><small>'+(cart.some(row=>row.offer_id&&Number(row.offer_discount_pct)>0)?'Offer prices apply to products only. '+(known?'Choose pickup at checkout.':'The branch will confirm the final price for items without a published price.'):known?'Choose pickup at checkout.':'The branch will confirm the final price for items without a published price.')+'</small>'+ 
       '<a class="btn menu-cart-checkout" href="customer-orders.html">Continue to checkout <span aria-hidden="true">→</span></a></div>';
     updateCartButton(cart);
     cartPanel.querySelectorAll('[data-cart-close]').forEach(btn=>btn.addEventListener('click',closeCart));

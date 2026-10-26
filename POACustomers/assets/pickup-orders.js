@@ -43,7 +43,7 @@
     if (typeof window.toast === 'function') window.toast(message, good !== false);
     else if (message) console[good === false ? 'error' : 'log'](message);
   }
-  function fulfillmentType() { return $('orderFulfillmentType')?.value === 'delivery' ? 'delivery' : 'pickup'; }
+  function fulfillmentType() { return 'pickup'; }
   function statusLabel(status, type) {
     if (status === 'ready_for_pickup') return 'Ready for pickup';
     if (status === 'out_for_delivery') return 'Out for delivery';
@@ -227,7 +227,7 @@
     let html = '<div class="pickup-summary-row"><span>Items</span><strong>' + quantityCount(cart) + '</strong></div>' +
       (hasOfferDiscount && calc.known ? '<div class="pickup-summary-row"><span>Product subtotal before discounts</span><strong><del>' + esc(money(baseSubtotal)) + '</del></strong></div><div class="pickup-summary-row"><span>Product discount</span><strong style="color:#a13a52">−' + esc(money(productSavings)) + '</strong></div>' : '') +
       '<div class="pickup-summary-row"><span>Items subtotal' + (hasOfferDiscount ? ' after discount' : '') + '</span><strong>' + subtotalText + '</strong></div>' +
-      (hasOfferDiscount ? '<div class="pickup-note">Discount applies to products only. The delivery fee is calculated separately and is not discounted.</div>' : '');
+      (hasOfferDiscount ? '<div class="pickup-note">Discount applies to products only.</div>' : '');
     if (hasOfferDiscount && !OFFER_DISCOUNT_BACKEND_READY) {
       html += '<div class="pickup-offer-checkout-warning">Offer prices are shown in the basket, but server-side offer validation is not enabled. Sending this order is paused to prevent an incorrect charge.</div>';
     }
@@ -660,15 +660,10 @@
     renderCart();
     if (readCart().length) {
       await loadBranches();
-      await loadSavedDeliveryAddresses();
       renderCart();
     }
     $('pickupOrderForm')?.addEventListener('submit', submitCustomerOrder);
-    $('orderFulfillmentType')?.addEventListener('change', updateFulfillmentUI);
-    $('useMyLocationBtn')?.addEventListener('click', useMyLocation);
-    $('deliveryAddress')?.addEventListener('input', () => {
-      if ($('deliveryAddress').value.trim() !== selectedSavedAddressText) selectedDeliveryInstructions = '';
-    });
+    // Checkout is pickup-only for the current release; delivery UI and routing are not initialized.
     updateFulfillmentUI();
     // Order history is loaded separately on customer-order-history.html, not on checkout.
   }
