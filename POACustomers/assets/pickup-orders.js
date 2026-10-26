@@ -586,7 +586,7 @@
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>Branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + '<br>' + esc(statusHint(order.status, type)) +
-        deliveryDetailsHtml(order, false) + (order.notes ? '<br>Note: ' + esc(order.notes) : '') + '</div>' +
+        deliveryDetailsHtml(order, false) + (order.notes ? '<br>Note: ' + esc(order.notes) : '') + (order.cancellation_reason ? '<br><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) : '') + '</div>' +
         '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'To be confirmed by branch' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div>' +
         (canCancel ? '<button class="btn danger" type="button" data-cancel-order="' + esc(order.id) + '">Cancel order</button>' : '') + '</div></article>';
     }).join('');
@@ -604,13 +604,22 @@
   }
 
   async function updateManagedOrder(id, status, type) {
-    if (!confirm('Update this order to: ' + statusLabel(status, type).toLowerCase() + '?')) return;
+    let cancellationReason = '';
+    if (status === 'cancelled') {
+      cancellationReason = window.prompt('Required: enter the reason for cancelling this order:');
+      if (cancellationReason === null) return;
+      cancellationReason = cancellationReason.trim();
+      if (!cancellationReason) { showMessage('managedOrdersMessage', 'Cancellation reason is required.', true); return; }
+      if (!confirm('Cancel this order and save the reason?')) return;
+    } else if (!confirm('Update this order to: ' + statusLabel(status, type).toLowerCase() + '?')) return;
     try {
-      const { error } = await sb.rpc('update_pickup_order_status', { p_order_id: id, p_new_status: status });
-      if (error) throw error;
-      toast('Order updated.');
+      const result = status === 'cancelled'
+        ? await sb.rpc('cancel_pickup_order_with_reason', { p_order_id: id, p_reason: cancellationReason })
+        : await sb.rpc('update_pickup_order_status', { p_order_id: id, p_new_status: status });
+      if (result.error) throw result.error;
+      toast(status === 'cancelled' ? 'Order cancelled and reason saved.' : 'Order updated.');
       await loadManagedOrders();
-    } catch (error) { showMessage('managedOrdersMessage', error?.message || 'Could not update the order.', true); }
+    } catch (error) { showMessage('managedOrdersMessage', error?.message || 'Could not update the order. Apply the cancellation-reason SQL patch in Supabase first.', true); }
   }
 
   async function loadManagedOrders() {
@@ -638,7 +647,7 @@
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>Handling branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + (order.branch_address ? '<br>Branch address: ' + esc(order.branch_address) : '') +
-        deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + '</div>' +
+        deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + (order.cancellation_reason ? '<br><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) : '') + '</div>' +
         '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'Confirm with customer' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div></div>' +
         '<div class="pickup-next-actions">' + (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
         (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '') + '</div></article>';
