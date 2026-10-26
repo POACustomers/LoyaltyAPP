@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v44-offers-page-30mb-image-compression";
+const CACHE = CACHE_NAMESPACE + "v46-offer-discount-percentage-field";
 const SHELL = [
   "./",
   "./index.html",
