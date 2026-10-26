@@ -528,4 +528,20 @@ body.has-customer-bottom-nav{padding-bottom:0!important}
 .customer-offers-notice p{margin:0 0 14px;line-height:1.6;color:var(--muted,#66756c)}
 .customer-offers-loading{padding:20px;text-align:center;color:var(--muted,#66756c)}
 .customer-offers-back{display:flex;width:max-content;max-width:100%;margin:18px auto 0;text-decoration:none;justify-content:center}
+
+.customer-offer-pricing{margin:12px 0;padding:11px 12px;border:1px solid #ecd3ca;border-radius:12px;background:rgba(255,244,237,.72);font-size:12px}
+.customer-offer-pricing p{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 7px}
+.customer-offer-pricing p span{color:var(--muted,#66756c)}
+.customer-offer-pricing del{color:#766d69}
+.customer-offer-pricing .customer-offer-savings{color:#a13a52}
+.customer-offer-pricing .customer-offer-final-price{padding-top:8px;border-top:1px solid #e6c9c2;margin-top:8px;font-size:14px}
+.customer-offer-pricing .customer-offer-final-price strong{color:var(--green,#073a2b);font-size:17px}
+.customer-offer-pricing small{display:block;margin-top:7px;color:var(--muted,#66756c);line-height:1.45}
+.customer-offer-add{display:inline-flex;align-items:center;justify-content:center;margin-top:6px;min-height:42px;text-decoration:none}
+.customer-offer-add:disabled{opacity:.52;cursor:not-allowed}
+.customer-offer-unavailable{margin:10px 0;padding:9px 10px;border-radius:10px;background:#fff6ef;color:#805a4c;font-size:12px;line-height:1.5}
+.customer-offer-add-status{margin:7px 0 0;color:var(--muted,#66756c);font-size:11px;line-height:1.45}
+.menu-cart-item-copy .menu-offer-price-detail,.pickup-cart-details .menu-offer-price-detail{display:block;margin-top:4px;color:#9a3851;font-size:11px;line-height:1.4}
+.menu-cart-item-copy .menu-offer-original,.pickup-cart-details .menu-offer-original{color:var(--muted,#66756c);margin-left:5px}
+.pickup-offer-checkout-warning{padding:11px 12px;margin:10px 0;border:1px solid #e7b1b9;border-radius:11px;background:#fff2f2;color:#92384a;font-size:12px;line-height:1.55}
 @media(min-width:720px){.customer-offers-list{grid-template-columns:repeat(2,minmax(0,1fr))}.customer-offer-card__image{max-height:210px}}

@@ -901,6 +901,32 @@ async function loadCustomerOffersPage() {
     const date = new Date(raw + "T00:00:00");
     return Number.isNaN(date.getTime()) ? raw : date.toLocaleDateString();
   };
+  const formatMoney = value => {
+    const number = Number(value);
+    return Number.isFinite(number)
+      ? (window.POA_FORMAT_CURRENCY ? window.POA_FORMAT_CURRENCY(number) : "EGP " + number.toFixed(2))
+      : "—";
+  };
+  const roundMoney = value => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+  const normalizeOfferProductName = value => String(value ?? "")
+    .normalize("NFKC")
+    .toLocaleLowerCase()
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+  const parseOfferDiscount = value => {
+    const digitMap = {"٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9","۰":"0","۱":"1","۲":"2","۳":"3","۴":"4","۵":"5","۶":"6","۷":"7","۸":"8","۹":"9"};
+    const text = String(value || "").replace(/[٠-٩۰-۹]/g, digit => digitMap[digit] || digit).replace(/٫/g, ".");
+    const match = text.match(/(\d{1,3}(?:[.,]\d+)?)\s*[%٪]/);
+    if (!match) return null;
+    const pct = Number(match[1].replace(",", "."));
+    return Number.isFinite(pct) && pct > 0 && pct <= 100 ? pct : null;
+  };
+  const isActiveMenuItem = item => !!item && item.id && String(item.name || "").trim() &&
+    item.is_active !== false && item.active !== false && String(item.status || "active").toLowerCase() !== "inactive";
   const params = new URLSearchParams(window.location.search);
   const targetOfferId = params.get("offer");
   const renderMessage = (title, detail, isError = false) => {
@@ -917,30 +943,134 @@ async function loadCustomerOffersPage() {
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw error;
-    const rows = (Array.isArray(data) ? data : []).filter(offer => {
+    const offers = (Array.isArray(data) ? data : []).filter(offer => {
       const production = String(offer.production_date || "").slice(0, 10);
       const expiry = String(offer.expiry_date || "").slice(0, 10);
       return (!production || production <= today) && (!expiry || expiry >= today);
     });
-    if (!rows.length) {
+    if (!offers.length) {
       renderMessage("No current offers", "There are no active offers available right now. Please check again later.");
       return;
     }
+
+    // Offers are matched to exactly one active menu item by product name. If the
+    // menu data cannot be verified, we show the offer but do not enable Add to Cart.
+    let menuItems = [];
+    let activeCategoryIds = null;
+    let menuLookupError = "";
+    try {
+      const [itemResult, categoryResult] = await Promise.all([
+        sb.from("menu_items").select("*"),
+        sb.from("menu_categories").select("id,is_active,status")
+      ]);
+      if (itemResult.error) throw itemResult.error;
+      if (categoryResult.error) throw categoryResult.error;
+      activeCategoryIds = new Set((Array.isArray(categoryResult.data) ? categoryResult.data : [])
+        .filter(category => category && category.is_active !== false && String(category.status || "active").toLowerCase() !== "inactive")
+        .map(category => String(category.id)));
+      menuItems = (Array.isArray(itemResult.data) ? itemResult.data : []).filter(item =>
+        isActiveMenuItem(item) && (!item.category_id || activeCategoryIds.has(String(item.category_id)))
+      );
+    } catch (menuError) {
+      menuLookupError = menuError?.message || "The active menu could not be checked.";
+      console.warn("Offer Add to Cart menu lookup failed:", menuLookupError);
+    }
+
+    const matches = new Map();
+    offers.forEach((offer, index) => {
+      const labelOptions = [offer.product_name, offer.title]
+        .map(normalizeOfferProductName).filter((v, i, a) => v && a.indexOf(v) === i);
+      let match = null;
+      if (!menuLookupError) {
+        for (const label of labelOptions) {
+          const candidates = menuItems.filter(item => normalizeOfferProductName(item.name) === label);
+          if (candidates.length === 1) { match = candidates[0]; break; }
+          if (candidates.length > 1) break;
+        }
+      }
+      const discountPct = parseOfferDiscount(offer.description);
+      const originalPrice = match && match.price !== null && match.price !== undefined && String(match.price).trim() !== "" ? Number(match.price) : null;
+      const priceKnown = Number.isFinite(originalPrice) && originalPrice >= 0;
+      const valid = !!match && discountPct !== null && priceKnown;
+      const discountAmount = valid ? roundMoney(originalPrice * discountPct / 100) : null;
+      const salePrice = valid ? Math.max(0, roundMoney(originalPrice - discountAmount)) : null;
+      matches.set(String(offer.id || index), { offer, item: match, discountPct, originalPrice, discountAmount, salePrice, valid });
+    });
+
     root.className = "customer-offers-list";
-    root.innerHTML = rows.map((offer, index) => {
+    root.innerHTML = offers.map((offer, index) => {
       const title = offer.title || offer.product_name || `Offer ${index + 1}`;
       const image = safeOfferImageSource(offer.image_url);
       const production = formatPageOfferDate(offer.production_date);
       const expiry = formatPageOfferDate(offer.expiry_date);
       const dates = production || expiry ? `<p class="customer-offer-dates">${production ? `Starts ${escapeOfferHtml(production)}` : ""}${production && expiry ? " · " : ""}${expiry ? `Available until ${escapeOfferHtml(expiry)}` : ""}</p>` : "";
       const id = String(offer.id || index);
+      const info = matches.get(id);
+      const discountMarkup = info?.valid
+        ? `<div class="customer-offer-pricing"><p><span>Original product price</span><del>${escapeOfferHtml(formatMoney(info.originalPrice))}</del></p><p><span>Discount (${escapeOfferHtml(info.discountPct)}%)</span><strong class="customer-offer-savings">−${escapeOfferHtml(formatMoney(info.discountAmount))}</strong></p><p class="customer-offer-final-price"><span>Price after discount</span><strong>${escapeOfferHtml(formatMoney(info.salePrice))}</strong></p><small>Discount applies to the product only. Delivery fee is calculated separately.</small></div>`
+        : `<p class="customer-offer-unavailable">${escapeOfferHtml(menuLookupError ? "The menu could not be verified right now. Refresh to try again." : (!info?.item ? "This offer needs an exact match with an active menu item." : (info.discountPct === null ? "Add a valid percentage such as 30% to the offer description." : "The linked menu item has no published price.")))}</p>`;
+      const button = info?.valid
+        ? `<button class="btn primary customer-offer-add" type="button" data-add-offer="${escapeOfferHtml(id)}">Add to Cart · ${escapeOfferHtml(info.discountPct)}% off</button>`
+        : `<button class="btn soft customer-offer-add" type="button" disabled>Add to Cart unavailable</button>`;
       return `<article class="customer-offer-card" id="offer-${escapeOfferHtml(id)}" data-offer-id="${escapeOfferHtml(id)}">
         ${image ? `<img class="customer-offer-card__image" src="${escapeOfferHtml(image)}" alt="${escapeOfferHtml(offer.product_name || title)}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async">` : ""}
         <div class="customer-offer-card__content"><p class="customer-offer-card__eyebrow">Special offer</p><h2>${escapeOfferHtml(title)}</h2>
         ${offer.product_name && String(offer.product_name).trim() !== String(title).trim() ? `<p class="customer-offer-card__product">${escapeOfferHtml(offer.product_name)}</p>` : ""}
         ${offer.description ? `<p class="customer-offer-card__description">${escapeOfferHtml(offer.description)}</p>` : ""}${dates}
-        <a class="btn soft customer-offer-card__menu-link" href="customer-menu.html">Browse menu</a></div></article>`;
+        ${discountMarkup}${button}<p class="customer-offer-add-status" data-offer-status="${escapeOfferHtml(id)}" aria-live="polite"></p></div></article>`;
     }).join("");
+
+    root.querySelectorAll("button[data-add-offer]").forEach(button => button.addEventListener("click", () => {
+      const entry = matches.get(String(button.dataset.addOffer));
+      const status = Array.from(root.querySelectorAll("[data-offer-status]")).find(node => node.dataset.offerStatus === String(button.dataset.addOffer));
+      if (!entry?.valid || !entry.item) {
+        if (status) status.textContent = "This offer cannot be added until the product, price, and discount are verified.";
+        return;
+      }
+      let cart;
+      try {
+        const parsed = JSON.parse(localStorage.getItem("poa_pickup_cart_v1") || "[]");
+        cart = Array.isArray(parsed) ? parsed.filter(row => row && row.id && Number(row.quantity) > 0) : [];
+      } catch (_) { cart = []; }
+      const item = entry.item;
+      const existing = cart.find(row => String(row.id) === String(item.id));
+      if (existing && Number(existing.quantity) >= 50) {
+        if (status) status.textContent = "Maximum quantity for this product is 50.";
+        return;
+      }
+      const offer = entry.offer;
+      if (existing) {
+        existing.quantity = Number(existing.quantity || 0) + 1;
+        existing.name = String(item.name);
+        existing.description = item.description || "";
+        existing.image_url = item.image_url || null;
+        existing.price = entry.salePrice;
+        existing.original_price = entry.originalPrice;
+        existing.offer_discount_pct = entry.discountPct;
+        existing.offer_discount_amount = entry.discountAmount;
+        existing.offer_id = String(offer.id);
+        existing.offer_title = offer.title || offer.product_name || item.name;
+      } else {
+        cart.push({
+          id: String(item.id), name: String(item.name), description: item.description || "",
+          image_url: item.image_url || null, price: entry.salePrice, quantity: 1,
+          original_price: entry.originalPrice, offer_discount_pct: entry.discountPct,
+          offer_discount_amount: entry.discountAmount, offer_id: String(offer.id),
+          offer_title: offer.title || offer.product_name || item.name
+        });
+      }
+      try {
+        localStorage.setItem("poa_pickup_cart_v1", JSON.stringify(cart));
+      } catch (_) {
+        if (status) status.textContent = "The basket could not be saved. Check free storage on this device and try again.";
+        return;
+      }
+      button.disabled = true;
+      button.textContent = "Added — opening basket…";
+      if (status) status.textContent = `Added at ${formatMoney(entry.salePrice)} each (${entry.discountPct}% off the product). Delivery is calculated separately.`;
+      window.location.href = "customer-menu.html#menu-cart";
+    }));
+
     if (targetOfferId) {
       requestAnimationFrame(() => {
         const target = Array.from(root.querySelectorAll("[data-offer-id]")).find(card => card.dataset.offerId === targetOfferId);

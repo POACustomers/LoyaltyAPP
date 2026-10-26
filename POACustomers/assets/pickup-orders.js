@@ -2,6 +2,8 @@
   'use strict';
 
   const CART_KEY = 'poa_pickup_cart_v1';
+  // Do not accept discounted offer orders until the Supabase order RPC validates and stores the promotion server-side.
+  const OFFER_DISCOUNT_BACKEND_READY = window.POA_OFFER_DISCOUNT_BACKEND_READY === true;
   const BRANCH_KEY = 'poa_customer_order_branch_v1';
   const page = document.body.dataset.page || '';
   const $ = id => document.getElementById(id);
@@ -168,7 +170,9 @@
         ? '<img class="pickup-item-photo" src="' + esc(item.image_url) + '" alt="' + esc(item.name) + '" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="pickup-item-photo-fallback" hidden aria-hidden="true">◉</div>'
         : '<div class="pickup-item-photo-fallback" aria-hidden="true">◉</div>';
       const priceText = price === null ? 'Price to be confirmed' : money(price) + ' each';
-      return '<article class="pickup-cart-row">' + image + '<div class="pickup-cart-details"><strong>' + esc(item.name) + '</strong><small>' + esc(priceText) + '</small>' +
+      const offerPriceInfo = item.offer_id && Number(item.offer_discount_pct) > 0 && normalizePrice(item.original_price) !== null
+        ? '<span class="menu-offer-price-detail">' + esc(Number(item.offer_discount_pct)) + '% product discount <span class="menu-offer-original"><del>' + esc(money(item.original_price)) + '</del></span></span>' : '';
+      return '<article class="pickup-cart-row">' + image + '<div class="pickup-cart-details"><strong>' + esc(item.name) + '</strong><small>' + esc(priceText) + '</small>' + offerPriceInfo +
         '<div class="pickup-qty"><button type="button" data-qty-minus="' + esc(item.id) + '" aria-label="Decrease quantity">−</button><b>' + Number(item.quantity) + '</b><button type="button" data-qty-plus="' + esc(item.id) + '" aria-label="Increase quantity">+</button><button type="button" class="pickup-remove" data-remove-item="' + esc(item.id) + '">Remove</button></div></div>' +
         '<strong class="pickup-price">' + (price === null ? 'TBC' : money(price * Number(item.quantity))) + '</strong></article>';
     }).join('');
@@ -220,8 +224,16 @@
     if (!summary) return;
     const cart = readCart(), calc = calculate(cart), delivery = fulfillmentType() === 'delivery', zone = delivery ? selectedZone() : null;
     const subtotalText = calc.known ? money(calc.total) : 'To be confirmed by branch';
+    const hasOfferDiscount = cart.some(row => row.offer_id && Number(row.offer_discount_pct) > 0 && normalizePrice(row.original_price) !== null && normalizePrice(row.price) !== null);
+    const baseSubtotal = calc.known ? cart.reduce((sum, row) => sum + Number(row.offer_id && normalizePrice(row.original_price) !== null ? row.original_price : row.price) * Number(row.quantity || 0), 0) : null;
+    const productSavings = calc.known ? Math.max(0, baseSubtotal - calc.total) : null;
     let html = '<div class="pickup-summary-row"><span>Items</span><strong>' + quantityCount(cart) + '</strong></div>' +
-      '<div class="pickup-summary-row"><span>Items subtotal</span><strong>' + subtotalText + '</strong></div>';
+      (hasOfferDiscount && calc.known ? '<div class="pickup-summary-row"><span>Product subtotal before discounts</span><strong><del>' + esc(money(baseSubtotal)) + '</del></strong></div><div class="pickup-summary-row"><span>Product discount</span><strong style="color:#a13a52">−' + esc(money(productSavings)) + '</strong></div>' : '') +
+      '<div class="pickup-summary-row"><span>Items subtotal' + (hasOfferDiscount ? ' after discount' : '') + '</span><strong>' + subtotalText + '</strong></div>' +
+      (hasOfferDiscount ? '<div class="pickup-note">Discount applies to the product only. Delivery fee is calculated separately and is not discounted.</div>' : '');
+    if (hasOfferDiscount && !OFFER_DISCOUNT_BACKEND_READY) {
+      html += '<div class="pickup-offer-checkout-warning">Offer prices are shown in the basket, but the order server has not yet been updated to validate and store these discounts. Sending this order is paused to prevent the regular price being charged. The Supabase order functions must be updated before discounted orders can be placed.</div>';
+    }
     if (delivery && !zone) {
       html += '<div class="pickup-note">Choose your current location or select a saved address with a map pin. The correct area and branch will be assigned automatically.</div>';
     }
@@ -246,7 +258,10 @@
     const calc = calculate(cart);
     const minimumValue = Number(zone?.minimum_order_amount || 0);
     const minimumNotMet = !!(delivery && zone && (calc.known ? calc.total < minimumValue : minimumValue > 0));
-    btn.disabled = !cart.length || (delivery ? !zone : !$('pickupBranch')?.value) || minimumNotMet;
+    const hasUnvalidatedOffer = !OFFER_DISCOUNT_BACKEND_READY && cart.some(row => row.offer_id && Number(row.offer_discount_pct) > 0);
+    btn.disabled = !cart.length || (delivery ? !zone : !$('pickupBranch')?.value) || minimumNotMet || hasUnvalidatedOffer;
+    if (hasUnvalidatedOffer) btn.title = 'Discounted offers cannot be submitted until Supabase server validation is updated.';
+    else btn.removeAttribute('title');
     updateOrderSummary();
   }
   function setLocationStatus(text, kind) {
@@ -507,6 +522,10 @@
     event.preventDefault();
     const cart = readCart();
     if (!cart.length) { setCheckoutView('empty'); return; }
+    if (!OFFER_DISCOUNT_BACKEND_READY && cart.some(row => row.offer_id && Number(row.offer_discount_pct) > 0)) {
+      showMessage('pickupCheckoutMessage', 'This basket contains a discounted offer. We paused checkout so you are not charged the regular price by the current order server. The Supabase order function must be updated to validate and save the offer discount before placing this order.', true);
+      return;
+    }
     const delivery = deliveryPayloadOrError();
     if (!delivery) return;
     const branchId = $('pickupBranch')?.value;

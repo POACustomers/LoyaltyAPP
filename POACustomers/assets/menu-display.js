@@ -83,6 +83,7 @@
       return '<article class="menu-cart-row">'+image+
         '<div class="menu-cart-item-copy"><strong>'+esc(row.name||'Menu item')+'</strong>'+
         '<small>'+(price===null?'Price to be confirmed':esc(money(price))+' each')+'</small>'+
+        (row.offer_id&&Number(row.offer_discount_pct)>0&&normalizePrice(row.original_price)!==null?'<span class="menu-offer-price-detail">'+esc(Number(row.offer_discount_pct))+'% product discount <span class="menu-offer-original"><del>'+esc(money(row.original_price))+'</del></span></span>':'')+
         '<div class="menu-cart-qty" role="group" aria-label="Quantity for '+esc(row.name||'item')+'">'+
         '<button type="button" data-cart-minus="'+esc(row.id)+'" aria-label="Decrease quantity">−</button>'+
         '<output aria-live="polite">'+Number(row.quantity)+'</output>'+
@@ -92,9 +93,9 @@
     cartPanel.innerHTML=
       '<div class="menu-cart-header"><div><p class="eyebrow">DINA\'S CORNER</p><h2 id="menuCartTitle">Your basket <span class="menu-cart-count"><span class="menu-cart-count-number">'+count+'</span> <span>'+(count===1?'item':'items')+'</span></span></h2></div>'+ 
       '<button type="button" class="menu-cart-close" data-cart-close aria-label="Close basket">×</button></div>'+ 
-      '<div class="menu-cart-order-total"><span>Order total</span><strong>'+(known?esc(money(total)):'To be confirmed')+'</strong></div>'+ 
+      '<div class="menu-cart-order-total"><span>Items subtotal</span><strong>'+(known?esc(money(total)):'To be confirmed')+'</strong></div>'+ 
       '<div class="menu-cart-lines">'+rows+'</div>'+ 
-      '<div class="menu-cart-footer"><small>'+(known?'Choose pickup or delivery at checkout.':'The branch will confirm the final price for items without a published price.')+'</small>'+ 
+      '<div class="menu-cart-footer"><small>'+(cart.some(row=>row.offer_id&&Number(row.offer_discount_pct)>0)?'Offer prices apply to products only. Delivery fees are calculated separately. '+(known?'Choose pickup or delivery at checkout.':'The branch will confirm the final price for items without a published price.'):known?'Choose pickup or delivery at checkout.':'The branch will confirm the final price for items without a published price.')+'</small>'+ 
       '<a class="btn menu-cart-checkout" href="customer-orders.html">Continue to checkout <span aria-hidden="true">→</span></a></div>';
     updateCartButton(cart);
     cartPanel.querySelectorAll('[data-cart-close]').forEach(btn=>btn.addEventListener('click',closeCart));
