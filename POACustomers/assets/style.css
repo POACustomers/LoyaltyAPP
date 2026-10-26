@@ -505,11 +505,8 @@ body.has-customer-bottom-nav{padding-bottom:0!important}
 .home-shortcuts-heading h3{margin:0;color:var(--green,#56382d);font-size:17px;font-weight:900}
 
 
-/* Dina's Corner: no category thumbnails; keep navigation compact and fast. */
-.home-menu-category-grid--text-only{align-items:stretch}
-.home-menu-category--text-only{min-height:58px;justify-content:center;padding:10px 12px;background:var(--paper,#fffaf5)}
-.home-menu-category--text-only .home-menu-category-name{min-height:0;font-size:14px;padding:4px 6px}
-.home-menu-category--text-only .home-menu-category-media{display:none!important}
+/* Make fallback category icons stay hidden while their category photo is loaded. */
+.home-menu-category-icon[hidden]{display:none!important}
 .customer-offers-page{padding-top:16px;padding-bottom:34px}
 .customer-offers-page__heading{margin:0 0 16px;padding:6px 2px}
 .customer-offers-page__heading .title{margin:0 0 6px;color:var(--green,#073a2b);font-size:26px}
