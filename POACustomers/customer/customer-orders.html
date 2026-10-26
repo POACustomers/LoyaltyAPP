@@ -61,38 +61,14 @@
   </section>
 
   <section id="pickupCheckoutFormPanel" class="card pickup-panel" aria-labelledby="pickupCheckoutTitle">
-    <h2 id="pickupCheckoutTitle">How would you like to receive your order?</h2>
+    <h2 id="pickupCheckoutTitle">Pickup from the branch</h2>
     <form id="pickupOrderForm">
       <div class="pickup-form-grid">
-        <label class="pickup-field" for="orderFulfillmentType">Order method <span class="required-mark">*</span>
-          <select id="orderFulfillmentType" class="input" required>
-            <option value="pickup">Pickup from the branch</option>
-            <option value="delivery">Delivery to my location</option>
-          </select>
-        </label>
-        <label class="pickup-field" id="pickupBranchField" for="pickupBranch">Branch handling your pickup order <span class="required-mark">*</span>
+        <label class="pickup-field" id="pickupBranchField" for="pickupBranch">Branch for pickup <span class="required-mark">*</span>
           <select id="pickupBranch" class="input" required><option value="">Loading branches…</option></select>
         </label>
       </div>
 
-      <section id="deliveryDetails" class="delivery-details" hidden aria-labelledby="deliveryDetailsTitle">
-        <h3 id="deliveryDetailsTitle">Delivery details</h3>
-        <div id="deliveryZoneSummary" class="delivery-zone-summary" hidden aria-live="polite"></div>
-        <label class="pickup-field" for="deliverySavedAddress">Saved address
-          <select id="deliverySavedAddress" class="input"><option value="">Loading your saved addresses…</option></select>
-        </label>
-        <p class="delivery-address-link"><a href="customer-profile.html">Manage saved addresses</a></p>
-        <label class="pickup-field" for="deliveryAddress">Additional details <span class="optional-mark">(optional)</span>
-          <textarea id="deliveryAddress" class="input" maxlength="500" placeholder="Building, street, floor or apartment…"></textarea>
-        </label>
-        <div class="delivery-location-tools">
-          <button id="useMyLocationBtn" class="btn soft" type="button">⌖ Update my location</button>
-          <span id="deliveryLocationStatus" class="delivery-location-status" aria-live="polite">Location pin required for delivery.</span>
-        </div>
-        <input id="deliveryLatitude" type="hidden">
-        <input id="deliveryLongitude" type="hidden">
-        <input id="deliveryMapUrl" type="hidden">
-      </section>
 
       <label class="pickup-field" for="pickupOrderNotes">Order note (optional)
         <textarea id="pickupOrderNotes" class="input" maxlength="500" placeholder="Any special instructions for this order"></textarea>
