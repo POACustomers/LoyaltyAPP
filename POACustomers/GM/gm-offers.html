@@ -6,10 +6,10 @@
 <meta name="theme-color" content="#C65F78">
 <link rel="manifest" href="../manifest.webmanifest">
 <title>Offers Management</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261026-offers-large-image-v1">
+<link rel="stylesheet" href="../assets/style.css?v=20261026-offer-discount-field-v2">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="../assets/tenant-config.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/tenant-branding.js?v=20261026-offers-large-image-v1"></script>
+<script src="../assets/tenant-config.js?v=20261026-offer-discount-field-v2"></script>
+<script src="../assets/tenant-branding.js?v=20261026-offer-discount-field-v2"></script>
 <style>
 .offer-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 0}
 .offer-admin-row{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
@@ -21,6 +21,7 @@
 .offer-admin-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
 .offer-admin-buttons .btn{min-height:36px;padding:8px 12px;font-size:12px}
 .offer-editing-note{margin-top:8px;font-size:12px;color:var(--muted)}
+.offer-discount-preview{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fffaf6;color:var(--green);font-size:13px;line-height:1.6}
 @media(max-width:520px){.offer-admin-row{gap:9px}.offer-admin-image{width:58px;height:58px;flex-basis:58px}.offer-admin-buttons .btn{flex:1}}
 </style>
 </head>
@@ -34,6 +35,7 @@
     <input id="gmOfferId" type="hidden" value="">
     <div class="field"><label for="gmOfferName">Menu Item / Product Name *</label><input class="input" id="gmOfferName" list="gmOfferMenuItemsList" placeholder="Choose or enter the exact menu item name" maxlength="160" required><datalist id="gmOfferMenuItemsList"></datalist><small class="sub">Use the exact item name from Menu. It lets the customer open the offer details and add the correct item to the basket.</small></div>
     <div class="field"><label for="gmOfferDescription">Description</label><input class="input" id="gmOfferDescription" placeholder="Offer description" maxlength="500"></div>
+    <div class="field"><label for="gmOfferDiscountPercent">Discount Percentage (%) *</label><input class="input" id="gmOfferDiscountPercent" type="number" min="0.01" max="100" step="0.01" inputmode="decimal" placeholder="30" required aria-describedby="gmOfferDiscountHelp"><small class="sub" id="gmOfferDiscountHelp">Enter a value from 0.01% to 100%. The discount applies to the product price only; delivery fees are excluded.</small><div class="offer-discount-preview" id="gmOfferDiscountPreview" aria-live="polite">Choose an exact menu item and enter the discount percentage to calculate the product discount.</div></div>
     <div class="field"><label for="gmOfferProduction">Production Date *</label><input class="input" id="gmOfferProduction" type="date" required></div>
     <div class="field"><label for="gmOfferExpiry">Expiry Date *</label><input class="input" id="gmOfferExpiry" type="date" required></div>
     <div class="field"><label for="gmOfferImage">Product Image</label><input class="input" id="gmOfferImage" type="file" accept="image/*"><small class="sub">Optional. Leave empty while editing to keep the current image. Source image up to 30 MB; automatically compressed before saving.</small><div class="offer-editing-note" id="offerCurrentImage"></div></div>
@@ -48,8 +50,8 @@
   </div>
 </main>
 <nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html"><b>☰</b>Menu</a><a href="gm-settings.html" class="active"><b>⚙</b>Settings</a></div></nav>
-<script src="../assets/config.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/app.js?v=20261026-offers-large-image-v1"></script>
+<script src="../assets/config.js?v=20261026-offer-discount-field-v2"></script>
+<script src="../assets/app.js?v=20261026-offer-discount-field-v2"></script>
 <script>
 (async function () {
   'use strict';
@@ -62,6 +64,7 @@
   let activeProfile = null;
   let offerRows = [];
   let editingOffer = null;
+  let menuItemsByNormalizedName = new Map();
 
   function esc(value) {
     return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
@@ -82,6 +85,61 @@
       maxInputMB: 30, maxDimension: 1000, quality: 0.82, maxOutputMB: 0.85, asDataUrl: true
     });
   }
+  function normalizeProductName(value) {
+    return String(value || '').normalize('NFKC').trim().toLocaleLowerCase().replace(/\s+/g, ' ');
+  }
+  function money(value) {
+    const amount = Number(value);
+    return Number.isFinite(amount)
+      ? (window.POA_FORMAT_CURRENCY ? window.POA_FORMAT_CURRENCY(amount) : 'EGP ' + amount.toFixed(2))
+      : '—';
+  }
+  function parseDiscountFromDescription(value) {
+    const digitMap = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
+    const text = String(value || '').replace(/[٠-٩۰-۹]/g, digit => digitMap[digit] || digit).replace(/٫/g, '.');
+    const match = text.match(/(\d{1,3}(?:[.,]\d+)?)\s*[%٪]/);
+    if (!match) return '';
+    const pct = Number(match[1].replace(',', '.'));
+    return Number.isFinite(pct) && pct > 0 && pct <= 100 ? String(pct) : '';
+  }
+  function offerDiscountValue(offer) {
+    if (offer && offer.discount_percent !== null && offer.discount_percent !== undefined && String(offer.discount_percent).trim() !== '') {
+      const pct = Number(offer.discount_percent);
+      if (Number.isFinite(pct) && pct > 0 && pct <= 100) return String(pct);
+    }
+    return parseDiscountFromDescription(offer?.description);
+  }
+  function syncDescriptionDiscount(description, discountPercent) {
+    const source = String(description || '').trim();
+    if (!source) return null;
+    const pctText = String(Number(discountPercent));
+    const percentagePattern = /([0-9٠-٩۰-۹]{1,3}(?:[.,٫][0-9٠-٩۰-۹]+)?)\s*[%٪]/;
+    return percentagePattern.test(source) ? source.replace(percentagePattern, pctText + '%') : source;
+  }
+  function updateDiscountPreview() {
+    const name = normalizeProductName($('gmOfferName').value);
+    const percent = Number($('gmOfferDiscountPercent').value);
+    const preview = $('gmOfferDiscountPreview');
+    const candidates = menuItemsByNormalizedName.get(name) || [];
+    const item = candidates.length === 1 ? candidates[0] : null;
+    if (!name || !item) {
+      preview.textContent = 'Choose an exact menu item from the suggestions to preview its price after discount.';
+      return;
+    }
+    const original = Number(item.price);
+    if (item.price === null || item.price === undefined || String(item.price).trim() === '' || !Number.isFinite(original) || original < 0) {
+      preview.textContent = 'This menu item does not have a published numeric price, so the discount amount cannot be calculated yet.';
+      return;
+    }
+    if (!Number.isFinite(percent) || percent <= 0 || percent > 100) {
+      preview.textContent = 'Enter a discount percentage greater than 0 and no more than 100.';
+      return;
+    }
+    const round = n => Math.round((n + Number.EPSILON) * 100) / 100;
+    const amount = round(original * percent / 100);
+    const finalPrice = Math.max(0, round(original - amount));
+    preview.textContent = 'Product price: ' + money(original) + ' · Discount amount (' + percent + '%): ' + money(amount) + ' · Price after discount: ' + money(finalPrice) + '. Delivery fee is not discounted.';
+  }
   function render(rows) {
     offerRows = Array.isArray(rows) ? rows : [];
     if (!offerRows.length) {
@@ -91,19 +149,27 @@
     list.innerHTML = offerRows.map(offer => {
       const name = offer.product_name || offer.title || 'Untitled offer';
       const image = offer.image_url ? `<img class="offer-admin-image" src="${esc(offer.image_url)}" alt="${esc(name)}">` : '<div class="offer-admin-image" aria-hidden="true" style="display:grid;place-items:center;color:var(--muted)">No image</div>';
-      return `<article class="offer-admin-row">${image}<div class="offer-admin-content"><strong>${esc(name)}</strong><small>${esc(offer.description || 'No description')}<br>Production: ${esc(offer.production_date || '—')} · Expiry: ${esc(offer.expiry_date || '—')}</small><div style="margin-top:6px"><span class="badge">${esc(offer.status || 'unknown')}</span></div><div class="offer-admin-buttons"><button class="btn soft" type="button" data-offer-action="edit" data-offer-id="${esc(offer.id)}">EDIT</button><button class="btn danger" type="button" data-offer-action="delete" data-offer-id="${esc(offer.id)}">DELETE</button></div></div></article>`;
+      const discountValue = offerDiscountValue(offer);
+      return `<article class="offer-admin-row">${image}<div class="offer-admin-content"><strong>${esc(name)}</strong><small>${esc(offer.description || 'No description')}<br>Discount: ${discountValue ? esc(discountValue) + '%' : 'Not set'}<br>Production: ${esc(offer.production_date || '—')} · Expiry: ${esc(offer.expiry_date || '—')}</small><div style="margin-top:6px"><span class="badge">${esc(offer.status || 'unknown')}</span></div><div class="offer-admin-buttons"><button class="btn soft" type="button" data-offer-action="edit" data-offer-id="${esc(offer.id)}">EDIT</button><button class="btn danger" type="button" data-offer-action="delete" data-offer-id="${esc(offer.id)}">DELETE</button></div></div></article>`;
     }).join('');
   }
   async function loadMenuItemSuggestions() {
     const datalist = $('gmOfferMenuItemsList');
     if (!datalist) return;
     try {
-      const result = await sb.from('menu_items').select('name,is_active,status').order('name', {ascending:true});
+      const result = await sb.from('menu_items').select('name,price,is_active,status').order('name', {ascending:true});
       if (result.error) throw result.error;
-      const names = [...new Set((Array.isArray(result.data) ? result.data : [])
-        .filter(item => item && String(item.name || '').trim() && item.is_active !== false && String(item.status || 'active').toLowerCase() !== 'inactive')
-        .map(item => String(item.name).trim()))];
+      const menuItems = (Array.isArray(result.data) ? result.data : [])
+        .filter(item => item && String(item.name || '').trim() && item.is_active !== false && String(item.status || 'active').toLowerCase() !== 'inactive');
+      menuItemsByNormalizedName = new Map();
+      for (const item of menuItems) {
+        const key = normalizeProductName(item.name);
+        if (!menuItemsByNormalizedName.has(key)) menuItemsByNormalizedName.set(key, []);
+        menuItemsByNormalizedName.get(key).push(item);
+      }
+      const names = [...new Set(menuItems.map(item => String(item.name).trim()))];
       datalist.innerHTML = names.map(name => `<option value="${esc(name)}"></option>`).join('');
+      updateDiscountPreview();
     } catch (error) {
       // Suggestions are an enhancement; do not block offer management if menu data is temporarily unavailable.
       console.warn('Could not load menu item suggestions for offers:', error?.message || error);
@@ -115,7 +181,7 @@
     refreshBtn.disabled = true;
     try {
       const result = await withTimeout(
-        sb.from('offers').select('id,title,product_name,description,production_date,expiry_date,image_url,status,created_at').order('created_at', {ascending:false}),
+        sb.from('offers').select('*').order('created_at', {ascending:false}),
         15000,
         'Loading offers timed out. Check your internet connection and Supabase status, then press Refresh.'
       );
@@ -134,6 +200,7 @@
     $('gmOfferId').value = '';
     $('gmOfferName').value = '';
     $('gmOfferDescription').value = '';
+    $('gmOfferDiscountPercent').value = '';
     $('gmOfferProduction').value = '';
     $('gmOfferExpiry').value = '';
     $('gmOfferImage').value = '';
@@ -142,6 +209,7 @@
     $('offerFormHeading').textContent = 'Add Offer';
     saveBtn.textContent = 'SAVE OFFER';
     cancelBtn.hidden = true;
+    updateDiscountPreview();
   }
   function startEdit(id) {
     const offer = offerRows.find(row => String(row.id) === String(id));
@@ -150,6 +218,7 @@
     $('gmOfferId').value = offer.id;
     $('gmOfferName').value = offer.product_name || offer.title || '';
     $('gmOfferDescription').value = offer.description || '';
+    $('gmOfferDiscountPercent').value = offerDiscountValue(offer);
     $('gmOfferProduction').value = offer.production_date || '';
     $('gmOfferExpiry').value = offer.expiry_date || '';
     $('gmOfferImage').value = '';
@@ -159,16 +228,19 @@
     saveBtn.textContent = 'UPDATE OFFER';
     cancelBtn.hidden = false;
     setMessage(`Editing: ${offer.product_name || offer.title || 'offer'}. Save to apply your changes.`, '');
+    updateDiscountPreview();
     $('offerFormCard').scrollIntoView({behavior:'smooth', block:'start'});
   }
   saveBtn.addEventListener('click', async () => {
     if (!activeProfile) { setMessage('Please sign in with an active GM/Admin account again.', 'error'); return; }
     const product_name = $('gmOfferName').value.trim();
     const description = $('gmOfferDescription').value.trim();
+    const discount_percent = Number($('gmOfferDiscountPercent').value);
     const production_date = $('gmOfferProduction').value;
     const expiry_date = $('gmOfferExpiry').value;
     const status = $('gmOfferStatus').value;
     if (!product_name || !production_date || !expiry_date) { setMessage('Product name, production date, and expiry date are required.', 'error'); return; }
+    if (!Number.isFinite(discount_percent) || discount_percent <= 0 || discount_percent > 100) { setMessage('Enter a discount percentage greater than 0 and no more than 100.', 'error'); return; }
     if (expiry_date < production_date) { setMessage('Expiry date cannot be before production date.', 'error'); return; }
     saveBtn.disabled = true;
     const originalLabel = saveBtn.textContent;
@@ -179,7 +251,8 @@
       const payload = {
         title: product_name,
         product_name,
-        description: description || null,
+        description: syncDescriptionDiscount(description, discount_percent),
+        discount_percent,
         production_date,
         expiry_date,
         image_url,
@@ -198,7 +271,11 @@
       resetForm();
       await loadOffers();
     } catch (error) {
-      setMessage(`Could not save offer: ${error?.message || error}`, 'error');
+      const errorText = String(error?.message || error || 'Unknown error');
+      const schemaHint = /discount_percent|column.*does not exist|schema cache/i.test(errorText)
+        ? ' Run POACustomers/sql/add-offers-discount-percent.sql in the correct Supabase project, then refresh this page.'
+        : '';
+      setMessage(`Could not save offer: ${errorText}.${schemaHint}`, 'error');
     } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = editingOffer ? 'UPDATE OFFER' : originalLabel;
@@ -206,6 +283,8 @@
     }
   });
   cancelBtn.addEventListener('click', () => { resetForm(); setMessage('Edit cancelled.', ''); });
+  $('gmOfferName').addEventListener('input', updateDiscountPreview);
+  $('gmOfferDiscountPercent').addEventListener('input', updateDiscountPreview);
   refreshBtn.addEventListener('click', loadOffers);
   list.addEventListener('click', async event => {
     const button = event.target.closest('button[data-offer-action]');
@@ -232,6 +311,7 @@
     }
   });
 
+  updateDiscountPreview();
   try {
     if (typeof sb === 'undefined' || !sb) throw new Error('Supabase client is not configured. Check assets/config.js.');
     list.innerHTML = '<div class="empty">Checking GM/Admin access…</div>';
