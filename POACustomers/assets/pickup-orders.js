@@ -13,8 +13,7 @@
   let selectedDeliveryInstructions = '';
   let selectedSavedAddressText = '';
   let activeBranches = [];
-  let deliveryZones = [];
-  let resolvedZoneDistanceKm = null;
+  let resolvedDeliveryRoute = null;
 
   function readCart() {
     try {
@@ -87,6 +86,7 @@
     return '<div class="pickup-delivery-details"><span class="fulfillment-badge">⌖ DELIVERY</span>' +
       (order.delivery_zone_name ? '<br><strong>Delivery area:</strong> ' + esc(order.delivery_zone_name) : '') +
       '<br><strong>Delivery address / area:</strong> ' + esc(order.delivery_address || 'Address not recorded') +
+      (order.delivery_distance_meters != null ? '<br><strong>Road distance:</strong> ' + esc((Number(order.delivery_distance_meters) / 1000).toFixed(2)) + ' km' : '') +
       (order.delivery_fee != null ? '<br><strong>Delivery fee:</strong> ' + esc(money(order.delivery_fee)) : '') +
       (map ? '<br><a class="delivery-location-link" href="' + esc(map) + '" target="_blank" rel="noopener noreferrer">↗ Open delivery location in Google Maps</a>' : '<br><small>Map location not available.</small>') + '</div>';
   }
@@ -138,7 +138,7 @@
     const method = $('pickupOrderSuccessMethod');
     if (number) number.textContent = String(orderNumber || '—');
     if (method) method.textContent = fulfillment === 'delivery'
-      ? 'Area: ' + String(result.delivery_zone_name || 'Selected delivery area') + '. Routed to ' + String(result.branch_name || 'the assigned branch') + '. Delivery fee: ' + money(result.delivery_fee ?? 0) + '. Branch Staff will update the order status.'
+      ? 'Routed to ' + String(result.branch_name || 'the nearest active branch') + (result.distance_km != null ? ' · ' + Number(result.distance_km).toFixed(2) + ' km by road' : '') + '. Delivery fee: ' + money(result.delivery_fee ?? 0) + '. Branch Staff will update the order status.'
       : 'Pickup from the selected branch. Branch Staff will update the order status.';
     $('pickupCheckoutMessage')?.setAttribute('hidden', '');
     setCheckoutView('success');
@@ -193,36 +193,33 @@
     renderCart();
   }
 
-  function selectedZone() {
-    const id = $('deliveryZone')?.value || '';
-    return deliveryZones.find(zone => String(zone.id) === String(id)) || null;
-  }
-  function updateZoneSummary(zone, distanceKm, isError) {
+  function updateZoneSummary(route, distanceKm, isError) {
     const box = $('deliveryZoneSummary');
     if (!box) return;
-    if (!zone) {
+    if (!route) {
       box.hidden = true;
       box.innerHTML = '';
       box.classList.remove('error');
       return;
     }
-    const branch = activeBranches.find(row => String(row.id) === String(zone.location_id));
-    const branchName = zone.branch_name || branch?.name || 'Assigned branch';
-    const areaName = zone.zone_name || zone.name || 'Delivery area';
-    const fee = zone.delivery_fee == null ? 0 : Number(zone.delivery_fee);
-    const minimum = zone.minimum_order_amount == null ? 0 : Number(zone.minimum_order_amount);
-    const distance = Number.isFinite(Number(distanceKm)) ? '<span class="delivery-zone-chip">Distance ' + esc(Number(distanceKm).toFixed(2)) + ' km</span>' : '';
-    box.innerHTML = '<div class="delivery-zone-heading"><strong>' + esc(isError ? 'Delivery area unavailable' : areaName) + '</strong>' +
-      (!isError ? '<span class="delivery-zone-route">· ' + esc(branchName) + '</span>' : '') + '</div>' +
-      (isError ? '<span class="delivery-zone-route">' + esc(zone.message || 'Outside delivery area.') + '</span>' :
-      '<div class="delivery-zone-facts"><span class="delivery-zone-chip">Fee ' + esc(money(fee)) + '</span><span class="delivery-zone-chip">Min. ' + esc(money(minimum)) + '</span>' + distance + '</div>');
+    const branchName = route.branch_name || 'Nearest active branch';
+    const fee = route.delivery_fee == null ? null : Number(route.delivery_fee);
+    const dkm = Number.isFinite(Number(distanceKm)) ? Number(distanceKm) : Number(route.distance_km);
+    const distance = Number.isFinite(dkm) ? '<span class="delivery-zone-chip">Road distance ' + esc(dkm.toFixed(2)) + ' km</span>' : '';
+    const feeChip = Number.isFinite(fee) ? '<span class="delivery-zone-chip">Delivery fee ' + esc(money(fee)) + '</span>' : '';
+    const mode = route.travel_mode === 'DRIVE' ? 'Car route' : 'Motorcycle route';
+    box.innerHTML = '<div class="delivery-zone-heading"><strong>' + esc(isError || route.covered === false ? 'Delivery unavailable' : 'Nearest branch found') + '</strong>' +
+      (!isError && route.branch_name ? '<span class="delivery-zone-route">· ' + esc(branchName) + '</span>' : '') + '</div>' +
+      (isError || route.covered === false
+        ? '<span class="delivery-zone-route">' + esc(route.message || 'A valid road route within 50 km could not be confirmed.') + '</span>'
+        : '<div class="delivery-zone-facts">' + distance + feeChip + '<span class="delivery-zone-chip">' + esc(mode) + ' · 10 EGP/km · maximum 50 km</span></div>');
     box.hidden = false;
-    box.classList.toggle('error', !!isError);
+    box.classList.toggle('error', !!isError || route.covered === false);
   }
   function updateOrderSummary() {
     const summary = $('pickupCartSummary');
     if (!summary) return;
-    const cart = readCart(), calc = calculate(cart), delivery = fulfillmentType() === 'delivery', zone = delivery ? selectedZone() : null;
+    const cart = readCart(), calc = calculate(cart), delivery = fulfillmentType() === 'delivery', route = delivery ? resolvedDeliveryRoute : null;
     const subtotalText = calc.known ? money(calc.total) : 'To be confirmed by branch';
     const hasOfferDiscount = cart.some(row => row.offer_id && Number(row.offer_discount_pct) > 0 && normalizePrice(row.original_price) !== null && normalizePrice(row.price) !== null);
     const baseSubtotal = calc.known ? cart.reduce((sum, row) => sum + Number(row.offer_id && normalizePrice(row.original_price) !== null ? row.original_price : row.price) * Number(row.quantity || 0), 0) : null;
@@ -230,19 +227,19 @@
     let html = '<div class="pickup-summary-row"><span>Items</span><strong>' + quantityCount(cart) + '</strong></div>' +
       (hasOfferDiscount && calc.known ? '<div class="pickup-summary-row"><span>Product subtotal before discounts</span><strong><del>' + esc(money(baseSubtotal)) + '</del></strong></div><div class="pickup-summary-row"><span>Product discount</span><strong style="color:#a13a52">−' + esc(money(productSavings)) + '</strong></div>' : '') +
       '<div class="pickup-summary-row"><span>Items subtotal' + (hasOfferDiscount ? ' after discount' : '') + '</span><strong>' + subtotalText + '</strong></div>' +
-      (hasOfferDiscount ? '<div class="pickup-note">Discount applies to the product only. Delivery fee is calculated separately and is not discounted.</div>' : '');
+      (hasOfferDiscount ? '<div class="pickup-note">Discount applies to products only. The delivery fee is calculated separately and is not discounted.</div>' : '');
     if (hasOfferDiscount && !OFFER_DISCOUNT_BACKEND_READY) {
-      html += '<div class="pickup-offer-checkout-warning">Offer prices are shown in the basket, but the order server has not yet been updated to validate and store these discounts. Sending this order is paused to prevent the regular price being charged. The Supabase order functions must be updated before discounted orders can be placed.</div>';
+      html += '<div class="pickup-offer-checkout-warning">Offer prices are shown in the basket, but server-side offer validation is not enabled. Sending this order is paused to prevent an incorrect charge.</div>';
     }
-    if (delivery && !zone) {
-      html += '<div class="pickup-note">Choose your current location or select a saved address with a map pin. The correct area and branch will be assigned automatically.</div>';
+    if (delivery && (!route || route.covered !== true)) {
+      html += '<div class="pickup-note">Update your GPS location or choose a saved address with a map pin. The nearest branch and road distance will be calculated automatically. Delivery is available up to 50 km by road.</div>';
+      if (route && route.message) html += '<div class="pickup-error">' + esc(route.message) + '</div>';
     }
-    if (delivery && zone) {
-      const fee = Number(zone.delivery_fee || 0), minimum = Number(zone.minimum_order_amount || 0);
-      html += '<div class="pickup-summary-row"><span>Delivery fee · ' + esc(zone.name) + '</span><strong>' + esc(money(fee)) + '</strong></div>' +
+    if (delivery && route && route.covered === true) {
+      const fee = Number(route.delivery_fee || 0);
+      html += '<div class="pickup-summary-row"><span>Road distance · ' + esc(route.branch_name || 'Nearest branch') + '</span><strong>' + esc(Number(route.distance_km).toFixed(2)) + ' km</strong></div>' +
+        '<div class="pickup-summary-row"><span>Delivery fee (10 EGP/km)</span><strong>' + esc(money(fee)) + '</strong></div>' +
         '<div class="pickup-summary-row"><span>Estimated total</span><strong>' + (calc.known ? esc(money(calc.total + fee)) : 'To be confirmed by branch') + '</strong></div>';
-      if (calc.known && calc.total < minimum) html += '<div class="pickup-error">Minimum item subtotal for this area is ' + esc(money(minimum)) + '. Add ' + esc(money(minimum - calc.total)) + ' more to continue.</div>';
-      else if (!calc.known && minimum > 0) html += '<div class="pickup-error">This area has a minimum order, but one or more menu items have no published price. The minimum cannot be verified. Ask the branch to confirm prices before delivery.</div>';
     } else if (!delivery) {
       html += '<div class="pickup-summary-row"><span>Order total</span><strong>' + subtotalText + '</strong></div>';
     }
@@ -254,16 +251,15 @@
   function refreshPlaceButton() {
     const btn = $('placePickupOrderBtn');
     if (!btn || btn.dataset.sending) return;
-    const cart = readCart(), delivery = fulfillmentType() === 'delivery', zone = delivery ? selectedZone() : null;
-    const calc = calculate(cart);
-    const minimumValue = Number(zone?.minimum_order_amount || 0);
-    const minimumNotMet = !!(delivery && zone && (calc.known ? calc.total < minimumValue : minimumValue > 0));
+    const cart = readCart(), delivery = fulfillmentType() === 'delivery', route = delivery ? resolvedDeliveryRoute : null;
     const hasUnvalidatedOffer = !OFFER_DISCOUNT_BACKEND_READY && cart.some(row => row.offer_id && Number(row.offer_discount_pct) > 0);
-    btn.disabled = !cart.length || (delivery ? !zone : !$('pickupBranch')?.value) || minimumNotMet || hasUnvalidatedOffer;
+    btn.disabled = !cart.length || (delivery ? !(route && route.covered === true) : !$('pickupBranch')?.value) || hasUnvalidatedOffer;
     if (hasUnvalidatedOffer) btn.title = 'Discounted offers cannot be submitted until Supabase server validation is updated.';
     else btn.removeAttribute('title');
     updateOrderSummary();
   }
+
+
   function setLocationStatus(text, kind) {
     const el = $('deliveryLocationStatus');
     if (!el) return;
@@ -278,7 +274,6 @@
     if (panel) panel.hidden = !delivery;
     if (branchField) branchField.hidden = delivery;
     if ($('pickupBranch')) $('pickupBranch').required = !delivery;
-    if ($('deliveryZone')) $('deliveryZone').required = delivery;
     const address = $('deliveryAddress');
     // Written address details are optional when GPS or a valid map link is supplied.
     if (address) address.required = false;
@@ -344,8 +339,7 @@
         else {
           selectedDeliveryInstructions = '';
           selectedSavedAddressText = '';
-          $('deliveryZone').value = '';
-          resolvedZoneDistanceKm = null;
+          resolvedDeliveryRoute = null;
           updateZoneSummary(null);
           updateOrderSummary();
           refreshPlaceButton();
@@ -369,8 +363,7 @@
       setLocationStatus('Saved address selected. Checking coverage…');
       await resolveDeliveryZoneForCoordinates(Number(row.latitude), Number(row.longitude));
     } else {
-      $('deliveryZone').value = '';
-      resolvedZoneDistanceKm = null;
+      resolvedDeliveryRoute = null;
       updateZoneSummary(null);
       setLocationStatus('This address has no map pin. Choose another address or update your location.', 'error');
     }
@@ -379,28 +372,32 @@
   }
 
   function deliveryPayloadOrError() {
-    if (fulfillmentType() !== 'delivery') return { type: 'pickup', address: null, mapUrl: null, latitude: null, longitude: null, instructions: null, zoneId: null };
-    const zone = selectedZone();
-    if (!zone) { showMessage('pickupCheckoutMessage', 'Choose a delivery area or use your GPS location to find the area serving you.', true); $('deliveryZone')?.focus(); return null; }
+    if (fulfillmentType() !== 'delivery') return { type: 'pickup', address: null, mapUrl: null, latitude: null, longitude: null, instructions: null, route: null };
     const address = $('deliveryAddress')?.value.trim() || '';
     const mapInput = $('deliveryMapUrl')?.value.trim() || '';
     const latText = $('deliveryLatitude')?.value || '', lngText = $('deliveryLongitude')?.value || '';
     const latitude = latText === '' ? null : Number(latText);
     const longitude = lngText === '' ? null : Number(lngText);
-    if ((latitude === null) !== (longitude === null)) { showMessage('pickupCheckoutMessage', 'The map location is incomplete. Use current location again or paste a Google Maps link.', true); return null; }
+    if ((latitude === null) !== (longitude === null)) { showMessage('pickupCheckoutMessage', 'The map location is incomplete. Update your current location again.', true); return null; }
     if (latitude !== null && (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)) {
-      showMessage('pickupCheckoutMessage', 'The map coordinates are invalid. Select your current location or paste a valid map link.', true); return null;
+      showMessage('pickupCheckoutMessage', 'The map coordinates are invalid. Select your current location or choose a valid saved map pin.', true); return null;
     }
     if (latitude === null || longitude === null) {
-      showMessage('pickupCheckoutMessage', 'Automatic branch routing requires a saved map pin. Use your current location or choose an address with a map pin from My Profile. A text address or link alone cannot reliably assign the correct branch.', true);
+      showMessage('pickupCheckoutMessage', 'Choose your current location or a saved address with a map pin before delivery.', true);
       $('useMyLocationBtn')?.focus();
       return null;
     }
     const mapUrl = validMapUrl(mapInput);
     if (mapInput && !mapUrl) { showMessage('pickupCheckoutMessage', 'The saved map link is invalid. Re-select the location or update the saved address.', true); return null; }
+    if (!resolvedDeliveryRoute || resolvedDeliveryRoute.covered !== true || Number(resolvedDeliveryRoute.latitude) !== latitude || Number(resolvedDeliveryRoute.longitude) !== longitude) {
+      showMessage('pickupCheckoutMessage', 'Please update your location and wait for a valid road route under 50 km before placing the order.', true);
+      return null;
+    }
     const resolvedMapUrl = mapUrl || 'https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude);
-    return { type: 'delivery', address: address || null, mapUrl: resolvedMapUrl, latitude, longitude, instructions: address === selectedSavedAddressText ? selectedDeliveryInstructions : null, zoneId: zone.id };
+    return { type: 'delivery', address: address || null, mapUrl: resolvedMapUrl, latitude, longitude, instructions: address === selectedSavedAddressText ? selectedDeliveryInstructions : null, route: resolvedDeliveryRoute };
   }
+
+
 
   async function loadBranches() {
     const select = $('pickupBranch');
@@ -429,86 +426,57 @@
     refreshPlaceButton();
   }
 
-  async function loadDeliveryZones() {
-    const select = $('deliveryZone');
-    if (!select) return;
-    select.innerHTML = '<option value="">Loading delivery areas…</option>';
-    select.disabled = true;
-    try {
-      const { data, error } = await sb.from('delivery_zones')
-        .select('id,name,area_description,location_id,center_latitude,center_longitude,radius_km,delivery_fee,minimum_order_amount,is_active')
-        .eq('is_active', true).order('name');
-      if (error) throw error;
-      const activeIds = new Set(activeBranches.map(row => String(row.id)));
-      deliveryZones = (Array.isArray(data) ? data : []).filter(zone => zone && zone.id && activeIds.has(String(zone.location_id)));
-      if (!deliveryZones.length) {
-        select.innerHTML = '<option value="">No active delivery areas configured</option>';
-        setLocationStatus('Delivery areas are not available yet. Please try pickup.', 'error');
-        return;
-      }
-      select.innerHTML = '<option value="">Choose your area</option>' + deliveryZones.map(zone => {
-        const branch = activeBranches.find(row => String(row.id) === String(zone.location_id));
-        const area = zone.area_description ? ' — ' + zone.area_description : '';
-        const label = zone.name + area + ' · ' + (branch?.name || 'Branch') + ' · fee ' + money(zone.delivery_fee);
-        return '<option value="' + esc(zone.id) + '">' + esc(label) + '</option>';
-      }).join('');
-      // This is an informational field, not a customer-controlled branch selector.
-      // The server resolves the matching zone from coordinates and fills the field automatically.
-      updateOrderSummary();
-      refreshPlaceButton();
-    } catch (error) {
-      deliveryZones = [];
-      select.innerHTML = '<option value="">Delivery areas unavailable</option>';
-      setLocationStatus('Could not load delivery areas. Please try again later.', 'error');
-    }
-  }
+
 
   async function resolveDeliveryZoneForCoordinates(latitude, longitude) {
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+      resolvedDeliveryRoute = null;
+      updateZoneSummary({ message: 'The map location is invalid. Select your current location again.' }, null, true);
       setLocationStatus('The map location is invalid. Select your current location again.', 'error');
-      $('deliveryZone').value = '';
-      updateZoneSummary(null);
       updateOrderSummary();
       refreshPlaceButton();
       return;
     }
+    resolvedDeliveryRoute = null;
+    updateZoneSummary(null);
+    updateOrderSummary();
+    refreshPlaceButton();
     try {
-      const { data, error } = await sb.rpc('resolve_delivery_zone', { p_lat: latitude, p_lng: longitude });
-      if (error) throw error;
+      const { data, error } = await sb.functions.invoke('delivery-routing', {
+        body: { action: 'quote', latitude, longitude }
+      });
+      if (error) {
+        let message = error.message || 'Could not calculate the road route.';
+        try {
+          if (error.context && typeof error.context.json === 'function') {
+            const body = await error.context.json();
+            if (body && body.message) message = body.message;
+          }
+        } catch (_) {}
+        throw new Error(message);
+      }
       const result = Array.isArray(data) ? data[0] : data;
-      if (!result || result.covered !== true) {
-        $('deliveryZone').value = '';
-        resolvedZoneDistanceKm = null;
-        updateZoneSummary({ message: result?.message || 'Your location is outside the configured delivery areas.' }, null, true);
-        setLocationStatus('Your location is outside the delivery areas.', 'error');
-        updateOrderSummary();
-        refreshPlaceButton();
-        return;
+      if (!result) throw new Error('The delivery service returned no route information.');
+      resolvedDeliveryRoute = result;
+      if (result.covered !== true) {
+        updateZoneSummary(result, result.distance_km, true);
+        setLocationStatus(result.message || 'The nearest branch is more than 50 km away by road.', 'error');
+      } else {
+        updateZoneSummary(result, result.distance_km, false);
+        setLocationStatus('Location confirmed · ' + result.branch_name + ' · ' + Number(result.distance_km).toFixed(2) + ' km by road · ' + money(result.delivery_fee), 'success');
       }
-      const zone = deliveryZones.find(row => String(row.id) === String(result.zone_id));
-      if (!zone) {
-        $('deliveryZone').value = '';
-        updateZoneSummary({ message: 'The matching area is not available for ordering. Ask the manager to check the branch and area settings.' }, null, true);
-        setLocationStatus('This delivery area is unavailable. Choose another area.', 'error');
-        updateOrderSummary();
-        refreshPlaceButton();
-        return;
-      }
-      $('deliveryZone').value = zone.id;
-      resolvedZoneDistanceKm = result.distance_km;
-      updateZoneSummary({ ...zone, zone_name: result.zone_name, branch_name: result.branch_name, delivery_fee: result.delivery_fee, minimum_order_amount: result.minimum_order_amount }, result.distance_km, false);
-      setLocationStatus('Location confirmed · ' + result.zone_name + ' · ' + result.branch_name, 'success');
       updateOrderSummary();
       refreshPlaceButton();
     } catch (error) {
-      $('deliveryZone').value = '';
-      resolvedZoneDistanceKm = null;
-      updateZoneSummary({ message: 'Could not check delivery coverage: ' + (error?.message || error) }, null, true);
-      setLocationStatus('Could not confirm this location. Try again.', 'error');
+      resolvedDeliveryRoute = null;
+      updateZoneSummary({ message: error?.message || 'Could not confirm a valid road route. Try again.' }, null, true);
+      setLocationStatus('Could not confirm this location. Check the routing service setup and try again.', 'error');
       updateOrderSummary();
       refreshPlaceButton();
     }
   }
+
+
 
   function showMessage(id, text, isError) {
     const box = $(id);
@@ -530,7 +498,7 @@
     if (!delivery) return;
     const branchId = $('pickupBranch')?.value;
     if (delivery.type === 'pickup' && !branchId) { showMessage('pickupCheckoutMessage', 'Choose the branch that will handle your pickup order.', true); $('pickupBranch')?.focus(); return; }
-    if (delivery.type === 'delivery' && !delivery.zoneId) { showMessage('pickupCheckoutMessage', 'Choose your delivery area first.', true); $('deliveryZone')?.focus(); return; }
+    if (delivery.type === 'delivery' && !(delivery.route && delivery.route.covered === true)) { showMessage('pickupCheckoutMessage', 'Confirm a valid road route within 50 km before placing the order.', true); $('useMyLocationBtn')?.focus(); return; }
 
     const button = $('placePickupOrderBtn');
     button.dataset.sending = 'true'; button.disabled = true; button.textContent = 'SENDING ORDER…';
@@ -539,14 +507,15 @@
       const notes = [delivery.instructions ? 'Delivery instructions: ' + delivery.instructions : '', $('pickupOrderNotes')?.value?.trim() ? 'Order note: ' + $('pickupOrderNotes').value.trim() : ''].filter(Boolean).join(' | ').slice(0, 500) || null;
       const orderItems = cart.map(row => ({ item_id: row.id, quantity: Number(row.quantity) }));
       const rpc = delivery.type === 'delivery'
-        ? await sb.rpc('place_delivery_order_in_zone', {
-            p_delivery_zone_id: delivery.zoneId,
-            p_items: orderItems,
-            p_delivery_address: delivery.address,
-            p_delivery_map_url: delivery.mapUrl,
-            p_delivery_latitude: delivery.latitude,
-            p_delivery_longitude: delivery.longitude,
-            p_notes: notes
+        ? await sb.functions.invoke('delivery-routing', {
+            body: {
+              action: 'place-order',
+              latitude: delivery.latitude,
+              longitude: delivery.longitude,
+              address: delivery.address,
+              notes,
+              items: orderItems
+            }
           })
         : await sb.rpc('place_customer_order', {
             p_location_id: branchId,
@@ -598,7 +567,7 @@
     if (!box) return;
     box.innerHTML = '<div class="pickup-empty">Loading your orders…</div>';
     const { data, error } = await sb.from('pickup_orders')
-      .select('id,order_number,customer_name,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_fee,total_amount,status,notes,subtotal,currency,created_at,updated_at')
+      .select('id,order_number,customer_name,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,created_at,updated_at')
       .order('created_at', { ascending: false }).limit(50);
     if (error) {
       box.innerHTML = '<div class="pickup-error">Could not load orders. Run the order setup SQL in Supabase. Details: ' + esc(error.message) + '</div>';
@@ -653,7 +622,7 @@
     }
     box.innerHTML = '<div class="pickup-empty">Loading branch orders…</div>';
     const { data, error } = await sb.from('pickup_orders')
-      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_fee,total_amount,status,notes,subtotal,currency,created_at')
+      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,created_at')
       .eq('location_id', assignedStaffLocationId).order('created_at', { ascending: false }).limit(100);
     if (error) { box.innerHTML = '<div class="pickup-error">Could not load branch orders. Run the order setup SQL in Supabase. Details: ' + esc(error.message) + '</div>'; return; }
     const orders = Array.isArray(data) ? data : [];
@@ -691,7 +660,6 @@
     renderCart();
     if (readCart().length) {
       await loadBranches();
-      await loadDeliveryZones();
       await loadSavedDeliveryAddresses();
       renderCart();
     }
