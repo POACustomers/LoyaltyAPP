@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v47-auto-receipt-png";
+const CACHE = CACHE_NAMESPACE + "v48-auto-receipt-png-layoutfix";
 const SHELL = [
   "./",
   "./index.html",
