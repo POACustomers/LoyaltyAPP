@@ -2,15 +2,31 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#C65F78">
 <link rel="manifest" href="../manifest.webmanifest"><title>Branch Orders — Staff</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261027-customer-location-share"><link rel="stylesheet" href="../assets/pickup-orders.css?v=20261027-customer-location-share">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="../assets/tenant-config.js?v=20261027-customer-location-share"></script><script src="../assets/tenant-branding.js?v=20261027-customer-location-share"></script>
+<link rel="stylesheet" href="../assets/style.css?v=20261027-cancel-form-v3"><link rel="stylesheet" href="../assets/pickup-orders.css?v=20261027-cancel-form-v3"><link rel="stylesheet" href="../assets/cancellation-dialog.css?v=20261027-cancel-form-v3">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="../assets/tenant-config.js?v=20261027-cancel-form-v3"></script><script src="../assets/tenant-branding.js?v=20261027-cancel-form-v3"></script>
 </head>
 <body data-page="staff-orders">
-<header class="topbar"><a class="brand brand-image" href="staff-scan.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261027-customer-location-share" alt="Dina's Corner"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
+<header class="topbar"><a class="brand brand-image" href="staff-scan.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261027-cancel-form-v3" alt="Dina's Corner"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
 <main class="pickup-main"><header class="pickup-heading"><p class="eyebrow">CUSTOMER SERVICE</p><h1 class="title">Branch Orders</h1><p class="sub">Staff handles pickup and delivery orders for the assigned branch, including the customer delivery location when applicable.</p></header>
 <div id="managedOrdersMessage" hidden aria-live="polite"></div>
+<div id="cancelOrderDialog" class="cancel-order-dialog" hidden>
+  <button class="cancel-order-dialog-backdrop" type="button" data-cancel-dialog-dismiss aria-label="Close cancellation form"></button>
+  <section class="cancel-order-dialog-panel" role="dialog" aria-modal="true" aria-labelledby="cancelOrderDialogTitle" aria-describedby="cancelOrderDialogDescription">
+    <form id="cancelOrderForm" novalidate>
+      <h2 id="cancelOrderDialogTitle">Cancel order</h2>
+      <p id="cancelOrderDialogDescription">You must write the reason for cancelling this order. The order will not be cancelled without a reason.</p>
+      <label class="cancel-order-reason-label" for="cancelOrderReason">Cancellation reason <span aria-hidden="true">*</span></label>
+      <textarea id="cancelOrderReason" name="cancellationReason" rows="4" maxlength="1000" placeholder="Write the cancellation reason here…" required></textarea>
+      <p id="cancelOrderDialogError" class="cancel-order-dialog-error" role="alert" hidden></p>
+      <div class="cancel-order-dialog-actions">
+        <button id="cancelOrderDismiss" class="btn soft" type="button">Back</button>
+        <button id="cancelOrderConfirm" class="btn danger" type="submit">Confirm cancellation</button>
+      </div>
+    </form>
+  </section>
+</div>
 <section class="card pickup-panel"><div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h2 style="margin:0">Customer orders</h2><button id="refreshManagedOrdersBtn" class="btn soft" type="button">REFRESH</button></div><div id="managedPickupOrders" class="pickup-orders-list" style="margin-top:14px"><div class="pickup-empty">Loading branch orders…</div></div></section></main>
 <nav class="nav"><div class="navin"><a href="staff-scan.html"><b>⌗</b>Scan</a><a href="staff-orders.html" class="active"><b>▣</b>Orders</a><a href="staff-customer.html"><b>●</b>Customer</a><a href="staff-history.html"><b>↺</b>History</a><a href="staff-profile.html"><b>●</b>Profile</a></div></nav>
-<script src="../assets/config.js?v=20261027-customer-location-share"></script><script src="../assets/app.js?v=20261027-customer-location-share"></script><script src="../assets/pickup-orders.js?v=20261027-customer-location-share"></script>
+<script src="../assets/config.js?v=20261027-cancel-form-v3"></script><script src="../assets/app.js?v=20261027-cancel-form-v3"></script><script src="../assets/pickup-orders.js?v=20261027-cancel-form-v3"></script>
 
 </body></html>
