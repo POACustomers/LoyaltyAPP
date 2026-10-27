@@ -567,7 +567,7 @@
     if (!box) return;
     box.innerHTML = '<div class="pickup-empty">Loading your orders…</div>';
     const { data, error } = await sb.from('pickup_orders')
-      .select('id,order_number,customer_name,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,created_at,updated_at')
+      .select('id,order_number,customer_name,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at,updated_at')
       .order('created_at', { ascending: false }).limit(50);
     if (error) {
       box.innerHTML = '<div class="pickup-error">Could not load orders. Run the order setup SQL in Supabase. Details: ' + esc(error.message) + '</div>';
@@ -604,22 +604,32 @@
   }
 
   async function updateManagedOrder(id, status, type) {
-    let cancellationReason = '';
+    let rpcName = 'update_pickup_order_status';
+    let rpcArgs = { p_order_id: id, p_new_status: status };
+
     if (status === 'cancelled') {
-      cancellationReason = window.prompt('Required: enter the reason for cancelling this order:');
-      if (cancellationReason === null) return;
-      cancellationReason = cancellationReason.trim();
-      if (!cancellationReason) { showMessage('managedOrdersMessage', 'Cancellation reason is required.', true); return; }
-      if (!confirm('Cancel this order and save the reason?')) return;
-    } else if (!confirm('Update this order to: ' + statusLabel(status, type).toLowerCase() + '?')) return;
+      const entered = window.prompt('Enter the required reason for cancelling this order:');
+      if (entered === null) return;
+      const reason = entered.trim();
+      if (!reason) {
+        showMessage('managedOrdersMessage', 'Cancellation reason is required. The order was not cancelled.', true);
+        return;
+      }
+      if (!confirm('Cancel this order with the reason below?\n\n' + reason)) return;
+      rpcName = 'staff_cancel_pickup_order';
+      rpcArgs = { p_order_id: id, p_cancel_reason: reason };
+    } else if (!confirm('Update this order to: ' + statusLabel(status, type).toLowerCase() + '?')) {
+      return;
+    }
+
     try {
-      const result = status === 'cancelled'
-        ? await sb.rpc('cancel_pickup_order_with_reason', { p_order_id: id, p_reason: cancellationReason })
-        : await sb.rpc('update_pickup_order_status', { p_order_id: id, p_new_status: status });
-      if (result.error) throw result.error;
+      const { error } = await sb.rpc(rpcName, rpcArgs);
+      if (error) throw error;
       toast(status === 'cancelled' ? 'Order cancelled and reason saved.' : 'Order updated.');
       await loadManagedOrders();
-    } catch (error) { showMessage('managedOrdersMessage', error?.message || 'Could not update the order. Apply the cancellation-reason SQL patch in Supabase first.', true); }
+    } catch (error) {
+      showMessage('managedOrdersMessage', error?.message || 'Could not update the order.', true);
+    }
   }
 
   async function loadManagedOrders() {
@@ -631,7 +641,7 @@
     }
     box.innerHTML = '<div class="pickup-empty">Loading branch orders…</div>';
     const { data, error } = await sb.from('pickup_orders')
-      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,created_at')
+      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at')
       .eq('location_id', assignedStaffLocationId).order('created_at', { ascending: false }).limit(100);
     if (error) { box.innerHTML = '<div class="pickup-error">Could not load branch orders. Run the order setup SQL in Supabase. Details: ' + esc(error.message) + '</div>'; return; }
     const orders = Array.isArray(data) ? data : [];
