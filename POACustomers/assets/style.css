@@ -505,8 +505,22 @@ body.has-customer-bottom-nav{padding-bottom:0!important}
 .home-shortcuts-heading h3{margin:0;color:var(--green,#56382d);font-size:17px;font-weight:900}
 
 
-/* Make fallback category icons stay hidden while their category photo is loaded. */
+/* Customer homepage menu-category carousel: affects only the customer home category section. */
+.customer-home-page{padding-top:18px}
+.home-categories-card{margin:0 0 18px;padding:0;overflow:hidden}
+.home-categories-intro{margin:0 0 15px}
+.home-categories-eyebrow{margin:0 0 4px;color:#b49a62;font-size:9px;font-weight:900;letter-spacing:1.7px}
+.home-categories-intro .title{margin:0 0 5px;color:#66724a;font-size:26px;line-height:1.15}
+.home-categories-intro .sub{margin:0;color:#756d65;font-size:13px;line-height:1.45}
+.home-menu-categories{min-width:0;max-width:100%}
+.home-menu-category-grid{display:flex;flex-wrap:nowrap;gap:9px;width:100%;min-width:0;margin:0;padding:0 0 8px;overflow-x:auto;overflow-y:hidden;direction:ltr;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#969696 transparent;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x}
+.home-menu-category{flex:0 0 calc((100% - 16px)/3);min-width:0;scroll-snap-align:start;border-radius:15px}
+.home-menu-category-media{aspect-ratio:1/1}
+.home-menu-category-name{min-height:34px;padding:6px 6px;font-size:10px;line-height:1.25}
 .home-menu-category-icon[hidden]{display:none!important}
+@media(min-width:640px){.home-menu-category{flex-basis:calc((100% - 45px)/6)}}
+@media(max-width:380px){.customer-home-page{padding-top:14px}.home-categories-intro .title{font-size:24px}.home-menu-category-grid{gap:8px;padding-bottom:7px}.home-menu-category{flex-basis:calc((100% - 16px)/3)}.home-menu-category-name{font-size:9px;padding-inline:4px}}
+@media(prefers-reduced-motion:reduce){.home-menu-category{transition:none}}
 .customer-offers-page{padding-top:16px;padding-bottom:34px}
 .customer-offers-page__heading{margin:0 0 16px;padding:6px 2px}
 .customer-offers-page__heading .title{margin:0 0 6px;color:var(--green,#073a2b);font-size:26px}

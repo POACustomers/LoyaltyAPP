@@ -26,15 +26,16 @@
         renderMessage('No active menu categories are available yet.');
         return;
       }
-      const shown=rows.slice(0,6);
-      root.innerHTML='<div class="home-menu-category-grid">'+shown.map(category=>{
+      // Render every active category in a horizontal carousel. CSS controls how many
+      // tiles are visible at once; the customer can swipe/scroll to reach the rest.
+      root.innerHTML='<div class="home-menu-category-grid" role="list" aria-label="All menu categories">'+rows.map(category=>{
         const name=String(category.name||'').trim();
         const image=safeImage(category.image_url);
         const media=image
           ? '<img class="home-menu-category-image" src="'+esc(image)+'" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="home-menu-category-icon" aria-hidden="true" hidden>'+esc(category.icon||'☕')+'</span>'
           : '<span class="home-menu-category-icon" aria-hidden="true">'+esc(category.icon||'☕')+'</span>';
-        return '<a class="home-menu-category" href="customer-menu.html?category='+encodeURIComponent(name)+'" aria-label="Open category '+esc(name)+'"><span class="home-menu-category-media">'+media+'</span><span class="home-menu-category-name">'+esc(name)+'</span></a>';
-      }).join('')+'</div>'+(rows.length>6?'<a class="home-category-browse-link" href="customer-menu.html">Browse all '+rows.length+' categories <span aria-hidden="true">→</span></a>':'');
+        return '<a class="home-menu-category" role="listitem" href="customer-menu.html?category='+encodeURIComponent(name)+'" aria-label="Open category '+esc(name)+'"><span class="home-menu-category-media">'+media+'</span><span class="home-menu-category-name">'+esc(name)+'</span></a>';
+      }).join('')+'</div>';
     }catch(error){
       console.error('Could not load customer home categories:',error?.message||error);
       renderMessage('Menu categories are temporarily unavailable. Please open the full menu.',true);
