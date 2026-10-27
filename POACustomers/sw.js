@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v46-offer-discount-percentage-field";
+const CACHE = CACHE_NAMESPACE + "v47-local-orders-24h-archive";
 const SHELL = [
   "./",
   "./index.html",
@@ -28,6 +28,7 @@ const SHELL = [
   "./assets/menu-display.css",
   "./assets/menu-display.js",
   "./assets/pickup-orders.css",
+  "./assets/cancellation-dialog.css",
   "./assets/pickup-orders.js",
   "./assets/customer-addresses.css",
   "./assets/customer-addresses.js",
