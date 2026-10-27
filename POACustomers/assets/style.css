@@ -597,3 +597,6 @@ body.has-customer-bottom-nav{padding-bottom:calc(72px + env(safe-area-inset-bott
 .poac-loyalty-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;color:rgba(255,255,255,.9);font-size:10px;line-height:1.4;}
 .poac-loyalty-bottom a{color:#fff;text-decoration:none;font-weight:800;white-space:nowrap;}
 @media(max-width:420px){.customer-home-hero{padding:21px 16px;border-radius:22px}.customer-home-hero h1{font-size:clamp(29px,7.5vw,37px)}.customer-home-hero__description{font-size:13px}.customer-home-hero__loyalty{padding:15px 16px}.customer-header-actions{gap:6px}.customer-header-basket{min-height:36px;padding:0 10px;font-size:12px}}
+
+/* User request: basket is available only from the bottom navigation; remove header basket on Home. */
+.customer-header-basket{display:none!important}
