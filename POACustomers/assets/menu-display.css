@@ -187,3 +187,14 @@ body[data-page="menu"] #menuItemsView .menu-list{width:100%;}
  body[data-page="customer-menu"] #menuCategoriesView .menu-name,
  body[data-page="menu"] #menuCategoriesView .menu-name{font-size:11px!important;padding-inline:5px!important}
 }
+
+
+/* POAC: restore the single five-item bottom navigation bar on the customer menu. */
+.customer-mobile-nav { display:none; }
+@media (max-width:679px) {
+  .customer-mobile-nav { position:fixed; z-index:500; inset-inline:0; bottom:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:2px; min-height:65px; padding:7px 9px calc(7px + env(safe-area-inset-bottom)); border-top:1px solid rgba(188,132,127,.22); background:rgba(255,251,247,.96); box-shadow:0 -8px 24px rgba(87,57,48,.08); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
+  .customer-mobile-nav a { display:flex; min-width:0; min-height:45px; flex-direction:column; align-items:center; justify-content:center; gap:3px; border-radius:11px; color:#8e827b; font-size:9px; font-weight:800; line-height:1.1; text-decoration:none; -webkit-tap-highlight-color:transparent; }
+  .customer-mobile-nav a svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; }
+  .customer-mobile-nav a.is-active { color:#a94761; background:#fae8e7; }
+  .customer-mobile-nav a:focus-visible { outline:2px solid #bf5e75; outline-offset:1px; }
+}
