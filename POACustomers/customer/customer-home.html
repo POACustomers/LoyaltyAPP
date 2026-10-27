@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261024-home-image-cards-v1">
 <title>Dina's Corner | Home</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261028-poac-clean-mobile-v2">
-<link rel="stylesheet" href="../assets/customer-home.css?v=20261028-poac-clean-mobile-v2">
+<link rel="stylesheet" href="../assets/customer-home.css?v=20261028-poac-loyalty-card-restored-v3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
@@ -41,6 +41,17 @@
   </div>
   <span class="customer-home-hero__sparkle customer-home-hero__sparkle--one" aria-hidden="true">✦</span>
   <span class="customer-home-hero__sparkle customer-home-hero__sparkle--two" aria-hidden="true">✧</span>
+</section>
+
+<section class="customer-home-hero__loyalty" aria-label="Your loyalty journey">
+  <div class="customer-home-hero__loyalty-head">
+    <span class="customer-home-hero__loyalty-star" aria-hidden="true">✦</span>
+    <span class="customer-home-hero__loyalty-label">YOUR LOYALTY JOURNEY</span>
+  </div>
+  <p class="customer-home-hero__loyalty-caption">Your points balance</p>
+  <div class="poac-loyalty-balance"><strong><span data-points>0</span></strong><span>/ 50 points</span></div>
+  <div class="poac-loyalty-progress" aria-hidden="true"><span></span></div>
+  <div class="poac-loyalty-bottom"><span>Every visit brings you closer.</span><a href="customer-card.html">View my card <span aria-hidden="true">→</span></a></div>
 </section>
 
 <section class="home-categories-card" aria-label="Menu categories">
@@ -82,5 +93,9 @@
 <script src="../assets/config.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/app.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/customer-home-categories.js?v=20261028-poac-clean-mobile-v2"></script>
+
+<script>
+(function(){function syncLoyaltyProgress(){var node=document.querySelector('[data-points]');var value=node?parseInt(node.textContent,10):0;if(!Number.isFinite(value))value=0;value=Math.max(0,Math.min(50,value));document.documentElement.style.setProperty('--loyalty-progress',(value/50*100)+'%');}syncLoyaltyProgress();var n=document.querySelector('[data-points]');if(n&&window.MutationObserver)new MutationObserver(syncLoyaltyProgress).observe(n,{childList:true,subtree:true,characterData:true});})();
+</script>
 </body>
 </html>
