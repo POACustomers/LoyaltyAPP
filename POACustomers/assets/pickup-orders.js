@@ -43,7 +43,41 @@
     if (typeof window.toast === 'function') window.toast(message, good !== false);
     else if (message) console[good === false ? 'error' : 'log'](message);
   }
-  function fulfillmentType() { return $('orderFulfillmentType')?.value === 'delivery' ? 'delivery' : 'pickup'; }
+  function fulfillmentType() { return 'pickup'; }
+
+  // Current release is pickup-only. This guard also hides old cached delivery markup
+  // when an older checkout HTML file is still being served by the browser.
+  function enforcePickupOnlyCheckoutUI() {
+    if (page !== 'customer-orders') return;
+    const method = $('orderFulfillmentType');
+    if (method) {
+      const wrapper = method.closest('.pickup-field, .field, .form-group, label');
+      Array.from(method.options || []).forEach(option => {
+        if (String(option.value).toLowerCase() === 'delivery') option.remove();
+      });
+      method.value = 'pickup';
+      method.disabled = true;
+      if (wrapper) {
+        wrapper.hidden = true;
+        wrapper.style.display = 'none';
+      }
+    }
+    const deliveryPanel = $('deliveryDetails');
+    if (deliveryPanel) {
+      deliveryPanel.hidden = true;
+      deliveryPanel.style.display = 'none';
+    }
+    const deliverySummary = $('deliveryZoneSummary');
+    if (deliverySummary) {
+      deliverySummary.hidden = true;
+      deliverySummary.style.display = 'none';
+      deliverySummary.textContent = '';
+    }
+    document.querySelectorAll('#pickupCheckoutFormPanel .delivery-details, #pickupCheckoutFormPanel .delivery-zone-summary, #pickupCheckoutFormPanel .delivery-location-tools, #pickupCheckoutFormPanel .delivery-location-status, #pickupCheckoutFormPanel .delivery-address-link').forEach(element => {
+      element.hidden = true;
+      element.style.display = 'none';
+    });
+  }
   function statusLabel(status, type) {
     if (status === 'ready_for_pickup') return 'Ready for pickup';
     if (status === 'out_for_delivery') return 'Out for delivery';
@@ -227,7 +261,7 @@
     let html = '<div class="pickup-summary-row"><span>Items</span><strong>' + quantityCount(cart) + '</strong></div>' +
       (hasOfferDiscount && calc.known ? '<div class="pickup-summary-row"><span>Product subtotal before discounts</span><strong><del>' + esc(money(baseSubtotal)) + '</del></strong></div><div class="pickup-summary-row"><span>Product discount</span><strong style="color:#a13a52">−' + esc(money(productSavings)) + '</strong></div>' : '') +
       '<div class="pickup-summary-row"><span>Items subtotal' + (hasOfferDiscount ? ' after discount' : '') + '</span><strong>' + subtotalText + '</strong></div>' +
-      (hasOfferDiscount ? '<div class="pickup-note">Discount applies to products only. The delivery fee is calculated separately and is not discounted.</div>' : '');
+      (hasOfferDiscount ? '<div class="pickup-note">Discount applies to products only.</div>' : '');
     if (hasOfferDiscount && !OFFER_DISCOUNT_BACKEND_READY) {
       html += '<div class="pickup-offer-checkout-warning">Offer prices are shown in the basket, but server-side offer validation is not enabled. Sending this order is paused to prevent an incorrect charge.</div>';
     }
@@ -268,6 +302,7 @@
     el.classList.toggle('error', kind === 'error');
   }
   function updateFulfillmentUI() {
+    enforcePickupOnlyCheckoutUI();
     const type = fulfillmentType(), delivery = type === 'delivery';
     const panel = $('deliveryDetails');
     const branchField = $('pickupBranchField');
@@ -567,7 +602,7 @@
     if (!box) return;
     box.innerHTML = '<div class="pickup-empty">Loading your orders…</div>';
     const { data, error } = await sb.from('pickup_orders')
-      .select('id,order_number,customer_name,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at,updated_at')
+      .select('id,order_number,customer_name,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,created_at,updated_at')
       .order('created_at', { ascending: false }).limit(50);
     if (error) {
       box.innerHTML = '<div class="pickup-error">Could not load orders. Run the order setup SQL in Supabase. Details: ' + esc(error.message) + '</div>';
@@ -586,7 +621,7 @@
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>Branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + '<br>' + esc(statusHint(order.status, type)) +
-        deliveryDetailsHtml(order, false) + (order.notes ? '<br>Note: ' + esc(order.notes) : '') + (order.cancellation_reason ? '<br><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) : '') + '</div>' +
+        deliveryDetailsHtml(order, false) + (order.notes ? '<br>Note: ' + esc(order.notes) : '') + '</div>' +
         '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'To be confirmed by branch' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div>' +
         (canCancel ? '<button class="btn danger" type="button" data-cancel-order="' + esc(order.id) + '">Cancel order</button>' : '') + '</div></article>';
     }).join('');
@@ -604,32 +639,13 @@
   }
 
   async function updateManagedOrder(id, status, type) {
-    let rpcName = 'update_pickup_order_status';
-    let rpcArgs = { p_order_id: id, p_new_status: status };
-
-    if (status === 'cancelled') {
-      const entered = window.prompt('Enter the required reason for cancelling this order:');
-      if (entered === null) return;
-      const reason = entered.trim();
-      if (!reason) {
-        showMessage('managedOrdersMessage', 'Cancellation reason is required. The order was not cancelled.', true);
-        return;
-      }
-      if (!confirm('Cancel this order with the reason below?\n\n' + reason)) return;
-      rpcName = 'staff_cancel_pickup_order';
-      rpcArgs = { p_order_id: id, p_cancel_reason: reason };
-    } else if (!confirm('Update this order to: ' + statusLabel(status, type).toLowerCase() + '?')) {
-      return;
-    }
-
+    if (!confirm('Update this order to: ' + statusLabel(status, type).toLowerCase() + '?')) return;
     try {
-      const { error } = await sb.rpc(rpcName, rpcArgs);
+      const { error } = await sb.rpc('update_pickup_order_status', { p_order_id: id, p_new_status: status });
       if (error) throw error;
-      toast(status === 'cancelled' ? 'Order cancelled and reason saved.' : 'Order updated.');
+      toast('Order updated.');
       await loadManagedOrders();
-    } catch (error) {
-      showMessage('managedOrdersMessage', error?.message || 'Could not update the order.', true);
-    }
+    } catch (error) { showMessage('managedOrdersMessage', error?.message || 'Could not update the order.', true); }
   }
 
   async function loadManagedOrders() {
@@ -641,7 +657,7 @@
     }
     box.innerHTML = '<div class="pickup-empty">Loading branch orders…</div>';
     const { data, error } = await sb.from('pickup_orders')
-      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at')
+      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,created_at')
       .eq('location_id', assignedStaffLocationId).order('created_at', { ascending: false }).limit(100);
     if (error) { box.innerHTML = '<div class="pickup-error">Could not load branch orders. Run the order setup SQL in Supabase. Details: ' + esc(error.message) + '</div>'; return; }
     const orders = Array.isArray(data) ? data : [];
@@ -657,7 +673,7 @@
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>Handling branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + (order.branch_address ? '<br>Branch address: ' + esc(order.branch_address) : '') +
-        deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + (order.cancellation_reason ? '<br><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) : '') + '</div>' +
+        deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + '</div>' +
         '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'Confirm with customer' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div></div>' +
         '<div class="pickup-next-actions">' + (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
         (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '') + '</div></article>';
@@ -679,15 +695,10 @@
     renderCart();
     if (readCart().length) {
       await loadBranches();
-      await loadSavedDeliveryAddresses();
       renderCart();
     }
     $('pickupOrderForm')?.addEventListener('submit', submitCustomerOrder);
-    $('orderFulfillmentType')?.addEventListener('change', updateFulfillmentUI);
-    $('useMyLocationBtn')?.addEventListener('click', useMyLocation);
-    $('deliveryAddress')?.addEventListener('input', () => {
-      if ($('deliveryAddress').value.trim() !== selectedSavedAddressText) selectedDeliveryInstructions = '';
-    });
+    // Checkout is pickup-only for the current release; delivery UI and routing are not initialized.
     updateFulfillmentUI();
     // Order history is loaded separately on customer-order-history.html, not on checkout.
   }
@@ -714,6 +725,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    if (page === 'customer-orders') enforcePickupOnlyCheckoutUI();
     if (page === 'customer-menu') updateCartDock();
     if (page === 'customer-orders') initCustomerOrders().catch(error => showMessage('pickupCheckoutMessage', error?.message || 'Could not initialize the order page.', true));
     if (page === 'customer-order-history') initCustomerOrderHistory().catch(error => showMessage('pickupOrdersMessage', error?.message || 'Could not load order history.', true));
