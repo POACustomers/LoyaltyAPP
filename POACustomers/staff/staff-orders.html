@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#C65F78">
 <link rel="manifest" href="../manifest.webmanifest"><title>Branch Orders — Staff</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261027-local-orders-24h-v1"><link rel="stylesheet" href="../assets/pickup-orders.css?v=20261027-local-orders-24h-v1"><link rel="stylesheet" href="../assets/cancellation-dialog.css?v=20261027-local-orders-24h-v1">
+<link rel="stylesheet" href="../assets/style.css?v=20261027-local-orders-24h-v1"><link rel="stylesheet" href="../assets/pickup-orders.css?v=20261027-single-order-list-v2"><link rel="stylesheet" href="../assets/cancellation-dialog.css?v=20261027-local-orders-24h-v1">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="../assets/tenant-config.js?v=20261027-local-orders-24h-v1"></script><script src="../assets/tenant-branding.js?v=20261027-local-orders-24h-v1"></script>
 </head>
 <body data-page="staff-orders">
@@ -29,7 +29,7 @@
   <div class="local-archive-header">
     <div>
       <p class="eyebrow">LOCAL COMPUTER COPY</p>
-      <h2 id="localOrderArchiveTitle" style="margin:0">النسخة المحلية على هذا الكمبيوتر <span class="local-archive-count" id="localOrderArchiveCount">0</span></h2>
+      <h2 id="localOrderArchiveTitle" style="margin:0">عدد النسخ المحلية على هذا الكمبيوتر <span class="local-archive-count" id="localOrderArchiveCount">0</span></h2>
       <p class="local-archive-description">يحفظ البرنامج نسخة من كل أوردر وحالته، بما فيها الإلغاء، لمدة 24 ساعة من وقت إنشاء الأوردر ثم يحذفها تلقائيًا من مساحة التخزين المحلية للمتصفح.</p>
     </div>
     <div class="local-archive-actions">
@@ -38,11 +38,11 @@
     </div>
   </div>
   <p id="localOrderArchiveStatus" class="local-archive-status" role="status" aria-live="polite">سيبدأ حفظ النسخ المحلية بعد التحقق من حساب الموظف والفرع.</p>
-  <div id="localOrderArchiveList" class="pickup-orders-list" style="margin-top:12px"><div class="pickup-empty">جارٍ تجهيز النسخة المحلية…</div></div>
+  <p class="local-archive-unified-note">تُحفظ النسخ على هذا الكمبيوتر في الخلفية، ويظهر كل أوردر مرة واحدة فقط في قائمة الأوردرات بالأسفل مع حالة حفظ النسخة المحلية ووقت انتهائها.</p>
   <p class="local-archive-warning">تنبيه: النسخة المؤقتة داخل البرنامج تُحذف تلقائيًا بعد 24 ساعة. أما ملف JSON الذي تنزّله يدويًا فهو ملف منفصل في مجلد التنزيلات ولن يستطيع المتصفح حذفه تلقائيًا.</p>
 </section>
 <section class="card pickup-panel"><div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h2 style="margin:0">Customer orders</h2><button id="refreshManagedOrdersBtn" class="btn soft" type="button">REFRESH</button></div><div id="managedPickupOrders" class="pickup-orders-list" style="margin-top:14px"><div class="pickup-empty">Loading branch orders…</div></div></section></main>
 <nav class="nav"><div class="navin"><a href="staff-scan.html"><b>⌗</b>Scan</a><a href="staff-orders.html" class="active"><b>▣</b>Orders</a><a href="staff-customer.html"><b>●</b>Customer</a><a href="staff-history.html"><b>↺</b>History</a><a href="staff-profile.html"><b>●</b>Profile</a></div></nav>
-<script src="../assets/config.js?v=20261027-local-orders-24h-v1"></script><script src="../assets/app.js?v=20261027-local-orders-24h-v1"></script><script src="../assets/pickup-orders.js?v=20261027-local-orders-24h-v1"></script>
+<script src="../assets/config.js?v=20261027-local-orders-24h-v1"></script><script src="../assets/app.js?v=20261027-local-orders-24h-v1"></script><script src="../assets/pickup-orders.js?v=20261027-single-order-list-v2"></script>
 
 </body></html>
