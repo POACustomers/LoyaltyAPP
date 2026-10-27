@@ -1,5 +1,5 @@
 /* ================================================================
-   POINTIVA / Dina's Corner — customer home presentation refresh
+   POAC / Dina's Corner — customer home presentation refresh
    All selectors are intentionally scoped to the customer home page.
    ================================================================ */
 body[data-page="customer-home"] {
@@ -503,3 +503,31 @@ body[data-page="customer-home"] .customer-home-mobile-nav { display: flex; }
   body[data-page="customer-home"] *::before,
   body[data-page="customer-home"] *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* POAC mobile cleanup v2: simpler home, compact category cards, touch-first horizontal browsing. */
+body[data-page="customer-home"] .customer-home-hero__loyalty,
+body[data-page="customer-home"] .customer-home-shortcuts { display:none !important; }
+body[data-page="customer-home"] .home-category-carousel-footer { display:none !important; }
+body[data-page="customer-home"] .home-menu-category-grid {
+  display:flex !important; gap:9px !important; overflow-x:auto !important;
+  overscroll-behavior-x:contain; scroll-snap-type:x mandatory;
+  padding:2px 1px 8px; scrollbar-width:none; -webkit-overflow-scrolling:touch;
+}
+body[data-page="customer-home"] .home-menu-category-grid::-webkit-scrollbar { display:none; }
+body[data-page="customer-home"] .home-menu-category {
+  flex:0 0 clamp(94px, 27vw, 116px); scroll-snap-align:start;
+}
+body[data-page="customer-home"] .home-menu-category-media { aspect-ratio:1/1 !important; }
+body[data-page="customer-home"] .home-menu-category-name { min-height:42px; padding:7px 6px; font-size:11px; line-height:1.25; }
+body[data-page="customer-home"] .home-categories-intro { margin-bottom:12px; }
+
+
+/* POAC: remove unused home controls/cards marked for removal. */
+body[data-page="customer-home"] .customer-header-points,
+body[data-page="customer-home"] .customer-home-hero__actions,
+body[data-page="customer-home"] .customer-home-hero__loyalty,
+body[data-page="customer-home"] .home-categories-intro,
+body[data-page="customer-home"] .home-categories-view-all,
+body[data-page="customer-home"] .home-category-browse-link { display: none !important; }
+body[data-page="customer-home"] .customer-home-hero { grid-template-columns: minmax(0,1fr); }
+body[data-page="customer-home"] .home-categories-card { padding-top: 14px; }
