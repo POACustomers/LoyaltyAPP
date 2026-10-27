@@ -797,6 +797,7 @@
       await renderLocalOrderArchive();
       const visibleCount = (await localArchiveGetAll()).filter(row => String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > Date.now()).length;
       setLocalArchiveStatus('النسخة المحلية محدثة على هذا الكمبيوتر. الطلبات المحفوظة: ' + visibleCount + '. مدة الاحتفاظ 24 ساعة من إنشاء كل أوردر.', 'success');
+      if ($('managedPickupOrders')) await loadManagedOrders({ quiet: true });
     } catch (error) {
       setLocalArchiveStatus('تعذر تحديث النسخة المحلية من Supabase. النسخ المحفوظة مسبقًا ما زالت على هذا الكمبيوتر. السبب: ' + (error?.message || 'خطأ غير معروف'), 'error');
       try { await renderLocalOrderArchive(); } catch (_) {}
@@ -820,37 +821,18 @@
   }
 
   async function renderLocalOrderArchive() {
-    const box = $('localOrderArchiveList');
     const countEl = $('localOrderArchiveCount');
-    if (!box) return;
     const rows = await localArchiveGetAll();
     const now = Date.now();
-    const branchRows = rows
-      .filter(row => String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > now)
-      .sort((a, b) => Number(b.createdAtMs) - Number(a.createdAtMs));
+    const branchRows = rows.filter(row =>
+      String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > now
+    );
     if (countEl) countEl.textContent = String(branchRows.length);
-    if (!branchRows.length) {
-      box.innerHTML = '<div class="pickup-empty">لا توجد نسخ محلية صالحة خلال آخر 24 ساعة. ستظهر هنا تلقائيًا الأوردرات الجديدة وحالاتها، بما فيها الأوردرات الملغية.</div>';
-      return;
-    }
-    box.innerHTML = branchRows.map(order => {
-      const type = order.fulfillment_type || 'pickup';
-      const itemsHtml = (order.items || []).map(item => '<div>• ' + esc(item.item_name) + ' × ' + Number(item.quantity || 0) + (item.unit_price == null ? ' — السعر يُؤكَّد من الفرع' : ' — ' + esc(money(item.line_total ?? (Number(item.unit_price) * Number(item.quantity || 0))))) + '</div>').join('');
-      const reason = order.status === 'cancelled' && String(order.cancellation_reason || '').trim()
-        ? '<div class="local-archive-reason"><strong>سبب الإلغاء:</strong> ' + esc(order.cancellation_reason) + '</div>' : '';
-      const total = order.total_amount != null ? money(order.total_amount) : order.subtotal == null ? 'يُؤكَّد من الفرع' : money(Number(order.subtotal) + Number(order.delivery_fee || 0));
-      return '<article class="pickup-order-card local-archive-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number || order.id) + '</div><small class="pickup-order-date">وقت الإنشاء: ' + esc(new Date(order.created_at || order.createdAtMs).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
-        '<div class="pickup-order-meta"><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>الفرع:</strong> ' + esc(order.branch_name || '—') + '</div>' +
-        '<div class="pickup-order-items">' + (itemsHtml || '<small>لا توجد تفاصيل أصناف محفوظة لهذا الأوردر.</small>') + '</div>' + reason +
-        '<div class="pickup-order-footer"><div class="pickup-order-total">إجمالي الأوردر<strong>' + esc(total) + '</strong></div><small class="local-archive-expiry">' + esc(localRemainingText(order.expiresAt)) + '</small></div>' +
-        '<div class="pickup-next-actions"><button class="btn soft" type="button" data-print-local-order="' + esc(order.id || order.order_number) + '">عرض / طباعة الإيصال</button></div></article>';
-    }).join('');
-    box.querySelectorAll('[data-print-local-order]').forEach(button => {
-      button.addEventListener('click', () => {
-        const order = branchRows.find(row => String(row.id || row.order_number) === String(button.dataset.printLocalOrder));
-        if (order) openPrintableOrder(order, order.items || [], 'local');
-      });
-    });
+
+    // The local archive is storage, not a second order list. Keep any older markup empty
+    // so an outdated HTML file cannot show duplicate order cards above the live list.
+    const oldList = $('localOrderArchiveList');
+    if (oldList) oldList.innerHTML = '<div class="pickup-empty">النسخ المحلية محفوظة على هذا الكمبيوتر، وتظهر الطلبات مرة واحدة فقط في قائمة الأوردرات بالأسفل.</div>';
   }
 
   async function downloadLocalOrderArchive() {
@@ -997,33 +979,94 @@
       return;
     }
     if (!quiet) box.innerHTML = '<div class="pickup-empty">Loading branch orders…</div>';
+
+    const now = Date.now();
+    let localRows = [];
+    try {
+      await localArchiveDeleteExpired();
+      localRows = (await localArchiveGetAll()).filter(row =>
+        String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > now
+      );
+    } catch (_) {
+      // The live Supabase list can still be shown if local storage is unavailable.
+    }
+    const localById = new Map(localRows.map(row => [String(row.id), row]));
+
     const { data, error } = await sb.from('pickup_orders')
       .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at,updated_at')
       .eq('location_id', assignedStaffLocationId).order('created_at', { ascending: false }).limit(100);
-    if (error) { box.innerHTML = '<div class="pickup-error">Could not load branch orders. Run the order setup SQL in Supabase. Details: ' + esc(error.message) + '</div>'; return; }
-    const orders = Array.isArray(data) ? data : [];
-    if (!orders.length) { box.innerHTML = '<div class="pickup-empty">No orders for this branch yet. New pickup and delivery orders will appear here.</div>'; return; }
-    const orderIds = orders.map(row => row.id);
-    const { data: items, error: itemsError } = await sb.from('pickup_order_items').select('order_id,item_name,quantity,unit_price,line_total').in('order_id', orderIds).order('created_at', { ascending: true });
-    if (itemsError) { box.innerHTML = '<div class="pickup-error">Could not load order items: ' + esc(itemsError.message) + '</div>'; return; }
-    const grouped = {};
-    (items || []).forEach(item => (grouped[item.order_id] ||= []).push(item));
+
+    let liveOrders = Array.isArray(data) ? data : [];
+    if (error && !localRows.length) {
+      box.innerHTML = '<div class="pickup-error">Could not load branch orders and no local copies are available. Details: ' + esc(error.message) + '</div>';
+      return;
+    }
+    const liveIds = new Set(liveOrders.map(row => String(row.id)));
+    const liveItems = {};
+    if (liveOrders.length) {
+      const orderIds = liveOrders.map(row => row.id);
+      const { data: items, error: itemsError } = await sb.from('pickup_order_items')
+        .select('order_id,item_name,quantity,unit_price,line_total').in('order_id', orderIds).order('created_at', { ascending: true });
+      if (!itemsError) {
+        (items || []).forEach(item => (liveItems[item.order_id] ||= []).push(item));
+      }
+    }
+
+    // One unified list: live Supabase orders win; local copies are used only if
+    // the same order is not in the live response. This avoids showing an order twice.
+    const localOnlyOrders = localRows.filter(row => !liveIds.has(String(row.id)));
+    const orders = [...liveOrders, ...localOnlyOrders].sort((a, b) => {
+      const ta = Date.parse(a.created_at || '') || Number(a.createdAtMs || 0);
+      const tb = Date.parse(b.created_at || '') || Number(b.createdAtMs || 0);
+      return tb - ta;
+    });
+    const grouped = { ...liveItems };
+    localOnlyOrders.forEach(order => { grouped[order.id] = Array.isArray(order.items) ? order.items : []; });
+
+    if (!orders.length) {
+      box.innerHTML = error
+        ? '<div class="pickup-error">تعذر الاتصال بـSupabase ولا توجد نسخة محلية صالحة خلال آخر 24 ساعة.</div>'
+        : '<div class="pickup-empty">No orders for this branch yet. New orders will appear here once, with their local-copy status.</div>';
+      return;
+    }
+
     box.innerHTML = orders.map(order => {
-      const type = order.fulfillment_type || 'pickup', rows = grouped[order.id] || [], action = nextStep(order), canCancel = ['placed','accepted','preparing'].includes(order.status);
-      const itemHtml = rows.map(row => '<div>• ' + esc(row.item_name) + ' × ' + Number(row.quantity) + (row.unit_price === null ? ' — price to be confirmed' : ' — ' + money(row.line_total)) + '</div>').join('');
+      const id = String(order.id);
+      const isLocalOnly = !liveIds.has(id);
+      const localCopy = localById.get(id);
+      const type = order.fulfillment_type || 'pickup';
+      const rows = grouped[order.id] || order.items || [];
+      const action = isLocalOnly ? null : nextStep(order);
+      const canCancel = !isLocalOnly && ['placed','accepted','preparing'].includes(order.status);
+      const createdAt = order.created_at || (order.createdAtMs ? new Date(order.createdAtMs).toISOString() : null);
+      const dateLabel = createdAt && !Number.isNaN(Date.parse(createdAt)) ? new Date(createdAt).toLocaleString() : '—';
+      const itemHtml = rows.map(row => {
+        const itemName = row.item_name || row.name || 'Item';
+        const unit = row.unit_price == null ? ' — price to be confirmed' : ' — ' + money(row.line_total == null ? Number(row.unit_price) * Number(row.quantity || 0) : row.line_total);
+        return '<div>• ' + esc(itemName) + ' × ' + Number(row.quantity || 0) + unit + '</div>';
+      }).join('');
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
-      return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
-        '<div class="pickup-order-meta">' + typeBadge + '<br><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>Handling branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + (order.branch_address ? '<br>Branch address: ' + esc(order.branch_address) : '') +
-        deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + (order.status === 'cancelled' && String(order.cancellation_reason || '').trim() ? '<div class="pickup-cancellation-reason" role="note" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48"><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) + '</div>' : '') + '</div>' +
-        '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'Confirm with customer' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div></div>' +
-        '<div class="pickup-next-actions"><button class="btn soft" type="button" data-print-live-order="' + esc(order.id) + '">عرض / طباعة الإيصال</button>' + (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
+      const localBadge = localCopy
+        ? '<div class="local-copy-inline" title="تُحذف النسخة المحلية تلقائيًا بعد 24 ساعة من إنشاء الأوردر">✓ نسخة محفوظة على الكمبيوتر · ' + esc(localRemainingText(localCopy.expiresAt)) + '</div>'
+        : (isLocalOnly ? '<div class="local-copy-inline">نسخة محلية فقط · تعذر عرض الأوردر الأصلي من Supabase</div>' : '<div class="local-copy-inline local-copy-pending">النسخة المحلية قيد التحديث</div>');
+      const cancellation = order.status === 'cancelled' && String(order.cancellation_reason || '').trim()
+        ? '<div class="pickup-cancellation-reason" role="note" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48"><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) + '</div>' : '';
+      const total = order.total_amount != null ? money(order.total_amount)
+        : order.subtotal == null ? 'Confirm with customer' : money(Number(order.subtotal) + Number(order.delivery_fee || 0));
+      return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number || order.id) + '</div><small class="pickup-order-date">' + esc(dateLabel) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
+        '<div class="pickup-order-meta">' + typeBadge + '<br><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>Handling branch: ' + esc(order.branch_name || '—') + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + (order.branch_address ? '<br>Branch address: ' + esc(order.branch_address) : '') +
+        deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + cancellation + localBadge + '</div>' +
+        '<div class="pickup-order-items">' + (itemHtml || '<small>No saved item details are available for this order.</small>') + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + esc(total) + '</strong></div></div>' +
+        '<div class="pickup-next-actions"><button class="btn soft" type="button" data-print-unified-order="' + esc(order.id) + '">عرض / طباعة الإيصال</button>' +
+        (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
         (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '') + '</div></article>';
     }).join('');
+
     box.querySelectorAll('[data-order-status]').forEach(button => button.addEventListener('click', () => updateManagedOrder(button.dataset.orderStatus, button.dataset.nextStatus, button.dataset.orderType)));
-    box.querySelectorAll('[data-print-live-order]').forEach(button => {
+    box.querySelectorAll('[data-print-unified-order]').forEach(button => {
       button.addEventListener('click', () => {
-        const order = orders.find(row => String(row.id) === String(button.dataset.printLiveOrder));
-        if (order) openPrintableOrder(order, grouped[order.id] || [], 'live');
+        const order = orders.find(row => String(row.id) === String(button.dataset.printUnifiedOrder));
+        if (order) openPrintableOrder(order, grouped[order.id] || order.items || [], liveIds.has(String(order.id)) ? 'live' : 'local');
       });
     });
   }
@@ -1084,7 +1127,10 @@
     localArchiveCleanupTimer = window.setInterval(async () => {
       try {
         const deleted = await localArchiveDeleteExpired();
-        if (deleted) await renderLocalOrderArchive();
+        if (deleted) {
+          await renderLocalOrderArchive();
+          await loadManagedOrders({ quiet: true });
+        }
       } catch (_) {}
     }, 5000);
     document.addEventListener('visibilitychange', () => {
