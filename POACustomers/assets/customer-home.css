@@ -505,7 +505,6 @@ body[data-page="customer-home"] .customer-home-mobile-nav { display: flex; }
 }
 
 /* POAC mobile cleanup v2: simpler home, compact category cards, touch-first horizontal browsing. */
-body[data-page="customer-home"] .customer-home-hero__loyalty,
 body[data-page="customer-home"] .customer-home-shortcuts { display:none !important; }
 body[data-page="customer-home"] .home-category-carousel-footer { display:none !important; }
 body[data-page="customer-home"] .home-menu-category-grid {
@@ -531,3 +530,18 @@ body[data-page="customer-home"] .home-categories-view-all,
 body[data-page="customer-home"] .home-category-browse-link { display: none !important; }
 body[data-page="customer-home"] .customer-home-hero { grid-template-columns: minmax(0,1fr); }
 body[data-page="customer-home"] .home-categories-card { padding-top: 14px; }
+
+
+/* POAC: restore green loyalty balance card on the customer home page. */
+body[data-page="customer-home"] .customer-home-hero__loyalty { display:flex !important; margin:0 0 18px; padding:16px 16px 14px; border-radius:20px; }
+body[data-page="customer-home"] .customer-home-hero__loyalty-caption { margin:12px 0 2px; font-size:12px; }
+body[data-page="customer-home"] .poac-loyalty-balance { display:flex; align-items:baseline; gap:7px; position:relative; z-index:1; }
+body[data-page="customer-home"] .poac-loyalty-balance strong { font-size:34px; line-height:1.1; font-weight:900; }
+body[data-page="customer-home"] .poac-loyalty-balance > span { color:#f3e0bd; font-size:12px; font-weight:800; }
+body[data-page="customer-home"] .poac-loyalty-progress { height:7px; margin:12px 0 10px; overflow:hidden; border:1px solid rgba(255,255,255,.2); border-radius:99px; background:rgba(255,255,255,.18); }
+body[data-page="customer-home"] .poac-loyalty-progress span { display:block; width:var(--loyalty-progress,10%); height:100%; border-radius:inherit; background:#f2d8a6; }
+body[data-page="customer-home"] .poac-loyalty-bottom { display:flex; align-items:center; justify-content:space-between; gap:10px; position:relative; z-index:1; color:rgba(255,250,245,.82); font-size:10px; }
+body[data-page="customer-home"] .poac-loyalty-bottom a { color:#fffaf5; text-decoration:none; font-size:11px; font-weight:900; white-space:nowrap; }
+/* Keep home category cards just a little more compact without changing their layout. */
+body[data-page="customer-home"] .home-menu-category { flex-basis:clamp(90px,26vw,110px) !important; }
+body[data-page="customer-home"] .home-menu-category-name { font-size:10.5px; }
