@@ -1,0 +1,20 @@
+إصلاح نافذة سبب إلغاء الطلب — Dina's Corner
+
+استبدل 3 ملفات فقط في مستودع GitHub، مع الحفاظ على نفس المسارات:
+1) POACustomers/staff/staff-orders.html
+2) POACustomers/assets/pickup-orders.js
+3) POACustomers/assets/cancellation-dialog.css (ملف جديد)
+
+لا ترفع ملفات JavaScript داخل Supabase SQL Editor. ملفات HTML وJavaScript/CSS ترفع إلى GitHub فقط.
+
+هذا الإصلاح يستبدل window.prompt بنموذج ظاهر داخل صفحة الموظف، ويمنع إرسال السبب الفارغ، ثم يستدعي RPC باسم staff_cancel_pickup_order بمعاملين p_order_id وp_cancel_reason.
+
+قاعدة البيانات: يفترض أن ترحيل CANCELLATION-REASON-MIGRATION.sql سبق تشغيله بنجاح؛ ظهرت بالفعل في قاعدة البيانات دالة trigger enforce_staff_cancellation_reason. إذا ظهر بعد تحديث الملفات خطأ أن staff_cancel_pickup_order غير موجودة، لا تعدّل القيود يدويًا؛ أرسل نص الخطأ للتحقق من وجود الدالة.
+
+بعد رفع الملفات الثلاثة:
+1) افتح صفحة الموظف Staff Orders واضغط Ctrl+F5 (أو أغلق وافتح الـPWA على الهاتف).
+2) اضغط CANCEL ORDER. يجب أن تظهر نافذة فيها خانة Cancellation reason.
+3) اتركها فارغة واضغط Confirm cancellation: يجب أن يمنع الإلغاء.
+4) أدخل السبب ثم أكد الإلغاء. يجب أن يختفي الطلب من الطلبات النشطة أو يظهر بحالة Cancelled عند التحديث.
+
+تم فحص صياغة JavaScript محليًا، وتأكدنا أن الصفحة تحتوي على النموذج وأن مسار الإلغاء يستدعي الدالة المخصصة. لم يتم الاتصال بقاعدة Supabase الحقيقية من بيئة الاختبار، لذلك يلزم تجربة طلب واحد للتأكد من الصلاحيات والدالة على مشروعك.
