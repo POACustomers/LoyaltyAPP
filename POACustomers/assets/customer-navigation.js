@@ -36,12 +36,14 @@
     if(!page || ['customer-login','customer-register'].includes(page)) return;
     if(document.querySelector('.customer-bottom-nav')) return;
 
+    // Visual order left-to-right: Home, My Order, Location, Rewards, Profile.
+    // Therefore the requested reading order right-to-left is Profile, Rewards, Location, My Order, Home.
     const items = [
       {label:'Home', href:'customer-home.html', match:['customer-home'], icon:'<path d="m3 10 9-7 9 7"/><path d="M5 9v11h5v-6h4v6h5V9"/>'},
-      {label:'Menu', href:'customer-menu.html', match:['customer-menu'], icon:'<path d="M4 6h16M4 12h16M4 18h16"/>'},
-      {label:'Offers', href:'customer-offers.html', match:['customer-offers'], icon:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>'},
-      {label:'Rewards', href:'customer-rewards.html', match:['customer-rewards'], icon:'<rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M2 12h20M7 8c-3 0-4-5-1-5 3 0 6 5 6 5M17 8c3 0 4-5 1-5-3 0-6 5-6 5"/>'},
-      {label:'My QR', href:'customer-card.html', match:['customer-card'], icon:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v2M17 20h4M20 18v3"/>'}
+      {label:'My Order', href:'customer-orders.html', match:['customer-orders'], icon:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'},
+      {label:'Location', href:'customer-locations.html', match:['customer-locations'], icon:'<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>'},
+      {label:'Rewards', href:'customer-rewards.html', match:['customer-rewards'], icon:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>'},
+      {label:'Profile', href:'customer-profile.html', match:['customer-profile'], icon:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'}
     ];
     const nav = document.createElement('nav');
     nav.className = 'customer-bottom-nav';
