@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C65F78">
+<link rel="manifest" href="../manifest.webmanifest">
+<title>Order Cancellation Log — GM</title>
+<link rel="stylesheet" href="../assets/style.css?v=20261027-cancellation-reason-v1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<script src="../assets/tenant-config.js?v=20261027-cancellation-reason-v1"></script>
+<script src="../assets/tenant-branding.js?v=20261027-cancellation-reason-v1"></script>
+<style>
+.cancel-log-main{max-width:1100px;margin:0 auto;padding:28px 16px 110px}
+.cancel-log-card{margin-top:18px;padding:16px;border-radius:18px;background:var(--paper,#fff);border:1px solid var(--line,#e4e6ea)}
+.cancel-log-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cancel-log-table-wrap{overflow:auto;margin-top:14px}
+.cancel-log-table{border-collapse:collapse;width:100%;min-width:680px;font-size:13px}
+.cancel-log-table th,.cancel-log-table td{padding:11px 10px;border-bottom:1px solid var(--line,#e4e6ea);text-align:left;vertical-align:top}
+.cancel-log-table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#677184)}
+.cancel-log-reason{white-space:pre-wrap;overflow-wrap:anywhere;max-width:440px}
+.cancel-log-notice{padding:14px;border-radius:12px;background:var(--paper,#fff);color:var(--muted,#677184)}
+.cancel-log-error{border:1px solid #f0c7c3;background:#fff7f6;color:#9f3027}
+@media(max-width:600px){.cancel-log-main{padding:22px 12px 104px}.cancel-log-card{padding:12px}}
+</style>
+</head>
+<body data-page="gm-cancellations">
+<header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="Dina's Corner"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
+<main class="cancel-log-main">
+  <p class="eyebrow">MANAGEMENT AUDIT</p>
+  <h1 class="title">Order Cancellation Log</h1>
+  <p class="sub">Cancelled orders with the reason recorded by Branch Staff.</p>
+  <section class="cancel-log-card">
+    <div class="cancel-log-top"><h2 style="margin:0">Recent cancellations</h2><button id="refreshCancellationLog" class="btn soft" type="button">REFRESH</button></div>
+    <div id="cancellationLogNotice" class="cancel-log-notice" role="status" aria-live="polite">Loading cancellation records…</div>
+    <div class="cancel-log-table-wrap">
+      <table class="cancel-log-table">
+        <thead><tr><th>Order</th><th>Customer</th><th>Branch</th><th>Reason for cancellation</th><th>Cancelled at</th></tr></thead>
+        <tbody id="cancellationLogRows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html"><b>☰</b>Menu</a><a href="gm-cancellations.html" class="active"><b>⊘</b>Cancellations</a><a href="gm-settings.html"><b>⚙</b>Settings</a></div></nav>
+<script src="../assets/config.js?v=20261027-cancellation-reason-v1"></script>
+<script src="../assets/app.js?v=20261027-cancellation-reason-v1"></script>
+<script>
+(function () {
+  'use strict';
+  const notice = document.getElementById('cancellationLogNotice');
+  const rowsRoot = document.getElementById('cancellationLogRows');
+  const refreshButton = document.getElementById('refreshCancellationLog');
+  const fmt = value => value ? new Date(value).toLocaleString() : '—';
+
+  function setNotice(message, isError) {
+    notice.textContent = message;
+    notice.classList.toggle('cancel-log-error', Boolean(isError));
+  }
+
+  async function loadCancellationLog() {
+    setNotice('Loading cancellation records…', false);
+    rowsRoot.replaceChildren();
+    const { data, error } = await sb.rpc('get_gm_cancelled_orders', { p_limit: 100 });
+    if (error) throw error;
+    const rows = Array.isArray(data) ? data : [];
+    if (!rows.length) {
+      setNotice('No Staff cancellation records with a saved reason were found.', false);
+      return;
+    }
+    for (const row of rows) {
+      const tr = document.createElement('tr');
+      const values = [row.order_number || row.id || '—', row.customer_name || '—', row.branch_name || '—', row.cancellation_reason || '—', fmt(row.cancelled_at)];
+      values.forEach((value, index) => {
+        const td = document.createElement('td');
+        td.textContent = String(value);
+        if (index === 3) td.className = 'cancel-log-reason';
+        tr.appendChild(td);
+      });
+      rowsRoot.appendChild(tr);
+    }
+    setNotice('Showing ' + rows.length + ' recent cancellation record(s).', false);
+  }
+
+  document.addEventListener('DOMContentLoaded', async function () {
+    try {
+      const profile = await guardRole(['gm']);
+      if (!profile) return;
+      await loadCancellationLog();
+      refreshButton.addEventListener('click', () => loadCancellationLog().catch(error => setNotice(error?.message || 'Could not load cancellation records.', true)));
+    } catch (error) {
+      setNotice(error?.message || 'Could not load cancellation records. Apply the cancellation-reason SQL migration first.', true);
+    }
+  });
+})();
+</script>
+</body>
+</html>
