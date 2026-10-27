@@ -1,0 +1,16 @@
+/* Accessible cancellation form used on the Staff Orders page. */
+.cancel-order-dialog[hidden]{display:none!important}
+.cancel-order-dialog{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;box-sizing:border-box}
+.cancel-order-dialog-backdrop{position:absolute;inset:0;width:100%;height:100%;border:0;background:rgba(20,18,18,.52);cursor:default}
+.cancel-order-dialog-panel{position:relative;z-index:1;width:min(100%,460px);max-height:calc(100dvh - 36px);overflow:auto;padding:22px;border:1px solid var(--line,#e7d6d2);border-radius:18px;background:var(--paper,#fffdf8);box-shadow:0 24px 80px rgba(20,18,18,.3);color:var(--text,#383838)}
+.cancel-order-dialog-panel h2{margin:0 0 8px;font-size:20px;color:var(--green,#62684b)}
+.cancel-order-dialog-panel p{margin:0 0 16px;font-size:13px;line-height:1.55;color:var(--muted,#777)}
+.cancel-order-reason-label{display:block;margin-bottom:7px;font-size:13px;font-weight:800;color:var(--green,#62684b)}
+.cancel-order-reason-label span{color:#b42345}
+#cancelOrderReason{display:block;width:100%;min-height:112px;box-sizing:border-box;padding:12px;border:1px solid var(--line,#e7d6d2);border-radius:12px;background:#fff;color:#262626;font:inherit;font-size:14px;line-height:1.5;resize:vertical}
+#cancelOrderReason:focus{outline:2px solid #c65f78;outline-offset:2px}
+.cancel-order-dialog-error{margin:9px 0 0!important;color:#a52d43!important;font-weight:800}
+.cancel-order-dialog-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap;margin-top:16px}
+.cancel-order-dialog-actions .btn{min-width:125px}
+.cancel-order-dialog-actions .btn:disabled{opacity:.6;cursor:wait}
+@media(max-width:520px){.cancel-order-dialog{padding:12px;align-items:end}.cancel-order-dialog-panel{padding:18px;border-radius:18px 18px 13px 13px;max-height:calc(100dvh - 24px)}.cancel-order-dialog-actions{flex-direction:column-reverse}.cancel-order-dialog-actions .btn{width:100%;min-height:45px}}
