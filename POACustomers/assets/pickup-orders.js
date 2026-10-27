@@ -284,7 +284,55 @@
     const direction = options.direction || 'ltr';
     const family = options.family || 'Tahoma, Arial, sans-serif';
     const style = options.italic ? 'font-style:italic;' : '';
-    return `<text x="${x}" y="${y}" text-anchor="${anchor}" direction="${direction}" unicode-bidi="plaintext" font-family="${family}" font-size="${size}" font-weight="${weight}" fill="${color}" style="${style}">${esc(value)}</text>`;
+    // Use explicit embedding rather than plaintext: plaintext made Arabic runs
+    // change the anchor direction unexpectedly and pushed text out of its cells.
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" direction="${direction}" unicode-bidi="embed" font-family="${family}" font-size="${size}" font-weight="${weight}" fill="${color}" style="${style}">${esc(value)}</text>`;
+  }
+
+  function wrapReceiptText(value, maxChars, maxLines = 2) {
+    const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+    if (!text) return ['—'];
+    const words = text.split(' ');
+    const pieces = [];
+    for (const word of words) {
+      if (Array.from(word).length <= maxChars) {
+        pieces.push(word);
+        continue;
+      }
+      const chars = Array.from(word);
+      for (let i = 0; i < chars.length; i += maxChars) pieces.push(chars.slice(i, i + maxChars).join(''));
+    }
+    const lines = [];
+    let current = '';
+    for (const piece of pieces) {
+      const candidate = current ? current + ' ' + piece : piece;
+      if (Array.from(candidate).length <= maxChars) current = candidate;
+      else {
+        if (current) lines.push(current);
+        current = piece;
+      }
+    }
+    if (current) lines.push(current);
+    if (!lines.length) return ['—'];
+    if (lines.length > maxLines) {
+      const clipped = lines.slice(0, maxLines);
+      const last = Array.from(clipped[maxLines - 1]);
+      clipped[maxLines - 1] = (last.length >= maxChars ? last.slice(0, maxChars - 1) : last).join('') + '…';
+      return clipped;
+    }
+    return lines;
+  }
+
+  function receiptValueText(x, y, value, options = {}) {
+    const text = String(value ?? '');
+    const hasArabic = /[\u0600-\u06FF]/.test(text);
+    return svgReceiptText(x, y, text, {
+      ...options,
+      direction: hasArabic ? 'rtl' : 'ltr',
+      // x is the right boundary for Arabic values and the right boundary for
+      // English values too; SVG uses opposite anchors for RTL and LTR text.
+      anchor: hasArabic ? 'start' : 'end'
+    });
   }
 
   function receiptMoney(value) {
@@ -305,13 +353,25 @@
     const width = 1024;
     const tableY = 535;
     const headerH = 72;
-    const rowH = 58;
-    const tableBottom = tableY + headerH + Math.max(rows.length, 1) * rowH;
+    const itemLayouts = rows.map((item, index) => {
+      const name = String(item.item_name || item.name || 'صنف');
+      const nameLines = wrapReceiptText(name, 26, 2);
+      const rowH = nameLines.length > 1 ? 78 : 58;
+      return { item, index, name, nameLines, rowH };
+    });
+    const rowCount = Math.max(itemLayouts.length, 1);
+    const rowTotalHeight = itemLayouts.length ? itemLayouts.reduce((sum, row) => sum + row.rowH, 0) : 58;
+    const tableBottom = tableY + headerH + rowTotalHeight;
     const totalsY = tableBottom + 12;
     const paymentY = totalsY + 145;
     const notesY = paymentY + 250;
-    const footerY = notesY + 112;
-    const height = footerY + 190;
+    const notesText = String(order.notes || '').trim();
+    const noteLines = wrapReceiptText(notesText || '—', 66, 2);
+    const cancelReason = String(order.cancellation_reason || '').trim();
+    const cancelLines = cancelReason ? wrapReceiptText(cancelReason, 66, 2) : [];
+    const notesH = 88 + Math.max(0, noteLines.length - 1) * 22 + (cancelLines.length ? 24 + Math.max(0, cancelLines.length - 1) * 20 : 0);
+    const footerY = notesY + notesH + 16;
+    const height = footerY + 180;
     const orderNo = String(order.order_number || order.id || '—');
     const createdAt = order.created_at || (order.createdAtMs ? new Date(order.createdAtMs).toISOString() : null);
     const dateLabel = createdAt && !Number.isNaN(Date.parse(createdAt))
@@ -321,36 +381,52 @@
       ? (order.fulfillment_type === 'delivery' ? 'Delivered · تم التسليم' : 'Picked up · تم الاستلام')
       : statusLabel(order.status, order.fulfillment_type || 'pickup');
     const branchName = [order.branch_name || 'Dina’s Corner', order.branch_city].filter(Boolean).join(' — ');
+    const branchNameLines = wrapReceiptText(branchName, 25, 2);
     const branchAddress = String(order.branch_address || '').trim();
-    const lineRows = rows.map((item, index) => {
-      const y = tableY + headerH + index * rowH;
-      const name = String(item.item_name || item.name || 'صنف');
+    const addressLines = branchAddress ? wrapReceiptText(branchAddress, 31, 2) : ['—'];
+    const fulfillment = (order.fulfillment_type || 'pickup') === 'delivery' ? 'توصيل' : 'استلام من الفرع';
+    const itemLayoutsPlaced = [];
+    let rowY = tableY + headerH;
+    for (const layout of itemLayouts) {
+      itemLayoutsPlaced.push({ ...layout, y: rowY });
+      rowY += layout.rowH;
+    }
+    const lineRows = itemLayoutsPlaced.map(layout => {
+      const { item, index, nameLines, rowH, y } = layout;
       const qty = Math.max(0, Number(item.quantity || 0));
       const priceValue = item.unit_price == null ? item.price : item.unit_price;
       const price = priceValue == null || priceValue === '' ? null : Number(priceValue);
       const lineValue = item.line_total == null ? (price == null ? null : price * qty) : Number(item.line_total);
       const fill = index % 2 ? '#fffaf7' : '#fffdf9';
+      const nameIsArabic = nameLines.some(line => /[\u0600-\u06FF]/.test(line));
+      let nameSvg = '';
+      if (nameLines.length === 1) {
+        nameSvg = receiptValueText(380, y + Math.round(rowH / 2) + 7, nameLines[0], { size: 20, color: '#231a1a' });
+      } else {
+        nameSvg = nameLines.map((line, lineIndex) => receiptValueText(380, y + 27 + lineIndex * 25, line, { size: 19, color: '#231a1a' })).join('');
+      }
+      const midY = y + Math.round(rowH / 2) + 7;
       return `<rect x="45" y="${y}" width="934" height="${rowH}" fill="${fill}"/><path d="M45 ${y + rowH}H979" stroke="#efb3bd" stroke-width="1.5"/>` +
-        svgReceiptText(380, y + 37, name, { size: 22, color: '#231a1a', anchor: 'end', direction: 'rtl' }) +
-        svgReceiptText(466, y + 37, String(qty), { size: 22, color: '#64363c', anchor: 'middle' }) +
-        svgReceiptText(628, y + 37, price == null ? 'To confirm' : receiptMoney(price), { size: 20, color: '#64363c', anchor: 'middle' }) +
-        svgReceiptText(955, y + 37, lineValue == null ? 'To confirm' : receiptMoney(lineValue), { size: 20, color: '#64363c', anchor: 'end' });
+        nameSvg +
+        svgReceiptText(466, midY, String(qty), { size: 21, color: '#64363c', anchor: 'middle' }) +
+        svgReceiptText(628, midY, price == null ? 'To confirm' : receiptMoney(price), { size: 19, color: '#64363c', anchor: 'middle' }) +
+        svgReceiptText(955, midY, lineValue == null ? 'To confirm' : receiptMoney(lineValue), { size: 19, color: '#64363c', anchor: 'end' });
     }).join('');
+    const emptyItemRow = !itemLayouts.length
+      ? `<rect x="45" y="${tableY + headerH}" width="934" height="58" fill="#fffdf9"/><path d="M45 ${tableY + headerH + 58}H979" stroke="#efb3bd" stroke-width="1.5"/>${svgReceiptText(380, tableY + headerH + 36, 'لا توجد تفاصيل أصناف متاحة', { size: 20, color: '#56343a', anchor: 'start', direction: 'rtl' })}`
+      : '';
     const calculatedSubtotal = rows.reduce((sum, item) => {
-      const line = item.line_total != null ? Number(item.line_total) : (item.unit_price != null ? Number(item.unit_price) * Number(item.quantity || 0) : 0);
+      const line = item.line_total != null ? Number(item.line_total) : (item.unit_price != null ? Number(item.unit_price) * Number(item.quantity || 0) : (item.price != null ? Number(item.price) * Number(item.quantity || 0) : 0));
       return sum + (Number.isFinite(line) ? line : 0);
     }, 0);
     const subtotalValue = order.subtotal != null ? Number(order.subtotal) : calculatedSubtotal;
     const totalValue = order.total_amount != null ? Number(order.total_amount) : subtotalValue + Number(order.delivery_fee || 0);
-    const notesText = String(order.notes || '').trim();
-    const noteShort = notesText.length > 100 ? notesText.slice(0, 97) + '…' : (notesText || '—');
-    const cancelReason = String(order.cancellation_reason || '').trim();
-    const branchAddrLine1 = branchAddress.length > 35 ? branchAddress.slice(0, 32) + '…' : (branchAddress || '—');
-    const branchAddrLine2 = branchAddress.length > 35 ? branchAddress.slice(32, 66) : '';
-    const rowCount = Math.max(rows.length, 1);
     const subtotalY = totalsY + 40;
     const totalY = totalsY + 93;
-
+    const addressSvg = addressLines.map((line, index) => receiptValueText(960, 439 + index * 24, line, { size: 17, color: '#312526' })).join('');
+    const branchNameSvg = branchNameLines.map((line, index) => svgReceiptText(635, 365 + index * 23, line, { size: 19, color: '#312526', anchor: 'start', direction: 'ltr', weight: 700 })).join('');
+    const noteSvg = noteLines.map((line, index) => receiptValueText(950, notesY + 64 + index * 21, line, { size: 17, color: '#56343a' })).join('');
+    const cancelSvg = cancelLines.map((line, index) => receiptValueText(950, notesY + 64 + noteLines.length * 21 + 7 + index * 20, line, { size: 15, color: '#a42f4d', weight: 700 })).join('');
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
       <defs>
         <linearGradient id="paper" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff8f3"/><stop offset="1" stop-color="#fffaf5"/></linearGradient>
@@ -362,58 +438,58 @@
       <image href="${floralTr}" x="830" y="14" width="180" height="185" preserveAspectRatio="xMaxYMin meet"/>
       <image href="${logo}" x="42" y="48" width="360" height="225" preserveAspectRatio="xMidYMid meet"/>
       ${svgReceiptText(960, 90, 'Pickup Order', { size: 54, color: '#b45159', anchor: 'end', family: 'Georgia, Times New Roman, serif', weight: 600 })}
-      ${svgReceiptText(960, 145, 'طلب استلام من الفرع', { size: 34, color: '#a94753', anchor: 'end', direction: 'rtl', weight: 700 })}
+      ${svgReceiptText(960, 145, 'طلب استلام من الفرع', { size: 34, color: '#a94753', anchor: 'start', direction: 'rtl', weight: 700 })}
       <rect x="535" y="175" width="425" height="54" rx="26" fill="url(#pink)" stroke="#f3a7b5" stroke-width="1.5"/>
       ${svgReceiptText(747, 210, 'Order Receipt · إيصال الطلب', { size: 25, color: '#a83f54', anchor: 'middle', weight: 700 })}
 
       <rect x="45" y="294" width="515" height="215" rx="19" fill="#fff0ef" stroke="#f5ccd0" stroke-width="1.5"/>
       <rect x="588" y="294" width="391" height="215" rx="19" fill="#fff0ef" stroke="#f5ccd0" stroke-width="1.5"/>
       ${svgReceiptText(70, 337, 'Order Number', { size: 21, color: '#a94753' })}
-      ${svgReceiptText(70, 363, 'رقم الطلب', { size: 17, color: '#6a343b', direction: 'rtl' })}
-      ${svgReceiptText(535, 347, orderNo, { size: 24, color: '#af3452', anchor: 'end', weight: 800 })}
+      ${svgReceiptText(200, 363, 'رقم الطلب', { size: 17, color: '#6a343b', direction: 'rtl', anchor: 'start' })}
+      ${svgReceiptText(535, 347, orderNo, { size: orderNo.length > 17 ? 19 : 23, color: '#af3452', anchor: 'end', weight: 800 })}
       ${svgReceiptText(70, 400, 'Date & Time', { size: 21, color: '#a94753' })}
-      ${svgReceiptText(70, 425, 'التاريخ والوقت', { size: 17, color: '#6a343b', direction: 'rtl' })}
-      ${svgReceiptText(535, 410, dateLabel, { size: 20, color: '#542d32', anchor: 'end' })}
-      ${svgReceiptText(70, 463, 'Status · حالة الطلب', { size: 20, color: '#a94753' })}
+      ${svgReceiptText(205, 425, 'التاريخ والوقت', { size: 17, color: '#6a343b', direction: 'rtl', anchor: 'start' })}
+      ${svgReceiptText(535, 410, dateLabel, { size: 19, color: '#542d32', anchor: 'end' })}
+      ${svgReceiptText(70, 463, 'Status', { size: 20, color: '#a94753' })}
+      ${svgReceiptText(205, 487, 'حالة الطلب', { size: 17, color: '#6a343b', direction: 'rtl', anchor: 'start' })}
       <rect x="310" y="441" width="230" height="48" rx="18" fill="${order.status === 'cancelled' ? '#fde0e5' : '#edf1db'}" stroke="${order.status === 'cancelled' ? '#efb2bf' : '#dbe3c6'}"/>
-      ${svgReceiptText(425, 471, order.status === 'cancelled' ? 'Cancelled · ملغي' : status, { size: 18, color: order.status === 'cancelled' ? '#9d2945' : '#4c5931', anchor: 'middle', weight: 700 })}
+      ${svgReceiptText(425, 471, order.status === 'cancelled' ? 'Cancelled · ملغي' : status, { size: status.length > 21 ? 16 : 18, color: order.status === 'cancelled' ? '#9d2945' : '#4c5931', anchor: 'middle', weight: 700 })}
       <circle cx="650" cy="333" r="26" fill="#f5d5dc"/>
       ${svgReceiptText(650, 342, '▣', { size: 28, color: '#ad4b5b', anchor: 'middle', weight: 700 })}
       ${svgReceiptText(690, 330, 'Branch · الفرع', { size: 20, color: '#a94753', weight: 700 })}
-      ${svgReceiptText(635, 365, branchName, { size: 21, color: '#312526', anchor: 'start', direction: 'ltr', weight: 700 })}
-      ${svgReceiptText(635, 397, 'Address · العنوان', { size: 18, color: '#a94753', weight: 700 })}
-      ${svgReceiptText(960, 425, branchAddrLine1, { size: 18, color: '#312526', anchor: 'end', direction: 'rtl' })}
-      ${branchAddrLine2 ? svgReceiptText(960, 450, branchAddrLine2, { size: 18, color: '#312526', anchor: 'end', direction: 'rtl' }) : ''}
+      ${branchNameSvg}
+      ${svgReceiptText(635, 412, 'Address · العنوان', { size: 17, color: '#a94753', weight: 700 })}
+      ${addressSvg}
 
-      <rect x="45" y="${tableY}" width="934" height="${headerH + rowCount * rowH}" rx="16" fill="#fffdf9" stroke="#ef9eac" stroke-width="1.7"/>
+      <rect x="45" y="${tableY}" width="934" height="${headerH + rowTotalHeight}" rx="16" fill="#fffdf9" stroke="#ef9eac" stroke-width="1.7"/>
       <path d="M45 ${tableY + headerH}H979" stroke="#ef9eac" stroke-width="1.5"/>
       <path d="M405 ${tableY}V${tableBottom} M522 ${tableY}V${tableBottom} M728 ${tableY}V${tableBottom}" stroke="#efb3bd" stroke-width="1.3"/>
       <rect x="45" y="${tableY}" width="934" height="${headerH}" rx="16" fill="url(#pink)"/>
       <rect x="45" y="${tableY + headerH - 14}" width="934" height="14" fill="url(#pink)"/>
       ${svgReceiptText(72, tableY + 28, 'Item', { size: 22, color: '#a42f4d', weight: 800 })}
-      ${svgReceiptText(72, tableY + 53, 'الصنف', { size: 17, color: '#a42f4d', direction: 'rtl' })}
+      ${svgReceiptText(145, tableY + 53, 'الصنف', { size: 17, color: '#a42f4d', direction: 'rtl', anchor: 'start' })}
       ${svgReceiptText(465, tableY + 31, 'Qty', { size: 22, color: '#a42f4d', anchor: 'middle', weight: 800 })}
       ${svgReceiptText(465, tableY + 54, 'الكمية', { size: 17, color: '#a42f4d', anchor: 'middle', direction: 'rtl' })}
       ${svgReceiptText(625, tableY + 31, 'Unit Price', { size: 22, color: '#a42f4d', anchor: 'middle', weight: 800 })}
       ${svgReceiptText(625, tableY + 54, 'سعر الوحدة', { size: 17, color: '#a42f4d', anchor: 'middle', direction: 'rtl' })}
       ${svgReceiptText(955, tableY + 31, 'Total', { size: 22, color: '#a42f4d', anchor: 'end', weight: 800 })}
-      ${svgReceiptText(955, tableY + 54, 'الإجمالي', { size: 17, color: '#a42f4d', anchor: 'end', direction: 'rtl' })}
-      ${lineRows}
+      ${svgReceiptText(955, tableY + 54, 'الإجمالي', { size: 17, color: '#a42f4d', anchor: 'start', direction: 'rtl' })}
+      ${lineRows || emptyItemRow}
 
       <rect x="496" y="${totalsY}" width="483" height="132" rx="16" fill="#fff0ef" stroke="#f5ccd0" stroke-width="1.4"/>
       <path d="M496 ${totalsY + 67}H979" stroke="#f2c2c8" stroke-width="1.5"/>
       ${svgReceiptText(520, subtotalY, 'Items subtotal', { size: 20, color: '#6a343b' })}
-      ${svgReceiptText(520, subtotalY + 24, 'إجمالي الأصناف', { size: 17, color: '#6a343b', direction: 'rtl' })}
+      ${svgReceiptText(660, subtotalY + 24, 'إجمالي الأصناف', { size: 17, color: '#6a343b', direction: 'rtl', anchor: 'start' })}
       ${svgReceiptText(955, subtotalY + 7, receiptMoney(subtotalValue), { size: 23, color: '#542d32', anchor: 'end' })}
       ${svgReceiptText(520, totalY, 'Order total', { size: 22, color: '#b12f51', weight: 800 })}
-      ${svgReceiptText(520, totalY + 25, 'إجمالي الطلب', { size: 17, color: '#b12f51', direction: 'rtl', weight: 700 })}
+      ${svgReceiptText(660, totalY + 25, 'إجمالي الطلب', { size: 17, color: '#b12f51', direction: 'rtl', anchor: 'start', weight: 700 })}
       ${svgReceiptText(955, totalY + 5, receiptMoney(totalValue), { size: 29, color: '#b12f51', anchor: 'end', weight: 800 })}
 
       <rect x="43" y="${paymentY}" width="936" height="236" rx="22" fill="#fff9f5" stroke="#f3c2ca" stroke-width="1.6"/>
       <rect x="66" y="${paymentY + 10}" width="212" height="216" rx="14" fill="#fffdf9" stroke="#f2b2be" stroke-width="1.8"/>
-      <image href="${qr}" x="83" y="${paymentY + 18}" width="178" height="178" preserveAspectRatio="xMidYMid meet"/>
-      <rect x="77" y="${paymentY + 197}" width="190" height="23" rx="8" fill="#bd5063"/>
-      ${svgReceiptText(172, paymentY + 214, 'Menu · قائمة المنيو', { size: 17, color: '#ffffff', anchor: 'middle', weight: 700 })}
+      <image href="${qr}" x="75" y="${paymentY + 14}" width="194" height="194" preserveAspectRatio="xMidYMid meet"/>
+      <rect x="77" y="${paymentY + 207}" width="190" height="22" rx="8" fill="#bd5063"/>
+      ${svgReceiptText(172, paymentY + 223, 'Menu · قائمة المنيو', { size: 16, color: '#ffffff', anchor: 'middle', weight: 700 })}
       <path d="M310 ${paymentY + 28}V${paymentY + 127} M648 ${paymentY + 28}V${paymentY + 127}" stroke="#efb3bd" stroke-width="1.4"/>
       ${svgReceiptText(477, paymentY + 65, 'INSTA▶PAY', { size: 31, color: '#4b177e', anchor: 'middle', weight: 900, family: 'Arial, sans-serif' })}
       ${svgReceiptText(477, paymentY + 99, 'InstaPay', { size: 21, color: '#a72f51', anchor: 'middle', weight: 700 })}
@@ -426,16 +502,17 @@
       ${svgReceiptText(356, paymentY + 177, '☎', { size: 28, color: '#ad4b5b', anchor: 'middle', weight: 700 })}
       ${svgReceiptText(900, paymentY + 178, RECEIPT_PAYMENT_NUMBER, { size: 34, color: '#b12f51', anchor: 'end', weight: 900 })}
 
-      <rect x="45" y="${notesY}" width="934" height="94" rx="19" fill="#fffdf9" stroke="#f5ccd0" stroke-width="1.5"/>
+      <rect x="45" y="${notesY}" width="934" height="${notesH}" rx="19" fill="#fffdf9" stroke="#f5ccd0" stroke-width="1.5"/>
       ${svgReceiptText(80, notesY + 37, '▤', { size: 28, color: '#b45163', weight: 700 })}
-      ${svgReceiptText(130, notesY + 32, 'Order Note · ملاحظات الطلب', { size: 21, color: '#b12f51', weight: 800 })}
-      ${svgReceiptText(130, notesY + 66, noteShort, { size: 18, color: '#56343a', direction: 'rtl' })}
-      ${cancelReason ? svgReceiptText(950, notesY + 84, 'سبب الإلغاء: ' + cancelReason.slice(0, 65), { size: 16, color: '#a42f4d', anchor: 'end', direction: 'rtl' }) : ''}
+      ${svgReceiptText(130, notesY + 32, 'Order Note', { size: 20, color: '#b12f51', weight: 800 })}
+      ${svgReceiptText(350, notesY + 32, 'ملاحظات الطلب', { size: 18, color: '#b12f51', direction: 'rtl', anchor: 'start', weight: 800 })}
+      ${noteSvg}
+      ${cancelLines.length ? svgReceiptText(130, notesY + 64 + noteLines.length * 21 + 7, 'سبب الإلغاء:', { size: 16, color: '#a42f4d', weight: 800 }) + cancelSvg : ''}
 
-      ${svgReceiptText(512, footerY + 54, 'Thank you!', { size: 38, color: '#b45159', anchor: 'middle', family: 'Georgia, Times New Roman, serif', weight: 700, italic: true })}
-      ${svgReceiptText(512, footerY + 87, 'For choosing Dina’s Corner', { size: 22, color: '#8f3b49', anchor: 'middle', family: 'Georgia, Times New Roman, serif' })}
-      <path d="M330 ${footerY + 112} C370 ${footerY + 135}, 420 ${footerY + 135}, 456 ${footerY + 117} M568 ${footerY + 117} C604 ${footerY + 135}, 654 ${footerY + 135}, 694 ${footerY + 112}" fill="none" stroke="#c59c56" stroke-width="2"/>
-      ${svgReceiptText(512, footerY + 136, '♥', { size: 26, color: '#c65f78', anchor: 'middle' })}
+      ${svgReceiptText(512, footerY + 48, 'Thank you!', { size: 38, color: '#b45159', anchor: 'middle', family: 'Georgia, Times New Roman, serif', weight: 700, italic: true })}
+      ${svgReceiptText(512, footerY + 81, 'For choosing Dina’s Corner', { size: 22, color: '#8f3b49', anchor: 'middle', family: 'Georgia, Times New Roman, serif' })}
+      <path d="M330 ${footerY + 106} C370 ${footerY + 129}, 420 ${footerY + 129}, 456 ${footerY + 111} M568 ${footerY + 111} C604 ${footerY + 129}, 654 ${footerY + 129}, 694 ${footerY + 106}" fill="none" stroke="#c59c56" stroke-width="2"/>
+      ${svgReceiptText(512, footerY + 130, '♥', { size: 26, color: '#c65f78', anchor: 'middle' })}
       <image href="${floralBl}" x="14" y="${height - 205}" width="190" height="190" preserveAspectRatio="xMinYMax meet"/>
       <image href="${floralBr}" x="820" y="${height - 205}" width="190" height="190" preserveAspectRatio="xMaxYMax meet"/>
     </svg>`;
