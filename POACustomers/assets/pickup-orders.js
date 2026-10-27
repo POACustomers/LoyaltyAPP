@@ -101,6 +101,45 @@
       (map ? '<br><a class="delivery-location-link" href="' + esc(map) + '" target="_blank" rel="noopener noreferrer">↗ Open delivery location in Google Maps</a>' : '<br><small>Map location not available.</small>') + '</div>';
   }
 
+  // Opens a formatted, print-ready order receipt from either the local archive or live Supabase order list.
+  // This is an order receipt, not a tax invoice.
+  function openPrintableOrder(order, items, sourceLabel) {
+    const printWindow = window.open('', '_blank', 'width=900,height=900');
+    if (!printWindow) {
+      toast('اسمح بفتح النوافذ المنبثقة في المتصفح لعرض وطباعة الإيصال.', false);
+      return;
+    }
+    try { printWindow.opener = null; } catch (_) {}
+    const type = order.fulfillment_type || 'pickup';
+    const status = statusLabel(order.status, type);
+    const createdAt = order.created_at || (order.createdAtMs ? new Date(order.createdAtMs).toISOString() : null);
+    const dateLabel = createdAt && !Number.isNaN(Date.parse(createdAt)) ? new Date(createdAt).toLocaleString('ar-EG') : '—';
+    const orderNo = order.order_number || order.id || '—';
+    const itemRows = (items || []).map(item => {
+      const itemName = item.item_name || item.name || 'صنف';
+      const qty = Number(item.quantity || 0);
+      const unitPrice = item.unit_price == null && item.price == null ? null : Number(item.unit_price ?? item.price);
+      const lineTotal = item.line_total == null ? (unitPrice == null ? null : unitPrice * qty) : Number(item.line_total);
+      return '<tr><td>' + esc(itemName) + '</td><td class="num">' + esc(qty) + '</td><td class="num">' + (unitPrice == null ? 'يُؤكّد' : esc(money(unitPrice))) + '</td><td class="num">' + (lineTotal == null ? 'يُؤكّد' : esc(money(lineTotal))) + '</td></tr>';
+    }).join('');
+    const subtotal = order.subtotal != null ? money(order.subtotal) : null;
+    const deliveryFee = order.delivery_fee != null ? money(order.delivery_fee) : null;
+    const total = order.total_amount != null ? money(order.total_amount) : (order.subtotal != null ? money(Number(order.subtotal) + Number(order.delivery_fee || 0)) : 'يُؤكّد من الفرع');
+    const cancelReason = order.status === 'cancelled' && String(order.cancellation_reason || '').trim()
+      ? '<div class="reason"><strong>سبب الإلغاء:</strong> ' + esc(order.cancellation_reason) + '</div>' : '';
+    const customerName = order.customer_name || '—';
+    const customerPhone = order.customer_phone || '—';
+    const branch = order.branch_name || 'Dina’s Corner';
+    const branchAddress = order.branch_address || '';
+    const fulfillment = type === 'delivery' ? 'توصيل' : 'استلام من الفرع';
+    const notes = String(order.notes || '').trim() ? '<p><strong>ملاحظات العميل:</strong> ' + esc(order.notes) + '</p>' : '';
+    printWindow.document.open();
+    printWindow.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>إيصال الطلب ${esc(orderNo)}</title><style>
+      *{box-sizing:border-box}body{margin:0;background:#f7f2ef;color:#3d3031;font-family:Tahoma,Arial,sans-serif;font-size:14px;line-height:1.6}.page{max-width:760px;margin:24px auto;padding:28px;background:#fffdfa;border:1px solid #ead9d3;border-radius:16px}.top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;border-bottom:2px solid #c65f78;padding-bottom:18px;margin-bottom:18px}.brand{font-size:25px;font-weight:800;color:#a74860}.subtitle{color:#776a6a;font-size:12px}.ticket{background:#f8e9ed;border:1px solid #efd2db;padding:8px 12px;border-radius:9px;font-weight:700;white-space:nowrap}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;margin-bottom:20px}.field{border-bottom:1px solid #eee1dd;padding:6px 0}.field small{display:block;color:#897b7b;font-size:11px}.field strong{font-size:13px;overflow-wrap:anywhere}.status{display:inline-block;background:#f2efd9;border-radius:20px;padding:3px 10px;font-size:12px}.status.cancelled{background:#fce4e8;color:#9d2945}.section-title{font-weight:800;margin:20px 0 8px}table{width:100%;border-collapse:collapse}th,td{padding:10px 7px;border-bottom:1px solid #eadfdb;text-align:right;vertical-align:top}th{background:#fbf2f3;color:#80505b;font-size:12px}.num{text-align:center;white-space:nowrap}.totals{margin:18px 0 0 auto;max-width:360px}.total-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #e4d7d2}.grand{font-size:19px;font-weight:800;color:#a74860;border-top:2px solid #c65f78;margin-top:6px;padding-top:12px}.reason{margin-top:16px;padding:12px;background:#fff0f2;border:1px solid #efc8d0;border-radius:8px;color:#773b48}.notice{margin-top:22px;padding:10px;background:#f8f5f3;border-radius:8px;text-align:center;color:#746969;font-size:11px}.actions{display:flex;gap:10px;justify-content:center;margin:0 auto 20px}.actions button{border:0;border-radius:8px;padding:11px 18px;background:#c65f78;color:#fff;font-weight:700;cursor:pointer}.actions .secondary{background:#e8dddd;color:#4d3d3f}@media(max-width:600px){.page{margin:0;padding:16px;border-radius:0}.grid{grid-template-columns:1fr 1fr}.top{gap:10px}.brand{font-size:20px}}@media print{@page{size:A5 portrait;margin:9mm}body{background:#fff;font-size:11px}.page{max-width:none;margin:0;padding:0;border:0;border-radius:0}.actions{display:none}.top{padding-bottom:10px;margin-bottom:10px}.brand{font-size:20px}th,td{padding:6px 4px}.notice{margin-top:14px}}
+      </style></head><body><div class="actions"><button onclick="window.print()">طباعة الإيصال / حفظ PDF</button><button class="secondary" onclick="window.close()">إغلاق</button></div><main class="page"><header class="top"><div><div class="brand">Dina’s Corner</div><div class="subtitle">إيصال تفاصيل الطلب</div></div><div class="ticket">رقم الطلب: ${esc(orderNo)}</div></header><section class="grid"><div class="field"><small>تاريخ ووقت الطلب</small><strong>${esc(dateLabel)}</strong></div><div class="field"><small>حالة الطلب</small><strong><span class="status ${order.status === 'cancelled' ? 'cancelled' : ''}">${esc(status)}</span></strong></div><div class="field"><small>اسم العميل</small><strong>${esc(customerName)}</strong></div><div class="field"><small>رقم الهاتف</small><strong>${esc(customerPhone)}</strong></div><div class="field"><small>طريقة الاستلام</small><strong>${esc(fulfillment)}</strong></div><div class="field"><small>الفرع</small><strong>${esc(branch)}</strong>${branchAddress ? '<div class="subtitle">' + esc(branchAddress) + '</div>' : ''}</div></section><div class="section-title">تفاصيل الأصناف</div><table><thead><tr><th>الصنف</th><th class="num">الكمية</th><th class="num">سعر الوحدة</th><th class="num">الإجمالي</th></tr></thead><tbody>${itemRows || '<tr><td colspan="4">لا توجد تفاصيل أصناف متاحة.</td></tr>'}</tbody></table><section class="totals">${subtotal != null ? '<div class="total-row"><span>الإجمالي قبل الرسوم</span><strong>' + esc(subtotal) + '</strong></div>' : ''}${deliveryFee != null && Number(order.delivery_fee) !== 0 ? '<div class="total-row"><span>رسوم التوصيل</span><strong>' + esc(deliveryFee) + '</strong></div>' : ''}<div class="total-row grand"><span>إجمالي الطلب</span><strong>${esc(total)}</strong></div></section>${notes}${cancelReason}<footer class="notice">هذا إيصال تفاصيل طلب من النظام، وليس فاتورة ضريبية. ${sourceLabel === 'local' ? 'تم فتحه من النسخة المحلية المحفوظة على هذا الكمبيوتر.' : 'تم فتحه من طلبات الفرع.'}</footer></main><script>window.addEventListener('load',()=>{setTimeout(()=>{try{window.focus()}catch(e){}},100)});</script></body></html>`);
+    printWindow.document.close();
+  }
+
   // Customer-menu product cards call this function to put a database-backed item in the basket.
   window.POAAddItemToCart = function (item) {
     if (document.body.dataset.page !== 'customer-menu') return;
@@ -803,8 +842,15 @@
       return '<article class="pickup-order-card local-archive-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number || order.id) + '</div><small class="pickup-order-date">وقت الإنشاء: ' + esc(new Date(order.created_at || order.createdAtMs).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta"><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>الفرع:</strong> ' + esc(order.branch_name || '—') + '</div>' +
         '<div class="pickup-order-items">' + (itemsHtml || '<small>لا توجد تفاصيل أصناف محفوظة لهذا الأوردر.</small>') + '</div>' + reason +
-        '<div class="pickup-order-footer"><div class="pickup-order-total">إجمالي الأوردر<strong>' + esc(total) + '</strong></div><small class="local-archive-expiry">' + esc(localRemainingText(order.expiresAt)) + '</small></div></article>';
+        '<div class="pickup-order-footer"><div class="pickup-order-total">إجمالي الأوردر<strong>' + esc(total) + '</strong></div><small class="local-archive-expiry">' + esc(localRemainingText(order.expiresAt)) + '</small></div>' +
+        '<div class="pickup-next-actions"><button class="btn soft" type="button" data-print-local-order="' + esc(order.id || order.order_number) + '">عرض / طباعة الإيصال</button></div></article>';
     }).join('');
+    box.querySelectorAll('[data-print-local-order]').forEach(button => {
+      button.addEventListener('click', () => {
+        const order = branchRows.find(row => String(row.id || row.order_number) === String(button.dataset.printLocalOrder));
+        if (order) openPrintableOrder(order, order.items || [], 'local');
+      });
+    });
   }
 
   async function downloadLocalOrderArchive() {
@@ -970,10 +1016,16 @@
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>Handling branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + (order.branch_address ? '<br>Branch address: ' + esc(order.branch_address) : '') +
         deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + (order.status === 'cancelled' && String(order.cancellation_reason || '').trim() ? '<div class="pickup-cancellation-reason" role="note" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48"><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) + '</div>' : '') + '</div>' +
         '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'Confirm with customer' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div></div>' +
-        '<div class="pickup-next-actions">' + (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
+        '<div class="pickup-next-actions"><button class="btn soft" type="button" data-print-live-order="' + esc(order.id) + '">عرض / طباعة الإيصال</button>' + (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
         (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '') + '</div></article>';
     }).join('');
     box.querySelectorAll('[data-order-status]').forEach(button => button.addEventListener('click', () => updateManagedOrder(button.dataset.orderStatus, button.dataset.nextStatus, button.dataset.orderType)));
+    box.querySelectorAll('[data-print-live-order]').forEach(button => {
+      button.addEventListener('click', () => {
+        const order = orders.find(row => String(row.id) === String(button.dataset.printLiveOrder));
+        if (order) openPrintableOrder(order, grouped[order.id] || [], 'live');
+      });
+    });
   }
 
   async function initCustomerOrderHistory() {
