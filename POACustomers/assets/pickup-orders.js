@@ -565,6 +565,46 @@
     toast('تم تنزيل صورة الفاتورة PNG. راجع مجلد التنزيلات على الكمبيوتر.');
   }
 
+  // Print the same approved PNG receipt that is downloaded after order status changes.
+  // Open the window synchronously from the button click so popup blockers are less likely to stop it.
+  async function printOrderReceiptPng(order, items) {
+    const printWindow = window.open('', '_blank', 'width=980,height=900');
+    if (!printWindow) {
+      toast('اسمح بالنوافذ المنبثقة للموقع ثم اضغط زر الطباعة مرة أخرى.', false);
+      return false;
+    }
+    printWindow.document.open();
+    printWindow.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>تجهيز الفاتورة</title><style>body{margin:0;padding:24px;background:#fff8f3;color:#613b42;font-family:Tahoma,Arial,sans-serif;text-align:center}.wait{padding:24px;border:1px solid #f0ccd3;border-radius:14px;background:#fff}</style></head><body><div class="wait">جارٍ تجهيز صورة الفاتورة للطباعة…</div></body></html>');
+    printWindow.document.close();
+
+    try {
+      const orderSnapshot = { ...order };
+      if (!orderSnapshot.created_at && orderSnapshot.createdAtMs) orderSnapshot.created_at = new Date(orderSnapshot.createdAtMs).toISOString();
+      const blob = await buildOrderReceiptPngBlob(orderSnapshot, items);
+      const imageUrl = URL.createObjectURL(blob);
+      const safeTitle = String(orderSnapshot.order_number || orderSnapshot.id || 'Order Receipt').replace(/[<>"&]/g, '');
+      printWindow.document.open();
+      printWindow.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>فاتورة ${safeTitle}</title><style>
+        *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;background:#f5eeeb;color:#51383d}.toolbar{position:sticky;top:0;z-index:2;display:flex;justify-content:center;gap:8px;padding:10px;background:#fff;border-bottom:1px solid #ead4d8}.toolbar button{border:0;border-radius:9px;padding:10px 18px;background:#c65f78;color:#fff;font-weight:800;cursor:pointer}.toolbar .secondary{background:#eee1e2;color:#5a4449}.sheet{display:flex;justify-content:center;padding:14px}.receipt{display:block;width:auto;height:auto;max-width:100%;max-height:calc(100vh - 95px);object-fit:contain;background:#fff8f3;box-shadow:0 5px 24px #00000012}
+        @media print{@page{size:A4 portrait;margin:0}html,body{width:100%;height:100%;background:#fff}.toolbar{display:none!important}.sheet{width:100%;height:100%;padding:0;align-items:center;justify-content:center}.receipt{max-width:100%;max-height:297mm;width:auto;height:auto;object-fit:contain;box-shadow:none;page-break-inside:avoid}}
+      </style></head><body><div class="toolbar"><button type="button" onclick="window.print()">🖨 طباعة الفاتورة</button><button class="secondary" type="button" onclick="window.close()">إغلاق</button></div><main class="sheet"><img id="receiptImage" class="receipt" src="${imageUrl}" alt="فاتورة Dina’s Corner"></main><script>
+        const receiptImage=document.getElementById('receiptImage');
+        receiptImage.addEventListener('load',()=>{setTimeout(()=>{try{window.focus();window.print()}catch(e){}},350)});
+        receiptImage.addEventListener('error',()=>{document.querySelector('.sheet').textContent='تعذر عرض صورة الفاتورة. أغلق النافذة وحاول مرة أخرى.'});
+        window.addEventListener('beforeunload',()=>{try{URL.revokeObjectURL('${imageUrl}')}catch(e){}});
+      <\/script></body></html>`);
+      printWindow.document.close();
+      return true;
+    } catch (error) {
+      try {
+        printWindow.document.open();
+        printWindow.document.write('<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><body style="font-family:Tahoma,Arial,sans-serif;padding:24px;color:#9d2945">تعذر تجهيز الفاتورة للطباعة. أغلق النافذة وحاول مرة أخرى.</body></html>');
+        printWindow.document.close();
+      } catch (_) {}
+      throw error;
+    }
+  }
+
   // Customer-menu product cards call this function to put a database-backed item in the basket.
   window.POAAddItemToCart = function (item) {
     if (document.body.dataset.page !== 'customer-menu') return;
@@ -1380,7 +1420,7 @@
         } catch (receiptError) {
           showMessage(
             'managedOrdersMessage',
-            'تم تحديث الأوردر بنجاح، لكن تعذر تنزيل صورة الفاتورة تلقائيًا. استخدم زر «تنزيل صورة الفاتورة» بجوار الأوردر لإعادة المحاولة. السبب: ' + (receiptError?.message || 'خطأ غير معروف'),
+            'تم تحديث الأوردر بنجاح، لكن تعذر تنزيل صورة الفاتورة تلقائيًا. يمكنك الضغط على رمز الطابعة أعلى الأوردر لعرض الفاتورة وطباعتها. السبب: ' + (receiptError?.message || 'خطأ غير معروف'),
             true
           );
         }
@@ -1475,14 +1515,13 @@
         ? '<div class="pickup-cancellation-reason" role="note" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48"><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) + '</div>' : '';
       const total = order.total_amount != null ? money(order.total_amount)
         : order.subtotal == null ? 'Confirm with customer' : money(Number(order.subtotal) + Number(order.delivery_fee || 0));
-      return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number || order.id) + '</div><small class="pickup-order-date">' + esc(dateLabel) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
+      const orderActionButtons = (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
+        (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '');
+      return '<article class="pickup-order-card"><div class="pickup-order-head"><div class="pickup-order-head-main"><div class="pickup-order-number">' + esc(order.order_number || order.id) + '</div><small class="pickup-order-date">' + esc(dateLabel) + '</small></div><div class="pickup-order-head-tools"><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span><button class="pickup-print-icon" type="button" data-print-unified-order="' + esc(order.id) + '" title="طباعة الفاتورة" aria-label="طباعة الفاتورة"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M7 14h10v7H7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="11" r=".9" fill="currentColor"/></svg></button></div></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>Handling branch: ' + esc(order.branch_name || '—') + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + (order.branch_address ? '<br>Branch address: ' + esc(order.branch_address) : '') +
         deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + cancellation + localBadge + '</div>' +
         '<div class="pickup-order-items">' + (itemHtml || '<small>No saved item details are available for this order.</small>') + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + esc(total) + '</strong></div></div>' +
-        '<div class="pickup-next-actions"><button class="btn soft" type="button" data-print-unified-order="' + esc(order.id) + '">عرض / طباعة الإيصال</button>' +
-        '<button class="btn soft" type="button" data-download-order-receipt="' + esc(order.id) + '">تنزيل صورة الفاتورة</button>' +
-        (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
-        (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '') + '</div></article>';
+        (orderActionButtons ? '<div class="pickup-next-actions">' + orderActionButtons + '</div>' : '') + '</article>';
     }).join('');
 
     box.querySelectorAll('[data-order-status]').forEach(button => button.addEventListener('click', () => {
@@ -1491,20 +1530,21 @@
       return updateManagedOrder(button.dataset.orderStatus, button.dataset.nextStatus, button.dataset.orderType, selectedOrder, selectedItems);
     }));
     box.querySelectorAll('[data-print-unified-order]').forEach(button => {
-      button.addEventListener('click', () => {
-        const order = orders.find(row => String(row.id) === String(button.dataset.printUnifiedOrder));
-        if (order) openPrintableOrder(order, grouped[order.id] || order.items || [], liveIds.has(String(order.id)) ? 'live' : 'local');
-      });
-    });
-    box.querySelectorAll('[data-download-order-receipt]').forEach(button => {
       button.addEventListener('click', async () => {
-        const order = orders.find(row => String(row.id) === String(button.dataset.downloadOrderReceipt));
+        const order = orders.find(row => String(row.id) === String(button.dataset.printUnifiedOrder));
         if (!order) return;
-        const originalText = button.textContent;
-        button.disabled = true; button.textContent = 'جارٍ تجهيز الصورة…';
-        try { await downloadOrderReceiptById(order, grouped[order.id] || order.items || []); }
-        catch (error) { showMessage('managedOrdersMessage', 'تعذر تنزيل صورة الفاتورة: ' + (error?.message || 'خطأ غير معروف'), true); }
-        finally { button.disabled = false; button.textContent = originalText; }
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.title = 'جارٍ تجهيز الفاتورة للطباعة…';
+        try {
+          await printOrderReceiptPng(order, grouped[order.id] || order.items || []);
+        } catch (error) {
+          showMessage('managedOrdersMessage', 'تعذر تجهيز الفاتورة للطباعة: ' + (error?.message || 'خطأ غير معروف'), true);
+        } finally {
+          button.disabled = false;
+          button.removeAttribute('aria-busy');
+          button.title = 'طباعة الفاتورة';
+        }
       });
     });
   }
