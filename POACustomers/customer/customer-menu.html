@@ -8,8 +8,8 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
 <title>Dina's Corner Menu</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261026-offers-page-v1">
-<link rel="stylesheet" href="../assets/menu-display.css?v=20261028-poac-menu-grid-two-column-v3">
+<link rel="stylesheet" href="../assets/style.css?v=20261028-fixed-customer-bottom-nav-v1">
+<link rel="stylesheet" href="../assets/menu-display.css?v=20261026-restore-category-images-v1">
 <link rel="stylesheet" href="../assets/pickup-orders.css?v=20261026-offers-large-image-v1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -60,36 +60,17 @@
     <div id="menuItemsView" hidden></div>
   </section>
 </main>
-
-<nav class="customer-mobile-nav" aria-label="Main customer navigation">
-  <a href="customer-home.html">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3.5 10.8 8.5-7 8.5 7M5.5 9.7v10h5.2v-6h2.6v6h5.2v-10"/></svg><span>Home</span>
-  </a>
-  <a class="is-active" href="customer-menu.html" aria-current="page">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16M4 12h16M4 18.5h16"/></svg><span>Menu</span>
-  </a>
-  <a href="customer-offers.html">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg><span>Offers</span>
-  </a>
-  <a href="customer-rewards.html">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14v12H5zM8 8V5.5a2 2 0 0 1 4 0V8m0 0V5.5a2 2 0 0 1 4 0V8M5 12h14M12 12v8"/></svg><span>Rewards</span>
-  </a>
-  <a href="customer-card.html">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 14h2M18 18h2M14 18v2"/></svg><span>My QR</span>
-  </a>
-</nav>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script src="../assets/tenant-config.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/tenant-branding.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/customer-navigation.js?v=20261026-offers-large-image-v1"></script>
+<script src="../assets/customer-navigation.js?v=20261028-fixed-customer-bottom-nav-v1"></script>
 <script src="../assets/config.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/app.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/pickup-orders.js?v=20261026-offers-large-image-v1"></script>
 
 
 
-<script src="../assets/menu-display.js?v=20261028-poac-menu-rail-fix-v1"></script>
+<script src="../assets/menu-display.js?v=20261026-restore-category-images-v1"></script>
 
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}
