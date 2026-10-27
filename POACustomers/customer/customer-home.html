@@ -8,6 +8,25 @@
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261024-home-image-cards-v1">
 <title>Customer Home</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261026-offers-large-image-v1">
+<style>
+/* Homepage-only category carousel; menu page styles are not changed. */
+.home-categories-card{margin-top:14px;padding:15px 12px 13px;overflow:hidden}
+.home-categories-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 2px 12px}
+.home-categories-heading h2{margin:0;color:var(--green,#0b4a36);font-size:clamp(20px,2.5vw,26px);line-height:1.2}
+.home-categories-heading .sub{margin:5px 0 0;font-size:12px;line-height:1.45}
+.home-categories-eyebrow{margin:0 0 4px;color:var(--muted,#8c8074);font-size:9px;font-weight:900;letter-spacing:1.2px}
+.home-all-menu-link{display:inline-flex;align-items:center;gap:5px;color:var(--green,#0b4a36);font-size:11px;font-weight:850;text-decoration:none;white-space:nowrap}
+.customer-home-category-carousel{min-width:0;width:100%}
+.customer-home-category-carousel .home-menu-category-grid{display:flex;flex-wrap:nowrap;gap:10px;width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;margin:0;padding:0 0 10px;scroll-snap-type:x proximity;scroll-behavior:smooth;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:auto;scrollbar-color:#8b8b8b #fff}
+.customer-home-category-carousel .home-menu-category{flex:0 0 118px;width:118px;min-width:118px;scroll-snap-align:start}
+.customer-home-category-carousel .home-menu-category-media{aspect-ratio:5/4}
+.customer-home-category-carousel .home-menu-category-name{min-height:36px;padding:7px 6px;font-size:10px;line-height:1.25}
+.customer-home-category-carousel .home-category-message{padding:14px 10px;border-radius:10px;background:#fbf6f1;color:var(--muted,#718078);font-size:12px;line-height:1.6;text-align:center}
+.customer-home-category-carousel .home-category-message.is-error{color:var(--danger,#a33)}
+@media(min-width:760px){.customer-home-category-carousel .home-menu-category{flex-basis:calc((100% - 50px)/6);width:calc((100% - 50px)/6);min-width:105px;max-width:145px}}
+@media(max-width:380px){.home-categories-card{padding:13px 10px}.customer-home-category-carousel .home-menu-category-grid{gap:8px}.customer-home-category-carousel .home-menu-category{flex-basis:108px;width:108px;min-width:108px}}
+@media(prefers-reduced-motion:reduce){.customer-home-category-carousel .home-menu-category-grid{scroll-behavior:auto}}
+</style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
@@ -42,6 +61,20 @@
   <div id="homeOffersContent" class="home-offers-fallback" aria-live="polite">
     <h3>Special Offers</h3>
     <p class="sub">Loading current offers…</p>
+  </div>
+</section>
+
+<section class="card home-categories-card" aria-labelledby="homeCategoriesTitle">
+  <div class="home-categories-heading">
+    <div>
+      <p class="home-categories-eyebrow">DINA'S CORNER</p>
+      <h2 id="homeCategoriesTitle">Our Menu</h2>
+      <p class="sub">Choose a category to view the available items.</p>
+    </div>
+    <a class="home-all-menu-link" href="customer-menu.html">View all <span aria-hidden="true">→</span></a>
+  </div>
+  <div id="homeMenuCategories" class="customer-home-category-carousel" aria-label="Menu categories" aria-live="polite">
+    <div class="home-category-message">Loading menu categories…</div>
   </div>
 </section>
 
@@ -80,5 +113,64 @@
 <script src="../assets/customer-navigation.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/config.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/app.js?v=20261026-offers-large-image-v1"></script>
+<script>
+(function loadHomepageMenuCategories(){
+  'use strict';
+  const root = document.getElementById('homeMenuCategories');
+  if (!root) return;
+
+  const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  }[char]));
+  const safeImage = value => {
+    const src = String(value || '').trim();
+    return (/^https:\/\//i.test(src) || /^data:image\/(png|jpe?g|webp);base64,/i.test(src)) ? src : '';
+  };
+  const browseLink = '<a class="home-category-browse-link" href="customer-menu.html">Browse full menu <span aria-hidden="true">→</span></a>';
+
+  function showMessage(message, isError=false){
+    root.innerHTML = '<div class="home-category-message'+(isError?' is-error':'')+'">'+escapeHTML(message)+'</div>';
+  }
+
+  async function load(){
+    try{
+      if(!window.sb || typeof window.sb.from !== 'function') throw new Error('Database connection is not ready.');
+      const {data,error} = await window.sb.from('menu_categories')
+        .select('id,name,icon,image_url,sort_order,is_active,status')
+        .order('sort_order',{ascending:true});
+      if(error) throw error;
+      const categories = (Array.isArray(data) ? data : [])
+        .filter(row => row && String(row.name || '').trim() && row.is_active !== false && String(row.status || 'active').toLowerCase() !== 'inactive')
+        .sort((a,b) => (Number(a.sort_order)||0) - (Number(b.sort_order)||0));
+      if(!categories.length){
+        showMessage('No active menu categories are available yet.');
+        root.insertAdjacentHTML('beforeend', browseLink);
+        return;
+      }
+      root.innerHTML = '<div class="home-menu-category-grid">'+categories.map(category => {
+        const name = String(category.name || '').trim();
+        const icon = escapeHTML(category.icon || '☕');
+        const image = safeImage(category.image_url);
+        const media = image
+          ? '<img class="home-menu-category-image" src="'+escapeHTML(image)+'" alt="" loading="lazy" decoding="async"><span class="home-menu-category-icon" aria-hidden="true" hidden>'+icon+'</span>'
+          : '<span class="home-menu-category-icon" aria-hidden="true">'+icon+'</span>';
+        return '<a class="home-menu-category" href="customer-menu.html?category='+encodeURIComponent(name)+'" aria-label="Open category '+escapeHTML(name)+'"><span class="home-menu-category-media">'+media+'</span><span class="home-menu-category-name">'+escapeHTML(name)+'</span></a>';
+      }).join('')+'</div>';
+      root.querySelectorAll('.home-menu-category-image').forEach(img => {
+        img.addEventListener('error', () => {
+          img.hidden = true;
+          const fallback = img.nextElementSibling;
+          if(fallback) fallback.hidden = false;
+        }, {once:true});
+      });
+    }catch(error){
+      console.error('Could not load customer homepage categories:',error?.message || error);
+      showMessage('Menu categories are temporarily unavailable. Please open the full menu.',true);
+      root.insertAdjacentHTML('beforeend', browseLink);
+    }
+  }
+  void load();
+})();
+</script>
 </body>
 </html>
