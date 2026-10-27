@@ -2,11 +2,11 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#C65F78">
 <link rel="manifest" href="../manifest.webmanifest"><title>Branch Orders — Staff</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261027-local-orders-24h-v1"><link rel="stylesheet" href="../assets/pickup-orders.css?v=20261027-single-order-list-v2"><link rel="stylesheet" href="../assets/cancellation-dialog.css?v=20261027-local-orders-24h-v1">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="../assets/tenant-config.js?v=20261027-local-orders-24h-v1"></script><script src="../assets/tenant-branding.js?v=20261027-local-orders-24h-v1"></script>
+<link rel="stylesheet" href="../assets/style.css?v=20261027-auto-receipt-actions-v2"><link rel="stylesheet" href="../assets/pickup-orders.css?v=20261027-auto-receipt-actions-v2"><link rel="stylesheet" href="../assets/cancellation-dialog.css?v=20261027-auto-receipt-actions-v2">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="../assets/tenant-config.js?v=20261027-auto-receipt-actions-v2"></script><script src="../assets/tenant-branding.js?v=20261027-auto-receipt-actions-v2"></script>
 </head>
 <body data-page="staff-orders">
-<header class="topbar"><a class="brand brand-image" href="staff-scan.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261027-local-orders-24h-v1" alt="Dina's Corner"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
+<header class="topbar"><a class="brand brand-image" href="staff-scan.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261027-auto-receipt-actions-v2" alt="Dina's Corner"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
 <main class="pickup-main"><header class="pickup-heading"><p class="eyebrow">CUSTOMER SERVICE</p><h1 class="title">Branch Orders</h1><p class="sub">Staff handles pickup and delivery orders for the assigned branch, including the customer delivery location when applicable.</p></header>
 <div id="managedOrdersMessage" hidden aria-live="polite"></div>
 <div id="cancelOrderDialog" class="cancel-order-dialog" hidden>
@@ -25,24 +25,20 @@
     </form>
   </section>
 </div>
-<section class="card pickup-panel local-archive-panel" aria-labelledby="localOrderArchiveTitle">
+<section class="card pickup-panel local-archive-panel local-archive-panel-compact" aria-labelledby="localOrderArchiveTitle">
   <div class="local-archive-header">
-    <div>
-      <p class="eyebrow">LOCAL COMPUTER COPY</p>
-      <h2 id="localOrderArchiveTitle" style="margin:0">عدد النسخ المحلية على هذا الكمبيوتر <span class="local-archive-count" id="localOrderArchiveCount">0</span></h2>
-      <p class="local-archive-description">يحفظ البرنامج نسخة من كل أوردر وحالته، بما فيها الإلغاء، لمدة 24 ساعة من وقت إنشاء الأوردر ثم يحذفها تلقائيًا من مساحة التخزين المحلية للمتصفح.</p>
+    <div class="local-archive-title-row">
+      <h2 id="localOrderArchiveTitle" style="margin:0">نسخة الكمبيوتر</h2>
+      <span class="local-archive-count" id="localOrderArchiveCount" aria-label="عدد النسخ المحفوظة">0</span>
     </div>
     <div class="local-archive-actions">
-      <button id="refreshLocalOrderArchiveBtn" class="btn soft" type="button">تحديث النسخة الآن</button>
-      <button id="downloadLocalOrderArchiveBtn" class="btn" type="button">تنزيل نسخة JSON</button>
+      <button id="refreshLocalOrderArchiveBtn" class="btn soft" type="button">تحديث</button>
     </div>
   </div>
-  <p id="localOrderArchiveStatus" class="local-archive-status" role="status" aria-live="polite">سيبدأ حفظ النسخ المحلية بعد التحقق من حساب الموظف والفرع.</p>
-  <p class="local-archive-unified-note">تُحفظ النسخ على هذا الكمبيوتر في الخلفية، ويظهر كل أوردر مرة واحدة فقط في قائمة الأوردرات بالأسفل مع حالة حفظ النسخة المحلية ووقت انتهائها.</p>
-  <p class="local-archive-warning">تنبيه: النسخة المؤقتة داخل البرنامج تُحذف تلقائيًا بعد 24 ساعة. أما ملف JSON الذي تنزّله يدويًا فهو ملف منفصل في مجلد التنزيلات ولن يستطيع المتصفح حذفه تلقائيًا.</p>
+  <p id="localOrderArchiveStatus" class="local-archive-status" role="status" aria-live="polite">جارٍ التجهيز…</p>
 </section>
 <section class="card pickup-panel"><div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h2 style="margin:0">Customer orders</h2><button id="refreshManagedOrdersBtn" class="btn soft" type="button">REFRESH</button></div><div id="managedPickupOrders" class="pickup-orders-list" style="margin-top:14px"><div class="pickup-empty">Loading branch orders…</div></div></section></main>
 <nav class="nav"><div class="navin"><a href="staff-scan.html"><b>⌗</b>Scan</a><a href="staff-orders.html" class="active"><b>▣</b>Orders</a><a href="staff-customer.html"><b>●</b>Customer</a><a href="staff-history.html"><b>↺</b>History</a><a href="staff-profile.html"><b>●</b>Profile</a></div></nav>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="../assets/config.js?v=20261027-auto-receipt-png-v2-layoutfix"></script><script src="../assets/app.js?v=20261027-auto-receipt-png-v2-layoutfix"></script><script src="../assets/pickup-orders.js?v=20261027-auto-receipt-png-v2-layoutfix"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="../assets/config.js?v=20261027-auto-receipt-actions-v2"></script><script src="../assets/app.js?v=20261027-auto-receipt-actions-v2"></script><script src="../assets/pickup-orders.js?v=20261027-auto-receipt-actions-v2"></script>
 
 </body></html>
