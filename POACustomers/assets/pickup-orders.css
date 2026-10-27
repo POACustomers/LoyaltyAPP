@@ -125,3 +125,12 @@
 .delivery-address-link{margin:1px 0 7px}
 .delivery-location-status{font-size:10px}
 @media(max-width:560px){.delivery-zone-summary .delivery-zone-facts{gap:5px;padding:6px}.delivery-zone-summary .delivery-zone-chip{padding:4px 6px}}
+
+
+/* Optional customer location sharing on pickup-only checkout */
+.customer-share-location{margin:14px 0;padding:14px;border:1px solid #e8c4cb;border-radius:14px;background:rgba(255,244,237,.55);display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.customer-share-location h3{margin:0;color:var(--green);font-size:14px}
+.customer-share-location p{margin:0;color:var(--muted);font-size:11px;line-height:1.5}
+.customer-share-location .btn{padding:10px 14px}
+.customer-share-location .delivery-location-status{min-width:0;flex:none;width:100%;font-size:11px}
+.customer-share-location .delivery-location-link{margin-top:0}

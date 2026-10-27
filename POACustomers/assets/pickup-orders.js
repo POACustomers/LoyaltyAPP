@@ -43,41 +43,7 @@
     if (typeof window.toast === 'function') window.toast(message, good !== false);
     else if (message) console[good === false ? 'error' : 'log'](message);
   }
-  function fulfillmentType() { return 'pickup'; }
-
-  // Current release is pickup-only. This guard also hides old cached delivery markup
-  // when an older checkout HTML file is still being served by the browser.
-  function enforcePickupOnlyCheckoutUI() {
-    if (page !== 'customer-orders') return;
-    const method = $('orderFulfillmentType');
-    if (method) {
-      const wrapper = method.closest('.pickup-field, .field, .form-group, label');
-      Array.from(method.options || []).forEach(option => {
-        if (String(option.value).toLowerCase() === 'delivery') option.remove();
-      });
-      method.value = 'pickup';
-      method.disabled = true;
-      if (wrapper) {
-        wrapper.hidden = true;
-        wrapper.style.display = 'none';
-      }
-    }
-    const deliveryPanel = $('deliveryDetails');
-    if (deliveryPanel) {
-      deliveryPanel.hidden = true;
-      deliveryPanel.style.display = 'none';
-    }
-    const deliverySummary = $('deliveryZoneSummary');
-    if (deliverySummary) {
-      deliverySummary.hidden = true;
-      deliverySummary.style.display = 'none';
-      deliverySummary.textContent = '';
-    }
-    document.querySelectorAll('#pickupCheckoutFormPanel .delivery-details, #pickupCheckoutFormPanel .delivery-zone-summary, #pickupCheckoutFormPanel .delivery-location-tools, #pickupCheckoutFormPanel .delivery-location-status, #pickupCheckoutFormPanel .delivery-address-link').forEach(element => {
-      element.hidden = true;
-      element.style.display = 'none';
-    });
-  }
+  function fulfillmentType() { return $('orderFulfillmentType')?.value === 'delivery' ? 'delivery' : 'pickup'; }
   function statusLabel(status, type) {
     if (status === 'ready_for_pickup') return 'Ready for pickup';
     if (status === 'out_for_delivery') return 'Out for delivery';
@@ -123,6 +89,19 @@
       (order.delivery_distance_meters != null ? '<br><strong>Road distance:</strong> ' + esc((Number(order.delivery_distance_meters) / 1000).toFixed(2)) + ' km' : '') +
       (order.delivery_fee != null ? '<br><strong>Delivery fee:</strong> ' + esc(money(order.delivery_fee)) : '') +
       (map ? '<br><a class="delivery-location-link" href="' + esc(map) + '" target="_blank" rel="noopener noreferrer">↗ Open delivery location in Google Maps</a>' : '<br><small>Map location not available.</small>') + '</div>';
+  }
+
+  // Customer location is stored as a clearly marked Google Maps link in the order notes,
+  // so it works with the existing order RPC and does not require a database migration.
+  function orderNotesHtml(notes, label) {
+    let text = String(notes || '');
+    const match = text.match(/Customer location:\s*(https:\/\/www\.google\.com\/maps\?q=[^\s|]+)/i);
+    let map = match ? validMapUrl(match[1]) : null;
+    if (match) text = text.replace(match[0], '').replace(/\s*\|\s*$/, '').trim();
+    text = text.replace(/\s*\|\s*/g, ' · ').trim();
+    let html = text ? '<br>' + esc(label || 'Note') + ': ' + esc(text) : '';
+    if (map) html += '<br><strong>Customer location:</strong> <a class="delivery-location-link" href="' + esc(map) + '" target="_blank" rel="noopener noreferrer">↗ Open customer location in Google Maps</a>';
+    return html;
   }
 
   // Customer-menu product cards call this function to put a database-backed item in the basket.
@@ -261,7 +240,7 @@
     let html = '<div class="pickup-summary-row"><span>Items</span><strong>' + quantityCount(cart) + '</strong></div>' +
       (hasOfferDiscount && calc.known ? '<div class="pickup-summary-row"><span>Product subtotal before discounts</span><strong><del>' + esc(money(baseSubtotal)) + '</del></strong></div><div class="pickup-summary-row"><span>Product discount</span><strong style="color:#a13a52">−' + esc(money(productSavings)) + '</strong></div>' : '') +
       '<div class="pickup-summary-row"><span>Items subtotal' + (hasOfferDiscount ? ' after discount' : '') + '</span><strong>' + subtotalText + '</strong></div>' +
-      (hasOfferDiscount ? '<div class="pickup-note">Discount applies to products only.</div>' : '');
+      (hasOfferDiscount ? '<div class="pickup-note">Discount applies to products only. The delivery fee is calculated separately and is not discounted.</div>' : '');
     if (hasOfferDiscount && !OFFER_DISCOUNT_BACKEND_READY) {
       html += '<div class="pickup-offer-checkout-warning">Offer prices are shown in the basket, but server-side offer validation is not enabled. Sending this order is paused to prevent an incorrect charge.</div>';
     }
@@ -302,7 +281,6 @@
     el.classList.toggle('error', kind === 'error');
   }
   function updateFulfillmentUI() {
-    enforcePickupOnlyCheckoutUI();
     const type = fulfillmentType(), delivery = type === 'delivery';
     const panel = $('deliveryDetails');
     const branchField = $('pickupBranchField');
@@ -336,6 +314,47 @@
       if (button) { button.disabled = false; button.textContent = '⌖ USE MY CURRENT LOCATION'; }
     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
   }
+  function setCustomerShareLocationStatus(message, kind) {
+    const el = $('customerShareLocationStatus');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.toggle('success', kind === 'success');
+    el.classList.toggle('error', kind === 'error');
+  }
+
+  function shareCustomerLocation() {
+    const button = $('customerShareLocationBtn');
+    if (!navigator.geolocation) {
+      setCustomerShareLocationStatus('This browser cannot share GPS location. You can still place the order without it.', 'error');
+      return;
+    }
+    if (button) { button.disabled = true; button.textContent = 'GETTING LOCATION…'; }
+    setCustomerShareLocationStatus('Waiting for permission to access your location…');
+    navigator.geolocation.getCurrentPosition(position => {
+      const latitude = Number(position.coords.latitude);
+      const longitude = Number(position.coords.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        setCustomerShareLocationStatus('Could not read valid coordinates. Please try again.', 'error');
+        if (button) { button.disabled = false; button.textContent = '⌖ SEND MY LOCATION'; }
+        return;
+      }
+      const mapUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude);
+      $('customerShareLatitude').value = String(latitude);
+      $('customerShareLongitude').value = String(longitude);
+      $('customerShareMapUrl').value = mapUrl;
+      const link = $('customerShareLocationMapLink');
+      if (link) { link.href = mapUrl; link.hidden = false; }
+      setCustomerShareLocationStatus('Location selected. It will be sent to the branch with your order.', 'success');
+      if (button) { button.disabled = false; button.textContent = '⌖ UPDATE MY LOCATION'; }
+    }, error => {
+      const message = error && error.code === 1
+        ? 'Location permission was denied. Allow location access in your browser and try again.'
+        : 'Could not get your location. Check device location and try again. You can still place the order without it.';
+      setCustomerShareLocationStatus(message, 'error');
+      if (button) { button.disabled = false; button.textContent = '⌖ SEND MY LOCATION'; }
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+  }
+
   async function loadSavedDeliveryAddresses() {
     const select = $('deliverySavedAddress');
     if (!select) return;
@@ -539,7 +558,13 @@
     button.dataset.sending = 'true'; button.disabled = true; button.textContent = 'SENDING ORDER…';
     showMessage('pickupCheckoutMessage', '', false);
     try {
-      const notes = [delivery.instructions ? 'Delivery instructions: ' + delivery.instructions : '', $('pickupOrderNotes')?.value?.trim() ? 'Order note: ' + $('pickupOrderNotes').value.trim() : ''].filter(Boolean).join(' | ').slice(0, 500) || null;
+      const typedNote = $('pickupOrderNotes')?.value?.trim() || '';
+      const sharedMapUrl = validMapUrl($('customerShareMapUrl')?.value || '');
+      const noteParts = [];
+      if (delivery.instructions) noteParts.push('Delivery instructions: ' + delivery.instructions);
+      if (typedNote) noteParts.push('Order note: ' + typedNote.slice(0, sharedMapUrl ? 350 : 500));
+      if (sharedMapUrl) noteParts.push('Customer location: ' + sharedMapUrl);
+      const notes = noteParts.join(' | ').slice(0, 500) || null;
       const orderItems = cart.map(row => ({ item_id: row.id, quantity: Number(row.quantity) }));
       const rpc = delivery.type === 'delivery'
         ? await sb.functions.invoke('delivery-routing', {
@@ -568,6 +593,10 @@
       if (!result || !result.order_number) throw new Error('The order system did not return an order number. Refresh your order history before trying again.');
       localStorage.removeItem(CART_KEY);
       if ($('pickupOrderNotes')) $('pickupOrderNotes').value = '';
+      ['customerShareLatitude', 'customerShareLongitude', 'customerShareMapUrl'].forEach(id => { if ($(id)) $(id).value = ''; });
+      const sharedLocationLink = $('customerShareLocationMapLink');
+      if (sharedLocationLink) { sharedLocationLink.hidden = true; sharedLocationLink.removeAttribute('href'); }
+      setCustomerShareLocationStatus('Location has not been shared.');
       const fulfillment = result.fulfillment_type === 'delivery' ? 'delivery' : 'pickup';
       renderCart();
       showOrderSuccess(result.order_number, fulfillment, result);
@@ -621,7 +650,7 @@
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>Branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + '<br>' + esc(statusHint(order.status, type)) +
-        deliveryDetailsHtml(order, false) + (order.notes ? '<br>Note: ' + esc(order.notes) : '') + '</div>' +
+        deliveryDetailsHtml(order, false) + orderNotesHtml(order.notes, 'Note') + '</div>' +
         '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'To be confirmed by branch' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div>' +
         (canCancel ? '<button class="btn danger" type="button" data-cancel-order="' + esc(order.id) + '">Cancel order</button>' : '') + '</div></article>';
     }).join('');
@@ -673,7 +702,7 @@
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>Handling branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + (order.branch_address ? '<br>Branch address: ' + esc(order.branch_address) : '') +
-        deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + '</div>' +
+        deliveryDetailsHtml(order, true) + orderNotesHtml(order.notes, 'Customer note') + '</div>' +
         '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'Confirm with customer' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div></div>' +
         '<div class="pickup-next-actions">' + (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
         (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '') + '</div></article>';
@@ -695,10 +724,16 @@
     renderCart();
     if (readCart().length) {
       await loadBranches();
+      await loadSavedDeliveryAddresses();
       renderCart();
     }
     $('pickupOrderForm')?.addEventListener('submit', submitCustomerOrder);
-    // Checkout is pickup-only for the current release; delivery UI and routing are not initialized.
+    $('customerShareLocationBtn')?.addEventListener('click', shareCustomerLocation);
+    $('orderFulfillmentType')?.addEventListener('change', updateFulfillmentUI);
+    $('useMyLocationBtn')?.addEventListener('click', useMyLocation);
+    $('deliveryAddress')?.addEventListener('input', () => {
+      if ($('deliveryAddress').value.trim() !== selectedSavedAddressText) selectedDeliveryInstructions = '';
+    });
     updateFulfillmentUI();
     // Order history is loaded separately on customer-order-history.html, not on checkout.
   }
@@ -725,7 +760,6 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    if (page === 'customer-orders') enforcePickupOnlyCheckoutUI();
     if (page === 'customer-menu') updateCartDock();
     if (page === 'customer-orders') initCustomerOrders().catch(error => showMessage('pickupCheckoutMessage', error?.message || 'Could not initialize the order page.', true));
     if (page === 'customer-order-history') initCustomerOrderHistory().catch(error => showMessage('pickupOrdersMessage', error?.message || 'Could not load order history.', true));
