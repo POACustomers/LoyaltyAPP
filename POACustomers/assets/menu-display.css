@@ -199,35 +199,5 @@ body[data-page="menu"] #menuItemsView .menu-list{width:100%;}
   .customer-mobile-nav a:focus-visible { outline:2px solid #bf5e75; outline-offset:1px; }
 }
 
-
-/* POAC menu correction: regular two-column category layout (no horizontal carousel). */
-body[data-page="customer-menu"] #menuCategoriesView .menu-grid,
-body[data-page="menu"] #menuCategoriesView .menu-grid,
-body[data-page="customer-menu"] #menuCategoriesView .menu-grid {
-  display:grid !important;
-  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-  gap:10px !important;
-  overflow:visible !important;
-  padding:2px 0 8px !important;
-  scroll-snap-type:none !important;
-  overscroll-behavior-x:auto !important;
-}
-body[data-page="customer-menu"] #menuCategoriesView .menu-category,
-body[data-page="menu"] #menuCategoriesView .menu-category {
-  width:100% !important; min-width:0 !important; max-width:100% !important;
-  flex:none !important; padding:0 0 8px !important; border-radius:14px !important;
-}
-body[data-page="customer-menu"] #menuCategoriesView .menu-category-media,
-body[data-page="menu"] #menuCategoriesView .menu-category-media {
-  width:100% !important; aspect-ratio:1/0.92 !important; height:auto !important;
-  margin-bottom:6px !important; border-radius:13px 13px 9px 9px !important;
-}
-body[data-page="customer-menu"] #menuCategoriesView .menu-name,
-body[data-page="menu"] #menuCategoriesView .menu-name {
-  min-height:34px !important; padding:0 5px !important; font-size:11px !important;
-  line-height:1.2 !important; overflow-wrap:anywhere !important;
-}
-@media (min-width:640px) {
- body[data-page="customer-menu"] #menuCategoriesView .menu-grid,
- body[data-page="menu"] #menuCategoriesView .menu-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
-}
+/* User request: remove the menu-page basket button; basket remains in bottom navigation. */
+.menu-cart-trigger{display:none!important}
