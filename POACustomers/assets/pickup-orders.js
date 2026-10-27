@@ -1198,7 +1198,7 @@
   async function syncLocalOrderArchive(forceFullSync = false) {
     if (!assignedStaffLocationId || localArchiveSyncRunning) return;
     localArchiveSyncRunning = true;
-    setLocalArchiveStatus('جارٍ تحديث النسخة المحلية من الطلبات…', 'loading');
+    setLocalArchiveStatus('جارٍ التحديث…', 'loading');
     try {
       await localArchiveDeleteExpired();
       const now = Date.now();
@@ -1229,21 +1229,22 @@
       localArchiveLastSyncAt = Date.now();
       await renderLocalOrderArchive();
       const visibleCount = (await localArchiveGetAll()).filter(row => String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > Date.now()).length;
-      setLocalArchiveStatus('النسخة المحلية محدثة على هذا الكمبيوتر. الطلبات المحفوظة: ' + visibleCount + '. مدة الاحتفاظ 24 ساعة من إنشاء كل أوردر.', 'success');
+      setLocalArchiveStatus('محدّثة', 'success');
       if ($('managedPickupOrders')) await loadManagedOrders({ quiet: true });
     } catch (error) {
-      setLocalArchiveStatus('تعذر تحديث النسخة المحلية من Supabase. النسخ المحفوظة مسبقًا ما زالت على هذا الكمبيوتر. السبب: ' + (error?.message || 'خطأ غير معروف'), 'error');
+      setLocalArchiveStatus('تعذر التحديث', 'error', error?.message || 'خطأ غير معروف');
       try { await renderLocalOrderArchive(); } catch (_) {}
     } finally {
       localArchiveSyncRunning = false;
     }
   }
 
-  function setLocalArchiveStatus(message, kind) {
+  function setLocalArchiveStatus(message, kind, detail = '') {
     const el = $('localOrderArchiveStatus');
     if (!el) return;
     el.textContent = message;
     el.dataset.kind = kind || '';
+    el.title = detail || '';
   }
 
   function localRemainingText(expiresAt) {
@@ -1268,43 +1269,8 @@
     if (oldList) oldList.innerHTML = '<div class="pickup-empty">النسخ المحلية محفوظة على هذا الكمبيوتر، وتظهر الطلبات مرة واحدة فقط في قائمة الأوردرات بالأسفل.</div>';
   }
 
-  async function downloadLocalOrderArchive() {
-    try {
-      await localArchiveDeleteExpired();
-      const rows = (await localArchiveGetAll())
-        .filter(row => String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > Date.now())
-        .sort((a, b) => Number(b.createdAtMs) - Number(a.createdAtMs));
-      if (!rows.length) {
-        setLocalArchiveStatus('لا توجد نسخ صالحة للتنزيل حاليًا.', 'error');
-        return;
-      }
-      const payload = {
-        app: "Dina's Corner",
-        exportType: 'local-order-archive',
-        exportedAt: new Date().toISOString(),
-        retentionPolicy: 'The application-managed local archive expires 24 hours after each order is created. This downloaded JSON file is a separate manual export and will not be auto-deleted by the browser.',
-        branchId: assignedStaffLocationId,
-        orders: rows
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-      link.href = url;
-      link.download = 'Dinas-Corner-Orders-24H-' + stamp + '.json';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1500);
-      setLocalArchiveStatus('تم تنزيل ملف JSON. تنبيه: ملف التنزيل مستقل عن النسخة المؤقتة ولا يحذفه المتصفح تلقائيًا بعد 24 ساعة.', 'success');
-    } catch (error) {
-      setLocalArchiveStatus('تعذر تنزيل النسخة المحلية: ' + (error?.message || 'خطأ غير معروف'), 'error');
-    }
-  }
-
   function bindLocalArchiveControls() {
     $('refreshLocalOrderArchiveBtn')?.addEventListener('click', () => syncLocalOrderArchive(true));
-    $('downloadLocalOrderArchiveBtn')?.addEventListener('click', downloadLocalOrderArchive);
   }
 
   function nextStep(order) {
@@ -1380,15 +1346,17 @@
   async function updateManagedOrder(id, status, type, receiptOrder = null, receiptItems = []) {
     let rpcName = 'update_pickup_order_status';
     let rpcArgs = { p_order_id: id, p_new_status: status };
+    let cancellationReason = '';
     if (status === 'cancelled') {
       const reason = await requestCancellationReason();
       if (reason === null) return;
-      if (!reason.trim()) {
+      cancellationReason = reason.trim();
+      if (!cancellationReason) {
         showMessage('managedOrdersMessage', 'Cancellation reason is required. The order was not cancelled.', true);
         return;
       }
       rpcName = 'staff_cancel_pickup_order';
-      rpcArgs = { p_order_id: id, p_cancel_reason: reason.trim() };
+      rpcArgs = { p_order_id: id, p_cancel_reason: cancellationReason };
     } else if (!confirm('Update this order to: ' + statusLabel(status, type).toLowerCase() + '?')) {
       return;
     }
@@ -1396,11 +1364,25 @@
       const { error } = await sb.rpc(rpcName, rpcArgs);
       if (error) throw error;
       toast(status === 'cancelled' ? 'Order cancelled and reason saved.' : 'Order updated.');
-      if (status === 'completed' && receiptOrder) {
+
+      // Download one receipt image only after the status change is confirmed by Supabase.
+      // Keep the existing pickup-completion download and add acceptance/cancellation.
+      const shouldDownloadReceipt = ['accepted', 'cancelled', 'completed'].includes(status);
+      if (shouldDownloadReceipt && receiptOrder) {
+        const receiptSnapshot = {
+          ...receiptOrder,
+          status,
+          ...(status === 'cancelled' ? { cancellation_reason: cancellationReason, cancelled_at: new Date().toISOString() } : {}),
+          updated_at: new Date().toISOString()
+        };
         try {
-          await downloadOrderReceiptById({ ...receiptOrder, status: 'completed', updated_at: new Date().toISOString() }, receiptItems);
+          await downloadOrderReceiptById(receiptSnapshot, receiptItems);
         } catch (receiptError) {
-          showMessage('managedOrdersMessage', 'تم إتمام الأوردر بنجاح، لكن تعذر تنزيل صورة الفاتورة تلقائيًا. استخدم زر «تنزيل صورة الفاتورة» بجوار الأوردر لإعادة المحاولة. السبب: ' + (receiptError?.message || 'خطأ غير معروف'), true);
+          showMessage(
+            'managedOrdersMessage',
+            'تم تحديث الأوردر بنجاح، لكن تعذر تنزيل صورة الفاتورة تلقائيًا. استخدم زر «تنزيل صورة الفاتورة» بجوار الأوردر لإعادة المحاولة. السبب: ' + (receiptError?.message || 'خطأ غير معروف'),
+            true
+          );
         }
       }
       await loadManagedOrders();
@@ -1498,7 +1480,7 @@
         deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + cancellation + localBadge + '</div>' +
         '<div class="pickup-order-items">' + (itemHtml || '<small>No saved item details are available for this order.</small>') + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + esc(total) + '</strong></div></div>' +
         '<div class="pickup-next-actions"><button class="btn soft" type="button" data-print-unified-order="' + esc(order.id) + '">عرض / طباعة الإيصال</button>' +
-        (order.status === 'completed' ? '<button class="btn soft" type="button" data-download-order-receipt="' + esc(order.id) + '">تنزيل صورة الفاتورة</button>' : '') +
+        '<button class="btn soft" type="button" data-download-order-receipt="' + esc(order.id) + '">تنزيل صورة الفاتورة</button>' +
         (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
         (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '') + '</div></article>';
     }).join('');
