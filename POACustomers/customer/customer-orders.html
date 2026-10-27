@@ -6,18 +6,18 @@
 <meta name="theme-color" content="#C65F78">
 <meta name="description" content="Place and track orders">
 <link rel="manifest" href="../manifest.webmanifest">
-<link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261027-pickup-only-final">
+<link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261027-pickup-location-share">
 <title>My Orders</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261027-pickup-only-final">
-<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261027-pickup-only-final"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261027-pickup-only-final">
-<script defer src="../assets/pwa-install.js?v=20261027-pickup-only-final"></script>
+<link rel="stylesheet" href="../assets/style.css?v=20261027-pickup-location-share">
+<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261027-customer-location-share"><link rel="stylesheet" href="../assets/customer-addresses.css?v=20261027-pickup-location-share">
+<script defer src="../assets/pwa-install.js?v=20261027-pickup-location-share"></script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
 </head>
 <body data-page="customer-orders">
 <header class="topbar customer-topbar">
-<a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261027-pickup-only-final" alt="DINA'S CORNER"></a>
+<a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261027-pickup-location-share" alt="DINA'S CORNER"></a>
 <details class="customer-top-menu" data-customer-top-menu>
   <summary aria-label="Open customer navigation" title="Open customer navigation"><svg class="customer-top-menu-symbol" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 6h16M4 12h16M4 18h16" /></svg></summary>
   <nav class="customer-menu-popup" aria-label="Customer menu">
@@ -69,6 +69,16 @@
         </label>
       </div>
 
+      <section class="customer-share-location" aria-labelledby="customerShareLocationTitle">
+        <h3 id="customerShareLocationTitle">Share your location (optional)</h3>
+        <p>Send your map location with the order so the branch can see where you are. No delivery fee or distance is calculated.</p>
+        <button id="customerShareLocationBtn" class="btn soft" type="button">⌖ Send my location</button>
+        <span id="customerShareLocationStatus" class="delivery-location-status" aria-live="polite">Location has not been shared.</span>
+        <a id="customerShareLocationMapLink" class="delivery-location-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open selected location in Google Maps</a>
+        <input id="customerShareLatitude" type="hidden">
+        <input id="customerShareLongitude" type="hidden">
+        <input id="customerShareMapUrl" type="hidden">
+      </section>
 
       <label class="pickup-field" for="pickupOrderNotes">Order note (optional)
         <textarea id="pickupOrderNotes" class="input" maxlength="500" placeholder="Any special instructions for this order"></textarea>
@@ -81,12 +91,12 @@
 
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="../assets/tenant-config.js?v=20261027-pickup-only-final"></script>
-<script src="../assets/tenant-branding.js?v=20261027-pickup-only-final"></script>
-<script src="../assets/customer-navigation.js?v=20261027-pickup-only-final"></script>
-<script src="../assets/config.js?v=20261027-pickup-only-final"></script>
-<script src="../assets/app.js?v=20261027-pickup-only-final"></script>
-<script src="../assets/pickup-orders.js?v=20261027-pickup-only-final"></script>
+<script src="../assets/tenant-config.js?v=20261027-pickup-location-share"></script>
+<script src="../assets/tenant-branding.js?v=20261027-pickup-location-share"></script>
+<script src="../assets/customer-navigation.js?v=20261027-pickup-location-share"></script>
+<script src="../assets/config.js?v=20261027-pickup-location-share"></script>
+<script src="../assets/app.js?v=20261027-pickup-location-share"></script>
+<script src="../assets/pickup-orders.js?v=20261027-customer-location-share"></script>
 
 </body>
 </html>
