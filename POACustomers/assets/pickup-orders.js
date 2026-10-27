@@ -81,6 +81,80 @@
       return ((u.protocol === 'https:' || u.protocol === 'http:') && mapsHost) ? u.href : null;
     } catch (_) { return null; }
   }
+
+  function setCustomerShareLocationStatus(message, kind) {
+    const el = $('customerShareLocationStatus');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.toggle('success', kind === 'success');
+    el.classList.toggle('error', kind === 'error');
+  }
+
+  function shareCustomerLocation() {
+    const button = $('customerShareLocationBtn');
+    const latitudeInput = $('customerShareLatitude');
+    const longitudeInput = $('customerShareLongitude');
+    const mapUrlInput = $('customerShareMapUrl');
+    const mapLink = $('customerShareLocationMapLink');
+
+    if (!window.isSecureContext && location.hostname !== 'localhost') {
+      setCustomerShareLocationStatus('Location sharing requires HTTPS. Open the secure https:// site, not an http:// link.', 'error');
+      return;
+    }
+    if (!navigator.geolocation) {
+      setCustomerShareLocationStatus('This browser cannot access GPS. Open the site in Safari or Chrome and allow location access.', 'error');
+      return;
+    }
+
+    if (button) { button.disabled = true; button.textContent = 'GETTING LOCATION…'; }
+    setCustomerShareLocationStatus('Requesting your phone location. Keep this page open and allow the permission prompt…');
+
+    const finishError = error => {
+      let message;
+      if (error && error.code === 1) {
+        message = 'Location permission was denied. On iPhone, open Settings > Privacy & Security > Location Services, allow location for Safari, then return to this page and reload. If opened inside WhatsApp, open the link in Safari.';
+      } else if (error && error.code === 3) {
+        message = 'The phone took too long to find your location. Turn on Location Services, move near a window, then tap Send my location again.';
+      } else {
+        message = 'The phone could not get a GPS location. Turn on Location Services and allow this website to use your location, then try again.';
+      }
+      setCustomerShareLocationStatus(message, 'error');
+      if (button) { button.disabled = false; button.textContent = '⌖ SEND MY LOCATION'; }
+    };
+
+    const onSuccess = position => {
+      const latitude = Number(position && position.coords && position.coords.latitude);
+      const longitude = Number(position && position.coords && position.coords.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        finishError({ code: 2 });
+        return;
+      }
+      const mapUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude);
+      if (latitudeInput) latitudeInput.value = String(latitude);
+      if (longitudeInput) longitudeInput.value = String(longitude);
+      if (mapUrlInput) mapUrlInput.value = mapUrl;
+      if (mapLink) { mapLink.href = mapUrl; mapLink.hidden = false; }
+      setCustomerShareLocationStatus('Location added. It will be sent to the branch with your order.', 'success');
+      if (button) { button.disabled = false; button.textContent = '⌖ UPDATE MY LOCATION'; }
+    };
+
+    // First request uses lower accuracy for faster/more reliable results indoors on phones.
+    // If the device times out or GPS is temporarily unavailable, retry once with high accuracy.
+    navigator.geolocation.getCurrentPosition(onSuccess, error => {
+      if (error && error.code === 1) { finishError(error); return; }
+      setCustomerShareLocationStatus('Trying the phone GPS again…');
+      navigator.geolocation.getCurrentPosition(onSuccess, finishError, {
+        enableHighAccuracy: true,
+        timeout: 25000,
+        maximumAge: 0
+      });
+    }, {
+      enableHighAccuracy: false,
+      timeout: 30000,
+      maximumAge: 300000
+    });
+  }
+
   function mapUrlForOrder(order) {
     const saved = validMapUrl(order?.delivery_map_url);
     if (saved) return saved;
@@ -553,7 +627,11 @@
     button.dataset.sending = 'true'; button.disabled = true; button.textContent = 'SENDING ORDER…';
     showMessage('pickupCheckoutMessage', '', false);
     try {
-      const notes = [delivery.instructions ? 'Delivery instructions: ' + delivery.instructions : '', $('pickupOrderNotes')?.value?.trim() ? 'Order note: ' + $('pickupOrderNotes').value.trim() : ''].filter(Boolean).join(' | ').slice(0, 500) || null;
+      const sharedMapUrl = validMapUrl($('customerShareMapUrl')?.value || '');
+      const notes = [
+        $('pickupOrderNotes')?.value?.trim() ? 'Order note: ' + $('pickupOrderNotes').value.trim() : '',
+        sharedMapUrl ? 'Customer location: ' + sharedMapUrl : ''
+      ].filter(Boolean).join(' | ').slice(0, 500) || null;
       const orderItems = cart.map(row => ({ item_id: row.id, quantity: Number(row.quantity) }));
       const rpc = delivery.type === 'delivery'
         ? await sb.functions.invoke('delivery-routing', {
@@ -582,6 +660,10 @@
       if (!result || !result.order_number) throw new Error('The order system did not return an order number. Refresh your order history before trying again.');
       localStorage.removeItem(CART_KEY);
       if ($('pickupOrderNotes')) $('pickupOrderNotes').value = '';
+      ['customerShareLatitude', 'customerShareLongitude', 'customerShareMapUrl'].forEach(id => { if ($(id)) $(id).value = ''; });
+      const sharedLocationLink = $('customerShareLocationMapLink');
+      if (sharedLocationLink) { sharedLocationLink.hidden = true; sharedLocationLink.removeAttribute('href'); }
+      setCustomerShareLocationStatus('Location has not been shared.');
       const fulfillment = result.fulfillment_type === 'delivery' ? 'delivery' : 'pickup';
       renderCart();
       showOrderSuccess(result.order_number, fulfillment, result);
@@ -1088,6 +1170,7 @@
       renderCart();
     }
     $('pickupOrderForm')?.addEventListener('submit', submitCustomerOrder);
+    $('customerShareLocationBtn')?.addEventListener('click', shareCustomerLocation);
     // Checkout is pickup-only for the current release; delivery UI and routing are not initialized.
     updateFulfillmentUI();
     // Order history is loaded separately on customer-order-history.html, not on checkout.
