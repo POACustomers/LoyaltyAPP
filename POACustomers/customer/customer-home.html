@@ -7,7 +7,7 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261024-home-image-cards-v1">
 <title>Customer Home</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261028-poac-nav-final-v2">
+<link rel="stylesheet" href="../assets/style.css?v=20261028-poac-nav-final-v3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
@@ -16,7 +16,8 @@
 
 <header class="topbar customer-topbar">
 <a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-home-image-cards-v1" alt="DINA'S CORNER"></a>
-<a class="customer-header-basket" href="customer-menu.html" aria-label="Open basket and menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L22 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span>Basket</span></a>
+<div class="customer-header-actions">
+<a class="customer-header-basket" href="customer-menu.html" aria-label="Open basket"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L22 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span>Basket</span></a>
 <details class="customer-top-menu" data-customer-top-menu>
   <summary aria-label="Open customer navigation" title="Open customer navigation"><svg class="customer-top-menu-symbol" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 6h16M4 12h16M4 18h16" /></svg></summary>
   <nav class="customer-menu-popup" aria-label="Customer menu">
@@ -30,9 +31,27 @@
     <a href="customer-profile.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">●</span><span>My Profile</span></a>
   <button class="customer-menu-logout" type="button" onclick="logout()" aria-label="Sign out">Sign Out</button></nav>
 </details>
+</div>
 </header>
-<main class="container">
+<main class="container customer-home-page">
 
+<section class="customer-home-hero" aria-labelledby="customerHomeHeroTitle">
+  <div class="customer-home-hero__copy">
+    <p class="customer-home-hero__eyebrow"><span class="customer-home-hero__eyebrow-mark" aria-hidden="true">✦</span> DINA'S CORNER <span aria-hidden="true">·</span> MADE WITH LOVE</p>
+    <h1 id="customerHomeHeroTitle"><span>Great rewards.</span></h1>
+    <p class="customer-home-hero__description">Discover your favourites and earn rewards with every visit.</p>
+  </div>
+  <span class="customer-home-hero__sparkle customer-home-hero__sparkle--one" aria-hidden="true">✦</span>
+  <span class="customer-home-hero__sparkle customer-home-hero__sparkle--two" aria-hidden="true">✧</span>
+</section>
+
+<section class="customer-home-hero__loyalty" aria-label="Your loyalty journey">
+  <div class="customer-home-hero__loyalty-head"><span class="customer-home-hero__loyalty-star" aria-hidden="true">✦</span><span class="customer-home-hero__loyalty-label">YOUR LOYALTY JOURNEY</span></div>
+  <p class="customer-home-hero__loyalty-caption">Your points balance</p>
+  <div class="poac-loyalty-balance"><strong><span data-points>0</span></strong><span>/ 50 points</span></div>
+  <div class="poac-loyalty-progress" aria-hidden="true"><span></span></div>
+  <div class="poac-loyalty-bottom"><span>Every visit brings you closer.</span><a href="customer-card.html">View my card <span aria-hidden="true">→</span></a></div>
+</section>
 
 <section id="homeOffersCard" class="card home-offers-card" style="margin-top:18px" aria-live="polite">
   <div id="homeOffersContent" class="home-offers-fallback" aria-live="polite">
@@ -73,7 +92,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script src="../assets/tenant-config.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/tenant-branding.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/customer-navigation.js?v=20261028-poac-nav-final-v2"></script>
+<script src="../assets/customer-navigation.js?v=20261028-poac-nav-final-v3"></script>
 <script src="../assets/config.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/app.js?v=20261026-offers-large-image-v1"></script>
 </body>
