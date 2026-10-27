@@ -545,3 +545,123 @@ body[data-page="customer-home"] .poac-loyalty-bottom a { color:#fffaf5; text-dec
 /* Keep home category cards just a little more compact without changing their layout. */
 body[data-page="customer-home"] .home-menu-category { flex-basis:clamp(90px,26vw,110px) !important; }
 body[data-page="customer-home"] .home-menu-category-name { font-size:10.5px; }
+
+/* POAC customer-home responsive refinement v4 — homepage only. */
+body[data-page="customer-home"] {
+  background: #fff3ec;
+  color: #493b35;
+}
+body[data-page="customer-home"] .customer-home-page {
+  box-sizing: border-box;
+  width: min(100%, 980px) !important;
+  max-width: 980px !important;
+  margin-inline: auto;
+  gap: clamp(14px, 2.4vw, 22px);
+  padding: clamp(14px, 2.5vw, 24px) clamp(12px, 2.8vw, 26px) calc(92px + env(safe-area-inset-bottom));
+}
+body[data-page="customer-home"] .customer-home-hero,
+body[data-page="customer-home"] .home-categories-card,
+body[data-page="customer-home"] .home-offers-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+body[data-page="customer-home"] .customer-home-hero {
+  padding: clamp(20px, 3.5vw, 34px);
+  border-color: rgba(190, 91, 116, .23);
+  background: linear-gradient(125deg, #fffaf6 0%, #fff0ed 58%, #f5e4d2 100%);
+  box-shadow: 0 10px 28px rgba(139, 77, 76, .08);
+}
+body[data-page="customer-home"] .customer-home-hero h1 span { color: #b84e69; }
+body[data-page="customer-home"] .customer-home-hero__eyebrow { color: #98485e; }
+body[data-page="customer-home"] .customer-home-hero__description { color: #71635d; }
+body[data-page="customer-home"] .customer-home-hero__loyalty {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  background: linear-gradient(135deg, #747b4d 0%, #5b653f 58%, #485438 100%);
+  box-shadow: 0 9px 22px rgba(74, 83, 51, .16);
+}
+body[data-page="customer-home"] .home-categories-card,
+body[data-page="customer-home"] .home-offers-card {
+  border-color: rgba(190, 91, 116, .2);
+  background: #fffbf7;
+  box-shadow: 0 7px 22px rgba(139, 77, 76, .06);
+}
+body[data-page="customer-home"] .home-categories-card { padding: clamp(13px, 2.3vw, 22px); }
+body[data-page="customer-home"] .home-menu-category {
+  background: #fffdfa;
+  border-color: #e8cfc8;
+  box-shadow: 0 4px 13px rgba(112, 74, 58, .07);
+}
+body[data-page="customer-home"] .home-menu-category-name {
+  color: #5d6541;
+  font-weight: 800;
+}
+body[data-page="customer-home"] .home-menu-category-media { background: #f5e5dd; }
+body[data-page="customer-home"] .home-offers-content { padding: clamp(13px, 2.4vw, 22px); }
+body[data-page="customer-home"] .home-offers-head h3 { color: #626a43; }
+body[data-page="customer-home"] .home-offer-count {
+  background: #fae8e8;
+  border-color: #e9c9cb;
+  color: #a4435d;
+}
+body[data-page="customer-home"] .home-offer-stage { background: #f8e9e3; }
+body[data-page="customer-home"] .home-offer-item { background: #fffdfa; border-color: #e8cfc8; }
+body[data-page="customer-home"] .home-offer-image-wrap,
+body[data-page="customer-home"] .home-offer-no-image {
+  max-width: 100%;
+}
+body[data-page="customer-home"] .customer-mobile-nav {
+  box-sizing: border-box;
+  padding-bottom: calc(7px + env(safe-area-inset-bottom));
+}
+@media (max-width: 680px) {
+  body[data-page="customer-home"] .customer-home-page {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 13px 12px calc(90px + env(safe-area-inset-bottom));
+    gap: 15px;
+  }
+  body[data-page="customer-home"] .customer-home-hero {
+    padding: 21px 17px 18px;
+    gap: 12px;
+  }
+  body[data-page="customer-home"] .customer-home-hero h1 {
+    font-size: clamp(30px, 8vw, 39px);
+    letter-spacing: -.6px;
+  }
+  body[data-page="customer-home"] .customer-home-hero__description {
+    max-width: 100%;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  body[data-page="customer-home"] .customer-home-hero__loyalty {
+    padding: 15px 15px 13px;
+    border-radius: 17px;
+  }
+  body[data-page="customer-home"] .home-categories-card { padding: 13px 12px; }
+  body[data-page="customer-home"] .home-menu-category {
+    flex-basis: clamp(104px, 29vw, 128px) !important;
+    border-radius: 14px;
+  }
+  body[data-page="customer-home"] .home-menu-category-name {
+    min-height: 40px;
+    padding: 7px 5px;
+    font-size: 10.5px;
+    line-height: 1.25;
+  }
+  body[data-page="customer-home"] .home-offers-content { padding: 13px; }
+  body[data-page="customer-home"] .home-offer-image-wrap,
+  body[data-page="customer-home"] .home-offer-no-image {
+    height: clamp(170px, 53vw, 240px);
+    min-height: 170px;
+    max-height: 240px;
+  }
+}
+@media (max-width: 370px) {
+  body[data-page="customer-home"] .customer-home-page { padding-inline: 9px; }
+  body[data-page="customer-home"] .home-menu-category { flex-basis: 104px !important; }
+  body[data-page="customer-home"] .poac-loyalty-bottom { gap: 6px; font-size: 9px; }
+  body[data-page="customer-home"] .poac-loyalty-bottom a { font-size: 10px; }
+}
