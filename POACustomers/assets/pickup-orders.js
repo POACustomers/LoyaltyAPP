@@ -214,6 +214,280 @@
     printWindow.document.close();
   }
 
+  // Download the approved Dina's Corner receipt as a PNG when a Staff member marks an order picked up.
+  const receiptAssetCache = new Map();
+  const RECEIPT_PAYMENT_NUMBER = '01282471226';
+
+  async function receiptAssetDataUrl(fileName) {
+    if (receiptAssetCache.has(fileName)) return receiptAssetCache.get(fileName);
+    const task = (async () => {
+      const url = new URL('../assets/' + fileName, window.location.href).href;
+      const response = await fetch(url, { cache: 'force-cache' });
+      if (!response.ok) throw new Error('تعذر تحميل أحد عناصر تصميم الفاتورة: ' + fileName);
+      const blob = await response.blob();
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('تعذر تجهيز صورة من عناصر تصميم الفاتورة.'));
+        reader.readAsDataURL(blob);
+      });
+    })();
+    receiptAssetCache.set(fileName, task);
+    try { return await task; } catch (error) { receiptAssetCache.delete(fileName); throw error; }
+  }
+
+  async function receiptMenuQrDataUrl() {
+    if (!window.QRCode) throw new Error('مكتبة QR غير جاهزة. حدّث صفحة طلبات الفرع ثم جرّب مرة أخرى.');
+    const holder = document.createElement('div');
+    holder.setAttribute('aria-hidden', 'true');
+    holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:320px;height:320px;overflow:hidden;pointer-events:none;';
+    document.body.appendChild(holder);
+    try {
+      const menuUrl = new URL('../customer/customer-menu.html', window.location.href).href;
+      holder.replaceChildren();
+      new window.QRCode(holder, {
+        text: menuUrl,
+        width: 320,
+        height: 320,
+        colorDark: '#171717',
+        colorLight: '#ffffff',
+        correctLevel: window.QRCode.CorrectLevel.M
+      });
+      const canvas = holder.querySelector('canvas');
+      if (canvas && canvas.width) return canvas.toDataURL('image/png');
+      const image = holder.querySelector('img');
+      if (image) {
+        if (!image.complete) await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = () => reject(new Error('تعذر إنشاء QR للمنيو.'));
+        });
+        const canvasFromImage = document.createElement('canvas');
+        canvasFromImage.width = 320;
+        canvasFromImage.height = 320;
+        const ctx = canvasFromImage.getContext('2d');
+        if (!ctx) throw new Error('المتصفح لا يدعم تجهيز صورة الفاتورة.');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 320, 320);
+        ctx.drawImage(image, 0, 0, 320, 320);
+        return canvasFromImage.toDataURL('image/png');
+      }
+      throw new Error('لم يكتمل إنشاء QR للمنيو.');
+    } finally {
+      holder.remove();
+    }
+  }
+
+  function svgReceiptText(x, y, value, options = {}) {
+    const size = options.size || 24;
+    const color = options.color || '#62353d';
+    const anchor = options.anchor || 'start';
+    const weight = options.weight || 400;
+    const direction = options.direction || 'ltr';
+    const family = options.family || 'Tahoma, Arial, sans-serif';
+    const style = options.italic ? 'font-style:italic;' : '';
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" direction="${direction}" unicode-bidi="plaintext" font-family="${family}" font-size="${size}" font-weight="${weight}" fill="${color}" style="${style}">${esc(value)}</text>`;
+  }
+
+  function receiptMoney(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? 'EGP ' + number.toFixed(2) : 'To be confirmed';
+  }
+
+  async function buildOrderReceiptPngBlob(order, items) {
+    const [logo, floralTl, floralTr, floralBl, floralBr, qr] = await Promise.all([
+      receiptAssetDataUrl('dina-corner-logo.png'),
+      receiptAssetDataUrl('dina-floral-tl.png'),
+      receiptAssetDataUrl('dina-floral-tr.png'),
+      receiptAssetDataUrl('dina-floral-bl.png'),
+      receiptAssetDataUrl('dina-floral-br.png'),
+      receiptMenuQrDataUrl()
+    ]);
+    const rows = Array.isArray(items) ? items : [];
+    const width = 1024;
+    const tableY = 535;
+    const headerH = 72;
+    const rowH = 58;
+    const tableBottom = tableY + headerH + Math.max(rows.length, 1) * rowH;
+    const totalsY = tableBottom + 12;
+    const paymentY = totalsY + 145;
+    const notesY = paymentY + 250;
+    const footerY = notesY + 112;
+    const height = footerY + 190;
+    const orderNo = String(order.order_number || order.id || '—');
+    const createdAt = order.created_at || (order.createdAtMs ? new Date(order.createdAtMs).toISOString() : null);
+    const dateLabel = createdAt && !Number.isNaN(Date.parse(createdAt))
+      ? new Date(createdAt).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      : '—';
+    const status = order.status === 'completed'
+      ? (order.fulfillment_type === 'delivery' ? 'Delivered · تم التسليم' : 'Picked up · تم الاستلام')
+      : statusLabel(order.status, order.fulfillment_type || 'pickup');
+    const branchName = [order.branch_name || 'Dina’s Corner', order.branch_city].filter(Boolean).join(' — ');
+    const branchAddress = String(order.branch_address || '').trim();
+    const lineRows = rows.map((item, index) => {
+      const y = tableY + headerH + index * rowH;
+      const name = String(item.item_name || item.name || 'صنف');
+      const qty = Math.max(0, Number(item.quantity || 0));
+      const priceValue = item.unit_price == null ? item.price : item.unit_price;
+      const price = priceValue == null || priceValue === '' ? null : Number(priceValue);
+      const lineValue = item.line_total == null ? (price == null ? null : price * qty) : Number(item.line_total);
+      const fill = index % 2 ? '#fffaf7' : '#fffdf9';
+      return `<rect x="45" y="${y}" width="934" height="${rowH}" fill="${fill}"/><path d="M45 ${y + rowH}H979" stroke="#efb3bd" stroke-width="1.5"/>` +
+        svgReceiptText(380, y + 37, name, { size: 22, color: '#231a1a', anchor: 'end', direction: 'rtl' }) +
+        svgReceiptText(466, y + 37, String(qty), { size: 22, color: '#64363c', anchor: 'middle' }) +
+        svgReceiptText(628, y + 37, price == null ? 'To confirm' : receiptMoney(price), { size: 20, color: '#64363c', anchor: 'middle' }) +
+        svgReceiptText(955, y + 37, lineValue == null ? 'To confirm' : receiptMoney(lineValue), { size: 20, color: '#64363c', anchor: 'end' });
+    }).join('');
+    const calculatedSubtotal = rows.reduce((sum, item) => {
+      const line = item.line_total != null ? Number(item.line_total) : (item.unit_price != null ? Number(item.unit_price) * Number(item.quantity || 0) : 0);
+      return sum + (Number.isFinite(line) ? line : 0);
+    }, 0);
+    const subtotalValue = order.subtotal != null ? Number(order.subtotal) : calculatedSubtotal;
+    const totalValue = order.total_amount != null ? Number(order.total_amount) : subtotalValue + Number(order.delivery_fee || 0);
+    const notesText = String(order.notes || '').trim();
+    const noteShort = notesText.length > 100 ? notesText.slice(0, 97) + '…' : (notesText || '—');
+    const cancelReason = String(order.cancellation_reason || '').trim();
+    const branchAddrLine1 = branchAddress.length > 35 ? branchAddress.slice(0, 32) + '…' : (branchAddress || '—');
+    const branchAddrLine2 = branchAddress.length > 35 ? branchAddress.slice(32, 66) : '';
+    const rowCount = Math.max(rows.length, 1);
+    const subtotalY = totalsY + 40;
+    const totalY = totalsY + 93;
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <defs>
+        <linearGradient id="paper" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff8f3"/><stop offset="1" stop-color="#fffaf5"/></linearGradient>
+        <linearGradient id="pink" x1="0" x2="1"><stop offset="0" stop-color="#ffe9eb"/><stop offset="1" stop-color="#f9d7de"/></linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#paper)"/>
+      <rect x="14" y="14" width="996" height="${height - 28}" rx="34" fill="none" stroke="#eaa0ad" stroke-width="2.5"/>
+      <image href="${floralTl}" x="14" y="14" width="180" height="185" preserveAspectRatio="xMinYMin meet"/>
+      <image href="${floralTr}" x="830" y="14" width="180" height="185" preserveAspectRatio="xMaxYMin meet"/>
+      <image href="${logo}" x="42" y="48" width="360" height="225" preserveAspectRatio="xMidYMid meet"/>
+      ${svgReceiptText(960, 90, 'Pickup Order', { size: 54, color: '#b45159', anchor: 'end', family: 'Georgia, Times New Roman, serif', weight: 600 })}
+      ${svgReceiptText(960, 145, 'طلب استلام من الفرع', { size: 34, color: '#a94753', anchor: 'end', direction: 'rtl', weight: 700 })}
+      <rect x="535" y="175" width="425" height="54" rx="26" fill="url(#pink)" stroke="#f3a7b5" stroke-width="1.5"/>
+      ${svgReceiptText(747, 210, 'Order Receipt · إيصال الطلب', { size: 25, color: '#a83f54', anchor: 'middle', weight: 700 })}
+
+      <rect x="45" y="294" width="515" height="215" rx="19" fill="#fff0ef" stroke="#f5ccd0" stroke-width="1.5"/>
+      <rect x="588" y="294" width="391" height="215" rx="19" fill="#fff0ef" stroke="#f5ccd0" stroke-width="1.5"/>
+      ${svgReceiptText(70, 337, 'Order Number', { size: 21, color: '#a94753' })}
+      ${svgReceiptText(70, 363, 'رقم الطلب', { size: 17, color: '#6a343b', direction: 'rtl' })}
+      ${svgReceiptText(535, 347, orderNo, { size: 24, color: '#af3452', anchor: 'end', weight: 800 })}
+      ${svgReceiptText(70, 400, 'Date & Time', { size: 21, color: '#a94753' })}
+      ${svgReceiptText(70, 425, 'التاريخ والوقت', { size: 17, color: '#6a343b', direction: 'rtl' })}
+      ${svgReceiptText(535, 410, dateLabel, { size: 20, color: '#542d32', anchor: 'end' })}
+      ${svgReceiptText(70, 463, 'Status · حالة الطلب', { size: 20, color: '#a94753' })}
+      <rect x="310" y="441" width="230" height="48" rx="18" fill="${order.status === 'cancelled' ? '#fde0e5' : '#edf1db'}" stroke="${order.status === 'cancelled' ? '#efb2bf' : '#dbe3c6'}"/>
+      ${svgReceiptText(425, 471, order.status === 'cancelled' ? 'Cancelled · ملغي' : status, { size: 18, color: order.status === 'cancelled' ? '#9d2945' : '#4c5931', anchor: 'middle', weight: 700 })}
+      <circle cx="650" cy="333" r="26" fill="#f5d5dc"/>
+      ${svgReceiptText(650, 342, '▣', { size: 28, color: '#ad4b5b', anchor: 'middle', weight: 700 })}
+      ${svgReceiptText(690, 330, 'Branch · الفرع', { size: 20, color: '#a94753', weight: 700 })}
+      ${svgReceiptText(635, 365, branchName, { size: 21, color: '#312526', anchor: 'start', direction: 'ltr', weight: 700 })}
+      ${svgReceiptText(635, 397, 'Address · العنوان', { size: 18, color: '#a94753', weight: 700 })}
+      ${svgReceiptText(960, 425, branchAddrLine1, { size: 18, color: '#312526', anchor: 'end', direction: 'rtl' })}
+      ${branchAddrLine2 ? svgReceiptText(960, 450, branchAddrLine2, { size: 18, color: '#312526', anchor: 'end', direction: 'rtl' }) : ''}
+
+      <rect x="45" y="${tableY}" width="934" height="${headerH + rowCount * rowH}" rx="16" fill="#fffdf9" stroke="#ef9eac" stroke-width="1.7"/>
+      <path d="M45 ${tableY + headerH}H979" stroke="#ef9eac" stroke-width="1.5"/>
+      <path d="M405 ${tableY}V${tableBottom} M522 ${tableY}V${tableBottom} M728 ${tableY}V${tableBottom}" stroke="#efb3bd" stroke-width="1.3"/>
+      <rect x="45" y="${tableY}" width="934" height="${headerH}" rx="16" fill="url(#pink)"/>
+      <rect x="45" y="${tableY + headerH - 14}" width="934" height="14" fill="url(#pink)"/>
+      ${svgReceiptText(72, tableY + 28, 'Item', { size: 22, color: '#a42f4d', weight: 800 })}
+      ${svgReceiptText(72, tableY + 53, 'الصنف', { size: 17, color: '#a42f4d', direction: 'rtl' })}
+      ${svgReceiptText(465, tableY + 31, 'Qty', { size: 22, color: '#a42f4d', anchor: 'middle', weight: 800 })}
+      ${svgReceiptText(465, tableY + 54, 'الكمية', { size: 17, color: '#a42f4d', anchor: 'middle', direction: 'rtl' })}
+      ${svgReceiptText(625, tableY + 31, 'Unit Price', { size: 22, color: '#a42f4d', anchor: 'middle', weight: 800 })}
+      ${svgReceiptText(625, tableY + 54, 'سعر الوحدة', { size: 17, color: '#a42f4d', anchor: 'middle', direction: 'rtl' })}
+      ${svgReceiptText(955, tableY + 31, 'Total', { size: 22, color: '#a42f4d', anchor: 'end', weight: 800 })}
+      ${svgReceiptText(955, tableY + 54, 'الإجمالي', { size: 17, color: '#a42f4d', anchor: 'end', direction: 'rtl' })}
+      ${lineRows}
+
+      <rect x="496" y="${totalsY}" width="483" height="132" rx="16" fill="#fff0ef" stroke="#f5ccd0" stroke-width="1.4"/>
+      <path d="M496 ${totalsY + 67}H979" stroke="#f2c2c8" stroke-width="1.5"/>
+      ${svgReceiptText(520, subtotalY, 'Items subtotal', { size: 20, color: '#6a343b' })}
+      ${svgReceiptText(520, subtotalY + 24, 'إجمالي الأصناف', { size: 17, color: '#6a343b', direction: 'rtl' })}
+      ${svgReceiptText(955, subtotalY + 7, receiptMoney(subtotalValue), { size: 23, color: '#542d32', anchor: 'end' })}
+      ${svgReceiptText(520, totalY, 'Order total', { size: 22, color: '#b12f51', weight: 800 })}
+      ${svgReceiptText(520, totalY + 25, 'إجمالي الطلب', { size: 17, color: '#b12f51', direction: 'rtl', weight: 700 })}
+      ${svgReceiptText(955, totalY + 5, receiptMoney(totalValue), { size: 29, color: '#b12f51', anchor: 'end', weight: 800 })}
+
+      <rect x="43" y="${paymentY}" width="936" height="236" rx="22" fill="#fff9f5" stroke="#f3c2ca" stroke-width="1.6"/>
+      <rect x="66" y="${paymentY + 10}" width="212" height="216" rx="14" fill="#fffdf9" stroke="#f2b2be" stroke-width="1.8"/>
+      <image href="${qr}" x="83" y="${paymentY + 18}" width="178" height="178" preserveAspectRatio="xMidYMid meet"/>
+      <rect x="77" y="${paymentY + 197}" width="190" height="23" rx="8" fill="#bd5063"/>
+      ${svgReceiptText(172, paymentY + 214, 'Menu · قائمة المنيو', { size: 17, color: '#ffffff', anchor: 'middle', weight: 700 })}
+      <path d="M310 ${paymentY + 28}V${paymentY + 127} M648 ${paymentY + 28}V${paymentY + 127}" stroke="#efb3bd" stroke-width="1.4"/>
+      ${svgReceiptText(477, paymentY + 65, 'INSTA▶PAY', { size: 31, color: '#4b177e', anchor: 'middle', weight: 900, family: 'Arial, sans-serif' })}
+      ${svgReceiptText(477, paymentY + 99, 'InstaPay', { size: 21, color: '#a72f51', anchor: 'middle', weight: 700 })}
+      <circle cx="725" cy="${paymentY + 54}" r="26" fill="#e11f2f"/>
+      <path d="M716 ${paymentY + 37} C700 ${paymentY + 50}, 719 ${paymentY + 71}, 737 ${paymentY + 62} C732 ${paymentY + 81}, 705 ${paymentY + 70}, 704 ${paymentY + 53} C705 ${paymentY + 44}, 709 ${paymentY + 39}, 716 ${paymentY + 37} Z" fill="#ffffff"/>
+      ${svgReceiptText(775, paymentY + 62, 'Vodafone Cash', { size: 20, color: '#e11f2f', anchor: 'middle', weight: 800 })}
+      ${svgReceiptText(775, paymentY + 91, 'فودافون كاش', { size: 18, color: '#e11f2f', anchor: 'middle', direction: 'rtl', weight: 700 })}
+      <rect x="315" y="${paymentY + 138}" width="635" height="61" rx="18" fill="url(#pink)" stroke="#f2bbc5" stroke-width="1.2"/>
+      <circle cx="356" cy="${paymentY + 168}" r="21" fill="#f0c8d1"/>
+      ${svgReceiptText(356, paymentY + 177, '☎', { size: 28, color: '#ad4b5b', anchor: 'middle', weight: 700 })}
+      ${svgReceiptText(900, paymentY + 178, RECEIPT_PAYMENT_NUMBER, { size: 34, color: '#b12f51', anchor: 'end', weight: 900 })}
+
+      <rect x="45" y="${notesY}" width="934" height="94" rx="19" fill="#fffdf9" stroke="#f5ccd0" stroke-width="1.5"/>
+      ${svgReceiptText(80, notesY + 37, '▤', { size: 28, color: '#b45163', weight: 700 })}
+      ${svgReceiptText(130, notesY + 32, 'Order Note · ملاحظات الطلب', { size: 21, color: '#b12f51', weight: 800 })}
+      ${svgReceiptText(130, notesY + 66, noteShort, { size: 18, color: '#56343a', direction: 'rtl' })}
+      ${cancelReason ? svgReceiptText(950, notesY + 84, 'سبب الإلغاء: ' + cancelReason.slice(0, 65), { size: 16, color: '#a42f4d', anchor: 'end', direction: 'rtl' }) : ''}
+
+      ${svgReceiptText(512, footerY + 54, 'Thank you!', { size: 38, color: '#b45159', anchor: 'middle', family: 'Georgia, Times New Roman, serif', weight: 700, italic: true })}
+      ${svgReceiptText(512, footerY + 87, 'For choosing Dina’s Corner', { size: 22, color: '#8f3b49', anchor: 'middle', family: 'Georgia, Times New Roman, serif' })}
+      <path d="M330 ${footerY + 112} C370 ${footerY + 135}, 420 ${footerY + 135}, 456 ${footerY + 117} M568 ${footerY + 117} C604 ${footerY + 135}, 654 ${footerY + 135}, 694 ${footerY + 112}" fill="none" stroke="#c59c56" stroke-width="2"/>
+      ${svgReceiptText(512, footerY + 136, '♥', { size: 26, color: '#c65f78', anchor: 'middle' })}
+      <image href="${floralBl}" x="14" y="${height - 205}" width="190" height="190" preserveAspectRatio="xMinYMax meet"/>
+      <image href="${floralBr}" x="820" y="${height - 205}" width="190" height="190" preserveAspectRatio="xMaxYMax meet"/>
+    </svg>`;
+
+    const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    try {
+      const image = new Image();
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = () => reject(new Error('تعذر تحويل تصميم الفاتورة إلى صورة.'));
+        image.src = svgUrl;
+      });
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('المتصفح لا يدعم حفظ صورة الفاتورة.');
+      context.fillStyle = '#fff8f3'; context.fillRect(0, 0, canvas.width, canvas.height);
+      context.setTransform(scale, 0, 0, scale, 0, 0);
+      context.drawImage(image, 0, 0, width, height);
+      return await new Promise((resolve, reject) => canvas.toBlob(blob => {
+        if (blob) resolve(blob); else reject(new Error('تعذر إنشاء ملف PNG للفاتورة.'));
+      }, 'image/png'));
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
+  }
+
+  async function downloadOrderReceiptPng(order, items) {
+    const blob = await buildOrderReceiptPngBlob(order, items);
+    const url = URL.createObjectURL(blob);
+    const safeOrderNumber = String(order.order_number || order.id || 'order').replace(/[^a-zA-Z0-9_-]+/g, '-').slice(0, 60);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Dinas-Corner-Receipt-' + safeOrderNumber + '.png';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 10000);
+    return true;
+  }
+
+  async function downloadOrderReceiptById(order, items) {
+    const orderSnapshot = { ...order };
+    if (!orderSnapshot.created_at && orderSnapshot.createdAtMs) orderSnapshot.created_at = new Date(orderSnapshot.createdAtMs).toISOString();
+    await downloadOrderReceiptPng(orderSnapshot, items);
+    toast('تم تنزيل صورة الفاتورة PNG. راجع مجلد التنزيلات على الكمبيوتر.');
+  }
+
   // Customer-menu product cards call this function to put a database-backed item in the basket.
   window.POAAddItemToCart = function (item) {
     if (document.body.dataset.page !== 'customer-menu') return;
@@ -1026,7 +1300,7 @@
     });
   }
 
-  async function updateManagedOrder(id, status, type) {
+  async function updateManagedOrder(id, status, type, receiptOrder = null, receiptItems = []) {
     let rpcName = 'update_pickup_order_status';
     let rpcArgs = { p_order_id: id, p_new_status: status };
     if (status === 'cancelled') {
@@ -1045,6 +1319,13 @@
       const { error } = await sb.rpc(rpcName, rpcArgs);
       if (error) throw error;
       toast(status === 'cancelled' ? 'Order cancelled and reason saved.' : 'Order updated.');
+      if (status === 'completed' && receiptOrder) {
+        try {
+          await downloadOrderReceiptById({ ...receiptOrder, status: 'completed', updated_at: new Date().toISOString() }, receiptItems);
+        } catch (receiptError) {
+          showMessage('managedOrdersMessage', 'تم إتمام الأوردر بنجاح، لكن تعذر تنزيل صورة الفاتورة تلقائيًا. استخدم زر «تنزيل صورة الفاتورة» بجوار الأوردر لإعادة المحاولة. السبب: ' + (receiptError?.message || 'خطأ غير معروف'), true);
+        }
+      }
       await loadManagedOrders();
       await syncLocalOrderArchive(false);
     } catch (error) {
@@ -1140,15 +1421,31 @@
         deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + cancellation + localBadge + '</div>' +
         '<div class="pickup-order-items">' + (itemHtml || '<small>No saved item details are available for this order.</small>') + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + esc(total) + '</strong></div></div>' +
         '<div class="pickup-next-actions"><button class="btn soft" type="button" data-print-unified-order="' + esc(order.id) + '">عرض / طباعة الإيصال</button>' +
+        (order.status === 'completed' ? '<button class="btn soft" type="button" data-download-order-receipt="' + esc(order.id) + '">تنزيل صورة الفاتورة</button>' : '') +
         (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
         (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '') + '</div></article>';
     }).join('');
 
-    box.querySelectorAll('[data-order-status]').forEach(button => button.addEventListener('click', () => updateManagedOrder(button.dataset.orderStatus, button.dataset.nextStatus, button.dataset.orderType)));
+    box.querySelectorAll('[data-order-status]').forEach(button => button.addEventListener('click', () => {
+      const selectedOrder = orders.find(row => String(row.id) === String(button.dataset.orderStatus));
+      const selectedItems = selectedOrder ? (grouped[selectedOrder.id] || selectedOrder.items || []) : [];
+      return updateManagedOrder(button.dataset.orderStatus, button.dataset.nextStatus, button.dataset.orderType, selectedOrder, selectedItems);
+    }));
     box.querySelectorAll('[data-print-unified-order]').forEach(button => {
       button.addEventListener('click', () => {
         const order = orders.find(row => String(row.id) === String(button.dataset.printUnifiedOrder));
         if (order) openPrintableOrder(order, grouped[order.id] || order.items || [], liveIds.has(String(order.id)) ? 'live' : 'local');
+      });
+    });
+    box.querySelectorAll('[data-download-order-receipt]').forEach(button => {
+      button.addEventListener('click', async () => {
+        const order = orders.find(row => String(row.id) === String(button.dataset.downloadOrderReceipt));
+        if (!order) return;
+        const originalText = button.textContent;
+        button.disabled = true; button.textContent = 'جارٍ تجهيز الصورة…';
+        try { await downloadOrderReceiptById(order, grouped[order.id] || order.items || []); }
+        catch (error) { showMessage('managedOrdersMessage', 'تعذر تنزيل صورة الفاتورة: ' + (error?.message || 'خطأ غير معروف'), true); }
+        finally { button.disabled = false; button.textContent = originalText; }
       });
     });
   }
