@@ -5,6 +5,10 @@
   // Do not accept discounted offer orders until the Supabase order RPC validates and stores the promotion server-side.
   const OFFER_DISCOUNT_BACKEND_READY = window.POA_OFFER_DISCOUNT_BACKEND_READY === true;
   const BRANCH_KEY = 'poa_customer_order_branch_v1';
+  const LOCAL_ARCHIVE_DB_NAME = 'dina_corner_local_order_archive_v1';
+  const LOCAL_ARCHIVE_STORE = 'orders';
+  const LOCAL_ARCHIVE_TTL_MS = 24 * 60 * 60 * 1000;
+  const LOCAL_ARCHIVE_SYNC_MS = 15 * 1000;
   const page = document.body.dataset.page || '';
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -15,6 +19,11 @@
   let activeBranches = [];
   let resolvedDeliveryRoute = null;
   let cancelDialogResolve = null;
+  let localArchiveDbPromise = null;
+  let localArchiveSyncRunning = false;
+  let localArchiveLastSyncAt = 0;
+  let localArchivePollTimer = null;
+  let localArchiveCleanupTimer = null;
 
   function readCart() {
     try {
@@ -44,7 +53,7 @@
     if (typeof window.toast === 'function') window.toast(message, good !== false);
     else if (message) console[good === false ? 'error' : 'log'](message);
   }
-  function fulfillmentType() { return $('orderFulfillmentType')?.value === 'delivery' ? 'delivery' : 'pickup'; }
+  function fulfillmentType() { return 'pickup'; }
   function statusLabel(status, type) {
     if (status === 'ready_for_pickup') return 'Ready for pickup';
     if (status === 'out_for_delivery') return 'Out for delivery';
@@ -90,19 +99,6 @@
       (order.delivery_distance_meters != null ? '<br><strong>Road distance:</strong> ' + esc((Number(order.delivery_distance_meters) / 1000).toFixed(2)) + ' km' : '') +
       (order.delivery_fee != null ? '<br><strong>Delivery fee:</strong> ' + esc(money(order.delivery_fee)) : '') +
       (map ? '<br><a class="delivery-location-link" href="' + esc(map) + '" target="_blank" rel="noopener noreferrer">↗ Open delivery location in Google Maps</a>' : '<br><small>Map location not available.</small>') + '</div>';
-  }
-
-  // Customer location is stored as a clearly marked Google Maps link in the order notes,
-  // so it works with the existing order RPC and does not require a database migration.
-  function orderNotesHtml(notes, label) {
-    let text = String(notes || '');
-    const match = text.match(/Customer location:\s*(https:\/\/www\.google\.com\/maps\?q=[^\s|]+)/i);
-    let map = match ? validMapUrl(match[1]) : null;
-    if (match) text = text.replace(match[0], '').replace(/\s*\|\s*$/, '').trim();
-    text = text.replace(/\s*\|\s*/g, ' · ').trim();
-    let html = text ? '<br>' + esc(label || 'Note') + ': ' + esc(text) : '';
-    if (map) html += '<br><strong>Customer location:</strong> <a class="delivery-location-link" href="' + esc(map) + '" target="_blank" rel="noopener noreferrer">↗ Open customer location in Google Maps</a>';
-    return html;
   }
 
   // Customer-menu product cards call this function to put a database-backed item in the basket.
@@ -241,7 +237,7 @@
     let html = '<div class="pickup-summary-row"><span>Items</span><strong>' + quantityCount(cart) + '</strong></div>' +
       (hasOfferDiscount && calc.known ? '<div class="pickup-summary-row"><span>Product subtotal before discounts</span><strong><del>' + esc(money(baseSubtotal)) + '</del></strong></div><div class="pickup-summary-row"><span>Product discount</span><strong style="color:#a13a52">−' + esc(money(productSavings)) + '</strong></div>' : '') +
       '<div class="pickup-summary-row"><span>Items subtotal' + (hasOfferDiscount ? ' after discount' : '') + '</span><strong>' + subtotalText + '</strong></div>' +
-      (hasOfferDiscount ? '<div class="pickup-note">Discount applies to products only. The delivery fee is calculated separately and is not discounted.</div>' : '');
+      (hasOfferDiscount ? '<div class="pickup-note">Discount applies to products only.</div>' : '');
     if (hasOfferDiscount && !OFFER_DISCOUNT_BACKEND_READY) {
       html += '<div class="pickup-offer-checkout-warning">Offer prices are shown in the basket, but server-side offer validation is not enabled. Sending this order is paused to prevent an incorrect charge.</div>';
     }
@@ -315,47 +311,6 @@
       if (button) { button.disabled = false; button.textContent = '⌖ USE MY CURRENT LOCATION'; }
     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
   }
-  function setCustomerShareLocationStatus(message, kind) {
-    const el = $('customerShareLocationStatus');
-    if (!el) return;
-    el.textContent = message;
-    el.classList.toggle('success', kind === 'success');
-    el.classList.toggle('error', kind === 'error');
-  }
-
-  function shareCustomerLocation() {
-    const button = $('customerShareLocationBtn');
-    if (!navigator.geolocation) {
-      setCustomerShareLocationStatus('This browser cannot share GPS location. You can still place the order without it.', 'error');
-      return;
-    }
-    if (button) { button.disabled = true; button.textContent = 'GETTING LOCATION…'; }
-    setCustomerShareLocationStatus('Waiting for permission to access your location…');
-    navigator.geolocation.getCurrentPosition(position => {
-      const latitude = Number(position.coords.latitude);
-      const longitude = Number(position.coords.longitude);
-      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-        setCustomerShareLocationStatus('Could not read valid coordinates. Please try again.', 'error');
-        if (button) { button.disabled = false; button.textContent = '⌖ SEND MY LOCATION'; }
-        return;
-      }
-      const mapUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude);
-      $('customerShareLatitude').value = String(latitude);
-      $('customerShareLongitude').value = String(longitude);
-      $('customerShareMapUrl').value = mapUrl;
-      const link = $('customerShareLocationMapLink');
-      if (link) { link.href = mapUrl; link.hidden = false; }
-      setCustomerShareLocationStatus('Location selected. It will be sent to the branch with your order.', 'success');
-      if (button) { button.disabled = false; button.textContent = '⌖ UPDATE MY LOCATION'; }
-    }, error => {
-      const message = error && error.code === 1
-        ? 'Location permission was denied. Allow location access in your browser and try again.'
-        : 'Could not get your location. Check device location and try again. You can still place the order without it.';
-      setCustomerShareLocationStatus(message, 'error');
-      if (button) { button.disabled = false; button.textContent = '⌖ SEND MY LOCATION'; }
-    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
-  }
-
   async function loadSavedDeliveryAddresses() {
     const select = $('deliverySavedAddress');
     if (!select) return;
@@ -559,13 +514,7 @@
     button.dataset.sending = 'true'; button.disabled = true; button.textContent = 'SENDING ORDER…';
     showMessage('pickupCheckoutMessage', '', false);
     try {
-      const typedNote = $('pickupOrderNotes')?.value?.trim() || '';
-      const sharedMapUrl = validMapUrl($('customerShareMapUrl')?.value || '');
-      const noteParts = [];
-      if (delivery.instructions) noteParts.push('Delivery instructions: ' + delivery.instructions);
-      if (typedNote) noteParts.push('Order note: ' + typedNote.slice(0, sharedMapUrl ? 350 : 500));
-      if (sharedMapUrl) noteParts.push('Customer location: ' + sharedMapUrl);
-      const notes = noteParts.join(' | ').slice(0, 500) || null;
+      const notes = [delivery.instructions ? 'Delivery instructions: ' + delivery.instructions : '', $('pickupOrderNotes')?.value?.trim() ? 'Order note: ' + $('pickupOrderNotes').value.trim() : ''].filter(Boolean).join(' | ').slice(0, 500) || null;
       const orderItems = cart.map(row => ({ item_id: row.id, quantity: Number(row.quantity) }));
       const rpc = delivery.type === 'delivery'
         ? await sb.functions.invoke('delivery-routing', {
@@ -594,10 +543,6 @@
       if (!result || !result.order_number) throw new Error('The order system did not return an order number. Refresh your order history before trying again.');
       localStorage.removeItem(CART_KEY);
       if ($('pickupOrderNotes')) $('pickupOrderNotes').value = '';
-      ['customerShareLatitude', 'customerShareLongitude', 'customerShareMapUrl'].forEach(id => { if ($(id)) $(id).value = ''; });
-      const sharedLocationLink = $('customerShareLocationMapLink');
-      if (sharedLocationLink) { sharedLocationLink.hidden = true; sharedLocationLink.removeAttribute('href'); }
-      setCustomerShareLocationStatus('Location has not been shared.');
       const fulfillment = result.fulfillment_type === 'delivery' ? 'delivery' : 'pickup';
       renderCart();
       showOrderSuccess(result.order_number, fulfillment, result);
@@ -651,12 +596,254 @@
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>Branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + '<br>' + esc(statusHint(order.status, type)) +
-        deliveryDetailsHtml(order, false) + orderNotesHtml(order.notes, 'Note') +
-        (order.status === 'cancelled' && String(order.cancellation_reason || '').trim() ? '<div class="pickup-cancellation-reason" role="note" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48"><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) + '</div>' : '') + '</div>' +
+        deliveryDetailsHtml(order, false) + (order.notes ? '<br>Note: ' + esc(order.notes) : '') + (order.status === 'cancelled' && String(order.cancellation_reason || '').trim() ? '<div class="pickup-cancellation-reason" role="note" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48"><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) + '</div>' : '') + '</div>' +
         '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'To be confirmed by branch' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div>' +
         (canCancel ? '<button class="btn danger" type="button" data-cancel-order="' + esc(order.id) + '">Cancel order</button>' : '') + '</div></article>';
     }).join('');
     box.querySelectorAll('[data-cancel-order]').forEach(button => button.addEventListener('click', () => cancelCustomerOrder(button.dataset.cancelOrder)));
+  }
+
+  // Local computer archive: IndexedDB, with fixed expiry at order creation + 24 hours.
+  // Status updates (including cancelled) replace the snapshot but never extend expiry.
+  function openLocalArchiveDb() {
+    if (!('indexedDB' in window)) return Promise.reject(new Error('This browser does not support local order storage.'));
+    if (localArchiveDbPromise) return localArchiveDbPromise;
+    localArchiveDbPromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(LOCAL_ARCHIVE_DB_NAME, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(LOCAL_ARCHIVE_STORE)) {
+          const store = db.createObjectStore(LOCAL_ARCHIVE_STORE, { keyPath: 'id' });
+          store.createIndex('branchId', 'location_id', { unique: false });
+          store.createIndex('expiresAt', 'expiresAt', { unique: false });
+          store.createIndex('createdAtMs', 'createdAtMs', { unique: false });
+        }
+      };
+      request.onsuccess = () => {
+        const db = request.result;
+        // Ask the browser to retain this site's storage when supported. Users can still clear it manually.
+        try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (_) {}
+        resolve(db);
+      };
+      request.onerror = () => reject(request.error || new Error('Could not open the local order archive.'));
+      request.onblocked = () => reject(new Error('The local order archive is blocked by another open tab. Close other Dina’s Corner tabs and try again.'));
+    });
+    return localArchiveDbPromise;
+  }
+
+  async function localArchiveGetAll() {
+    const db = await openLocalArchiveDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(LOCAL_ARCHIVE_STORE, 'readonly');
+      const req = tx.objectStore(LOCAL_ARCHIVE_STORE).getAll();
+      req.onsuccess = () => resolve(Array.isArray(req.result) ? req.result : []);
+      req.onerror = () => reject(req.error || new Error('Could not read saved local orders.'));
+    });
+  }
+
+  async function localArchiveDeleteExpired() {
+    const rows = await localArchiveGetAll();
+    const expiredIds = rows.filter(row => Number(row.expiresAt) <= Date.now()).map(row => row.id);
+    if (!expiredIds.length) return 0;
+    const db = await openLocalArchiveDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(LOCAL_ARCHIVE_STORE, 'readwrite');
+      const store = tx.objectStore(LOCAL_ARCHIVE_STORE);
+      expiredIds.forEach(id => store.delete(id));
+      tx.oncomplete = () => resolve(expiredIds.length);
+      tx.onerror = () => reject(tx.error || new Error('Could not remove expired local orders.'));
+      tx.onabort = () => reject(tx.error || new Error('Removing expired local orders was interrupted.'));
+    });
+  }
+
+  async function localArchiveUpsertBatch(orders, groupedItems, branchId) {
+    if (!orders.length) return 0;
+    const now = Date.now();
+    const previousRows = await localArchiveGetAll();
+    const previousById = new Map(previousRows.map(row => [String(row.id), row]));
+    const db = await openLocalArchiveDb();
+    const records = [];
+    for (const order of orders) {
+      const id = String(order.id ?? '');
+      if (!id) continue;
+      const existing = previousById.get(id);
+      const parsedCreated = Date.parse(order.created_at || '');
+      const createdAtMs = Number.isFinite(parsedCreated) ? parsedCreated : (existing?.createdAtMs || now);
+      const expiresAt = existing && Number.isFinite(Number(existing.expiresAt))
+        ? Number(existing.expiresAt)
+        : createdAtMs + LOCAL_ARCHIVE_TTL_MS;
+      if (expiresAt <= now) continue;
+      const itemRows = groupedItems[order.id] || existing?.items || [];
+      records.push({
+        ...order,
+        id,
+        location_id: String(order.location_id || branchId),
+        items: itemRows.map(item => ({
+          item_name: String(item.item_name || 'Item'),
+          quantity: Number(item.quantity || 0),
+          unit_price: item.unit_price == null ? null : Number(item.unit_price),
+          line_total: item.line_total == null ? null : Number(item.line_total)
+        })),
+        createdAtMs,
+        firstSeenAt: existing?.firstSeenAt || now,
+        archivedAt: existing?.archivedAt || now,
+        expiresAt,
+        localArchiveVersion: 1
+      });
+    }
+    if (!records.length) return 0;
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(LOCAL_ARCHIVE_STORE, 'readwrite');
+      const store = tx.objectStore(LOCAL_ARCHIVE_STORE);
+      records.forEach(row => store.put(row));
+      tx.oncomplete = () => resolve(records.length);
+      tx.onerror = () => reject(tx.error || new Error('Could not save orders on this computer.'));
+      tx.onabort = () => reject(tx.error || new Error('Saving local orders was interrupted.'));
+    });
+  }
+
+  async function fetchOrdersForLocalArchive(column, sinceIso, branchId) {
+    const all = [];
+    let offset = 0;
+    const pageSize = 300;
+    const fields = 'id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at,updated_at';
+    while (true) {
+      const { data, error } = await sb.from('pickup_orders')
+        .select(fields)
+        .eq('location_id', branchId)
+        .gte(column, sinceIso)
+        .order(column, { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      const batch = Array.isArray(data) ? data : [];
+      all.push(...batch);
+      if (batch.length < pageSize) break;
+      offset += pageSize;
+    }
+    return all;
+  }
+
+  async function syncLocalOrderArchive(forceFullSync = false) {
+    if (!assignedStaffLocationId || localArchiveSyncRunning) return;
+    localArchiveSyncRunning = true;
+    setLocalArchiveStatus('جارٍ تحديث النسخة المحلية من الطلبات…', 'loading');
+    try {
+      await localArchiveDeleteExpired();
+      const now = Date.now();
+      const fullSync = forceFullSync || !localArchiveLastSyncAt;
+      const since = fullSync
+        ? new Date(now - LOCAL_ARCHIVE_TTL_MS).toISOString()
+        : new Date(Math.max(now - LOCAL_ARCHIVE_TTL_MS, localArchiveLastSyncAt - 2 * 60 * 1000)).toISOString();
+      const createdOrders = await fetchOrdersForLocalArchive('created_at', since, assignedStaffLocationId);
+      let changedOrders = [];
+      if (!fullSync) changedOrders = await fetchOrdersForLocalArchive('updated_at', since, assignedStaffLocationId);
+      const byId = new Map();
+      [...createdOrders, ...changedOrders].forEach(order => byId.set(String(order.id), order));
+      const orders = [...byId.values()];
+      const groupedItems = {};
+      const ids = orders.map(order => order.id);
+      for (let i = 0; i < ids.length; i += 100) {
+        const chunk = ids.slice(i, i + 100);
+        if (!chunk.length) continue;
+        const { data: items, error: itemsError } = await sb.from('pickup_order_items')
+          .select('order_id,item_name,quantity,unit_price,line_total')
+          .in('order_id', chunk)
+          .order('created_at', { ascending: true });
+        if (itemsError) throw itemsError;
+        (items || []).forEach(item => (groupedItems[item.order_id] ||= []).push(item));
+      }
+      await localArchiveUpsertBatch(orders, groupedItems, assignedStaffLocationId);
+      await localArchiveDeleteExpired();
+      localArchiveLastSyncAt = Date.now();
+      await renderLocalOrderArchive();
+      const visibleCount = (await localArchiveGetAll()).filter(row => String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > Date.now()).length;
+      setLocalArchiveStatus('النسخة المحلية محدثة على هذا الكمبيوتر. الطلبات المحفوظة: ' + visibleCount + '. مدة الاحتفاظ 24 ساعة من إنشاء كل أوردر.', 'success');
+    } catch (error) {
+      setLocalArchiveStatus('تعذر تحديث النسخة المحلية من Supabase. النسخ المحفوظة مسبقًا ما زالت على هذا الكمبيوتر. السبب: ' + (error?.message || 'خطأ غير معروف'), 'error');
+      try { await renderLocalOrderArchive(); } catch (_) {}
+    } finally {
+      localArchiveSyncRunning = false;
+    }
+  }
+
+  function setLocalArchiveStatus(message, kind) {
+    const el = $('localOrderArchiveStatus');
+    if (!el) return;
+    el.textContent = message;
+    el.dataset.kind = kind || '';
+  }
+
+  function localRemainingText(expiresAt) {
+    const ms = Math.max(0, Number(expiresAt) - Date.now());
+    const hours = Math.floor(ms / 3600000);
+    const minutes = Math.floor((ms % 3600000) / 60000);
+    return hours > 0 ? hours + ' ساعة و' + minutes + ' دقيقة متبقية' : minutes + ' دقيقة متبقية';
+  }
+
+  async function renderLocalOrderArchive() {
+    const box = $('localOrderArchiveList');
+    const countEl = $('localOrderArchiveCount');
+    if (!box) return;
+    const rows = await localArchiveGetAll();
+    const now = Date.now();
+    const branchRows = rows
+      .filter(row => String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > now)
+      .sort((a, b) => Number(b.createdAtMs) - Number(a.createdAtMs));
+    if (countEl) countEl.textContent = String(branchRows.length);
+    if (!branchRows.length) {
+      box.innerHTML = '<div class="pickup-empty">لا توجد نسخ محلية صالحة خلال آخر 24 ساعة. ستظهر هنا تلقائيًا الأوردرات الجديدة وحالاتها، بما فيها الأوردرات الملغية.</div>';
+      return;
+    }
+    box.innerHTML = branchRows.map(order => {
+      const type = order.fulfillment_type || 'pickup';
+      const itemsHtml = (order.items || []).map(item => '<div>• ' + esc(item.item_name) + ' × ' + Number(item.quantity || 0) + (item.unit_price == null ? ' — السعر يُؤكَّد من الفرع' : ' — ' + esc(money(item.line_total ?? (Number(item.unit_price) * Number(item.quantity || 0))))) + '</div>').join('');
+      const reason = order.status === 'cancelled' && String(order.cancellation_reason || '').trim()
+        ? '<div class="local-archive-reason"><strong>سبب الإلغاء:</strong> ' + esc(order.cancellation_reason) + '</div>' : '';
+      const total = order.total_amount != null ? money(order.total_amount) : order.subtotal == null ? 'يُؤكَّد من الفرع' : money(Number(order.subtotal) + Number(order.delivery_fee || 0));
+      return '<article class="pickup-order-card local-archive-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number || order.id) + '</div><small class="pickup-order-date">وقت الإنشاء: ' + esc(new Date(order.created_at || order.createdAtMs).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
+        '<div class="pickup-order-meta"><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>الفرع:</strong> ' + esc(order.branch_name || '—') + '</div>' +
+        '<div class="pickup-order-items">' + (itemsHtml || '<small>لا توجد تفاصيل أصناف محفوظة لهذا الأوردر.</small>') + '</div>' + reason +
+        '<div class="pickup-order-footer"><div class="pickup-order-total">إجمالي الأوردر<strong>' + esc(total) + '</strong></div><small class="local-archive-expiry">' + esc(localRemainingText(order.expiresAt)) + '</small></div></article>';
+    }).join('');
+  }
+
+  async function downloadLocalOrderArchive() {
+    try {
+      await localArchiveDeleteExpired();
+      const rows = (await localArchiveGetAll())
+        .filter(row => String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > Date.now())
+        .sort((a, b) => Number(b.createdAtMs) - Number(a.createdAtMs));
+      if (!rows.length) {
+        setLocalArchiveStatus('لا توجد نسخ صالحة للتنزيل حاليًا.', 'error');
+        return;
+      }
+      const payload = {
+        app: "Dina's Corner",
+        exportType: 'local-order-archive',
+        exportedAt: new Date().toISOString(),
+        retentionPolicy: 'The application-managed local archive expires 24 hours after each order is created. This downloaded JSON file is a separate manual export and will not be auto-deleted by the browser.',
+        branchId: assignedStaffLocationId,
+        orders: rows
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      link.href = url;
+      link.download = 'Dinas-Corner-Orders-24H-' + stamp + '.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+      setLocalArchiveStatus('تم تنزيل ملف JSON. تنبيه: ملف التنزيل مستقل عن النسخة المؤقتة ولا يحذفه المتصفح تلقائيًا بعد 24 ساعة.', 'success');
+    } catch (error) {
+      setLocalArchiveStatus('تعذر تنزيل النسخة المحلية: ' + (error?.message || 'خطأ غير معروف'), 'error');
+    }
+  }
+
+  function bindLocalArchiveControls() {
+    $('refreshLocalOrderArchiveBtn')?.addEventListener('click', () => syncLocalOrderArchive(true));
+    $('downloadLocalOrderArchiveBtn')?.addEventListener('click', downloadLocalOrderArchive);
   }
 
   function nextStep(order) {
@@ -749,21 +936,23 @@
       if (error) throw error;
       toast(status === 'cancelled' ? 'Order cancelled and reason saved.' : 'Order updated.');
       await loadManagedOrders();
+      await syncLocalOrderArchive(false);
     } catch (error) {
       showMessage('managedOrdersMessage', error?.message || 'Could not update the order.', true);
     }
   }
 
-  async function loadManagedOrders() {
+  async function loadManagedOrders(options = {}) {
+    const quiet = options.quiet === true;
     const box = $('managedPickupOrders');
     if (!box) return;
     if (!assignedStaffLocationId) {
       box.innerHTML = '<div class="pickup-error">This Staff account has no assigned branch. Ask the GM to assign this Staff account to a branch before handling orders.</div>';
       return;
     }
-    box.innerHTML = '<div class="pickup-empty">Loading branch orders…</div>';
+    if (!quiet) box.innerHTML = '<div class="pickup-empty">Loading branch orders…</div>';
     const { data, error } = await sb.from('pickup_orders')
-      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at')
+      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at,updated_at')
       .eq('location_id', assignedStaffLocationId).order('created_at', { ascending: false }).limit(100);
     if (error) { box.innerHTML = '<div class="pickup-error">Could not load branch orders. Run the order setup SQL in Supabase. Details: ' + esc(error.message) + '</div>'; return; }
     const orders = Array.isArray(data) ? data : [];
@@ -779,7 +968,7 @@
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>Handling branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + (order.branch_address ? '<br>Branch address: ' + esc(order.branch_address) : '') +
-        deliveryDetailsHtml(order, true) + orderNotesHtml(order.notes, 'Customer note') + (order.cancellation_reason ? '<br><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) : '') + '</div>' +
+        deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + (order.status === 'cancelled' && String(order.cancellation_reason || '').trim() ? '<div class="pickup-cancellation-reason" role="note" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48"><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) + '</div>' : '') + '</div>' +
         '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'Confirm with customer' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div></div>' +
         '<div class="pickup-next-actions">' + (action ? '<button class="btn" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="' + esc(action.next) + '">' + esc(action.label) + '</button>' : '') +
         (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '') + '</div></article>';
@@ -801,16 +990,10 @@
     renderCart();
     if (readCart().length) {
       await loadBranches();
-      await loadSavedDeliveryAddresses();
       renderCart();
     }
     $('pickupOrderForm')?.addEventListener('submit', submitCustomerOrder);
-    $('customerShareLocationBtn')?.addEventListener('click', shareCustomerLocation);
-    $('orderFulfillmentType')?.addEventListener('change', updateFulfillmentUI);
-    $('useMyLocationBtn')?.addEventListener('click', useMyLocation);
-    $('deliveryAddress')?.addEventListener('input', () => {
-      if ($('deliveryAddress').value.trim() !== selectedSavedAddressText) selectedDeliveryInstructions = '';
-    });
+    // Checkout is pickup-only for the current release; delivery UI and routing are not initialized.
     updateFulfillmentUI();
     // Order history is loaded separately on customer-order-history.html, not on checkout.
   }
@@ -822,7 +1005,6 @@
       showMessage('managedOrdersMessage', 'Order handling is restricted to Staff accounts assigned to a branch.', true);
       return;
     }
-    initCancellationDialog();
     assignedStaffLocationId = profile.location_id || null;
     if (!assignedStaffLocationId) {
       try {
@@ -833,8 +1015,33 @@
         }
       } catch (_) {}
     }
-    $('refreshManagedOrdersBtn')?.addEventListener('click', loadManagedOrders);
-    await loadManagedOrders();
+    initCancellationDialog();
+    bindLocalArchiveControls();
+    await renderLocalOrderArchive().catch(() => {});
+    $('refreshManagedOrdersBtn')?.addEventListener('click', async () => {
+      await loadManagedOrders();
+      await syncLocalOrderArchive(false);
+    });
+    await Promise.allSettled([loadManagedOrders(), syncLocalOrderArchive(true)]);
+    if (localArchivePollTimer) window.clearInterval(localArchivePollTimer);
+    localArchivePollTimer = window.setInterval(async () => {
+      if (document.visibilityState === 'hidden') return;
+      await Promise.allSettled([loadManagedOrders({ quiet: true }), syncLocalOrderArchive(false)]);
+    }, LOCAL_ARCHIVE_SYNC_MS);
+    if (localArchiveCleanupTimer) window.clearInterval(localArchiveCleanupTimer);
+    localArchiveCleanupTimer = window.setInterval(async () => {
+      try {
+        const deleted = await localArchiveDeleteExpired();
+        if (deleted) await renderLocalOrderArchive();
+      } catch (_) {}
+    }, 5000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') syncLocalOrderArchive(false);
+    });
+    window.addEventListener('beforeunload', () => {
+      if (localArchivePollTimer) window.clearInterval(localArchivePollTimer);
+      if (localArchiveCleanupTimer) window.clearInterval(localArchiveCleanupTimer);
+    }, { once: true });
   }
 
   document.addEventListener('DOMContentLoaded', () => {

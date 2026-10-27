@@ -127,10 +127,20 @@
 @media(max-width:560px){.delivery-zone-summary .delivery-zone-facts{gap:5px;padding:6px}.delivery-zone-summary .delivery-zone-chip{padding:4px 6px}}
 
 
-/* Optional customer location sharing on pickup-only checkout */
-.customer-share-location{margin:14px 0;padding:14px;border:1px solid #e8c4cb;border-radius:14px;background:rgba(255,244,237,.55);display:flex;flex-direction:column;align-items:flex-start;gap:8px}
-.customer-share-location h3{margin:0;color:var(--green);font-size:14px}
-.customer-share-location p{margin:0;color:var(--muted);font-size:11px;line-height:1.5}
-.customer-share-location .btn{padding:10px 14px}
-.customer-share-location .delivery-location-status{min-width:0;flex:none;width:100%;font-size:11px}
-.customer-share-location .delivery-location-link{margin-top:0}
+/* Local computer archive: orders retained for 24 hours from creation. */
+.local-archive-panel{border:1px solid #d9c59d;background:linear-gradient(180deg,#fffdf8 0%,#fffaf0 100%)}
+.local-archive-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.local-archive-header h2{font-size:18px;color:var(--pickup-navy);line-height:1.4}
+.local-archive-description{max-width:670px;color:var(--muted);font-size:12px;line-height:1.65;margin:8px 0 0}
+.local-archive-count{display:inline-grid;place-items:center;min-width:27px;height:27px;padding:0 7px;border-radius:999px;background:#f4e6c6;color:#6c4b13;font-size:12px;vertical-align:middle}
+.local-archive-actions{display:flex;gap:8px;flex-wrap:wrap}
+.local-archive-actions .btn{font-size:11px;white-space:nowrap}
+.local-archive-status{margin:12px 0 0;padding:10px 12px;border-radius:10px;background:#f0f3f7;color:#34445a;font-size:11px;line-height:1.55;overflow-wrap:anywhere}
+.local-archive-status[data-kind="success"]{background:#eef7ed;color:#285d32}
+.local-archive-status[data-kind="error"]{background:#fff0ee;color:#8d352d}
+.local-archive-status[data-kind="loading"]{background:#fff7df;color:#6f5314}
+.local-archive-card{background:#fff;border-color:#e9dfc9}
+.local-archive-reason{margin-top:9px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48;font-size:11px;line-height:1.55;overflow-wrap:anywhere}
+.local-archive-expiry{color:#8b6217;font-size:10px;text-align:right;line-height:1.45}
+.local-archive-warning{margin:12px 0 0;color:#806e53;font-size:10px;line-height:1.6}
+@media(max-width:560px){.local-archive-header{display:block}.local-archive-actions{display:grid;grid-template-columns:1fr 1fr;margin-top:12px}.local-archive-actions .btn{white-space:normal}.local-archive-header h2{font-size:16px}.local-archive-expiry{max-width:115px}}
