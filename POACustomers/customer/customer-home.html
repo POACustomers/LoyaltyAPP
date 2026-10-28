@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261024-home-image-cards-v1">
 <title>Customer Home</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261028-poac-nav-final-v3">
-<link rel="stylesheet" href="../assets/customer-home.css?v=20261028-home-final-categories-contact-v1">
+<link rel="stylesheet" href="../assets/customer-home.css?v=20261028-home-bestsellers-final-v2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
@@ -36,35 +36,29 @@
 </header>
 <main class="container customer-home-page">
 
-<section class="customer-home-hero" aria-labelledby="customerHomeHeroTitle">
-  <div class="customer-home-hero__copy">
-    <p class="customer-home-hero__eyebrow"><span class="customer-home-hero__eyebrow-mark" aria-hidden="true">✦</span> DINA'S CORNER <span aria-hidden="true">·</span> MADE WITH LOVE</p>
-    <h1 id="customerHomeHeroTitle"><span>Great rewards.</span></h1>
-    <p class="customer-home-hero__description">Discover your favourites and earn rewards with every visit.</p>
+<section class="customer-home-best-sellers" aria-labelledby="customerHomeBestSellersTitle">
+  <div class="customer-home-best-sellers__heading"><h1 id="customerHomeBestSellersTitle">Best Sellers</h1></div>
+  <div id="homeBestSellersRail" class="customer-home-best-sellers__rail" aria-label="Best-selling products" tabindex="0">
+    <p class="customer-home-best-sellers__status" role="status">Loading products…</p>
   </div>
-  <span class="customer-home-hero__sparkle customer-home-hero__sparkle--one" aria-hidden="true">✦</span>
-  <span class="customer-home-hero__sparkle customer-home-hero__sparkle--two" aria-hidden="true">✧</span>
 </section>
 
-<section class="customer-home-hero__loyalty" aria-label="Your loyalty journey">
-  <div class="customer-home-hero__loyalty-head"><span class="customer-home-hero__loyalty-star" aria-hidden="true">✦</span><span class="customer-home-hero__loyalty-label">YOUR LOYALTY JOURNEY</span></div>
-  <p class="customer-home-hero__loyalty-caption">Your points balance</p>
-  <div class="poac-loyalty-balance"><strong><span data-points>0</span></strong><span>/ 50 points</span></div>
-  <div class="poac-loyalty-progress" aria-hidden="true"><span></span></div>
-  <div class="poac-loyalty-bottom"><span>Every visit brings you closer.</span><a href="customer-card.html">View my card <span aria-hidden="true">→</span></a></div>
+<section class="customer-home-loyalty" aria-label="Your loyalty journey">
+  <div class="customer-home-loyalty__head">
+    <div class="customer-home-loyalty__title"><span class="customer-home-loyalty__star" aria-hidden="true">✧</span><span>YOUR LOYALTY JOURNEY</span></div>
+    <a id="homeCustomerAvatarWrap" class="customer-home-loyalty__avatar" href="customer-profile.html" aria-label="Open your profile" hidden>
+      <img id="homeCustomerAvatar" alt="Your profile photo" loading="eager" decoding="async">
+    </a>
+  </div>
+  <p class="customer-home-loyalty__caption">Your points balance</p>
+  <div class="customer-home-loyalty__balance"><strong><span data-points>0</span></strong><span>/ 50 points</span></div>
+  <div class="customer-home-loyalty__progress" role="progressbar" aria-label="Points progress to next reward" aria-valuemin="0" aria-valuemax="50" aria-valuenow="0"><span data-home-points-progress></span></div>
+  <div class="customer-home-loyalty__bottom"><span>Every visit brings you closer.</span><a href="customer-card.html">View my card <span aria-hidden="true">→</span></a></div>
 </section>
 
-<section class="home-categories-card" aria-label="Menu categories">
-  <div class="home-categories-intro">
-    <div>
-      <p class="home-categories-eyebrow">DINA'S CORNER</p>
-      <h2 class="title">Menu Categories</h2>
-      <p class="sub">اسحب للشمال علشان تشوف باقي الأقسام</p>
-    </div>
-    <a class="home-categories-view-all" href="customer-menu.html">Full Menu <span aria-hidden="true">→</span></a>
-  </div>
-  <div id="homeMenuCategories" class="home-menu-categories" aria-live="polite" aria-label="Menu categories">
-    <div class="home-category-message" role="status">Loading menu categories…</div>
+<section class="home-categories-card" aria-label="Menu category images">
+  <div id="homeMenuCategories" class="home-menu-categories" aria-live="polite" aria-label="Swipe through menu category images">
+    <div class="home-category-message" role="status">Loading category images…</div>
   </div>
 </section>
 
@@ -78,36 +72,50 @@
 
 
 
-<section class="customer-home-contact customer-home-contact--inline" aria-label="Payment and contact">
-  <div class="customer-home-contact__inline-row">
-    <a class="customer-home-contact__inline-social customer-home-contact__inline-instagram" href="https://www.instagram.com/dinas_corner_healthy?vrfl=MWVqN2J4ejN4M2F5cA==" target="_blank" rel="noopener noreferrer" aria-label="Open Dina's Corner on Instagram">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><defs><linearGradient id="social-ig-gradient" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ffd35b"/><stop offset=".48" stop-color="#f23b73"/><stop offset="1" stop-color="#8a35d2"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="6" fill="url(#social-ig-gradient)"/><rect x="6.2" y="6.2" width="11.6" height="11.6" rx="3.4" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="16.1" cy="7.9" r="1" fill="#fff"/></svg>
+<section class="customer-home-contact customer-home-contact--inline" aria-label="Social links and payment numbers">
+  <div class="customer-home-contact__inline-row" aria-label="Social, contact and payment links">
+    <a class="customer-home-contact__inline-social" href="https://www.instagram.com/dinas_corner_healthy?vrfl=MWVqN2J4ejN4M2F5cA==" target="_blank" rel="noopener noreferrer" aria-label="Instagram — Dina's Corner" title="Instagram">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><defs><linearGradient id="socialInstagramGradient" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ffd35b"/><stop offset=".48" stop-color="#f23b73"/><stop offset="1" stop-color="#8a35d2"/></linearGradient></defs><rect x="1" y="1" width="22" height="22" rx="6.5" fill="url(#socialInstagramGradient)"/><rect x="5.7" y="5.7" width="12.6" height="12.6" rx="3.6" fill="none" stroke="#fff" stroke-width="1.9"/><circle cx="12" cy="12" r="3" fill="none" stroke="#fff" stroke-width="1.9"/><circle cx="16.4" cy="7.7" r="1.05" fill="#fff"/></svg>
     </a>
-    <a class="customer-home-contact__inline-social customer-home-contact__inline-facebook" href="https://www.facebook.com/groups/214513169304014" target="_blank" rel="noopener noreferrer" aria-label="Open Dina's Corner Facebook group">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="#1877f2"/><path fill="#fff" d="M13.5 20v-7h2.4l.4-2.8h-2.8V8.4c0-.8.3-1.4 1.4-1.4h1.5V4.5c-.3 0-1.2-.1-2.2-.1-2.3 0-3.8 1.4-3.8 4v1.8H8v2.8h2.4v7z"/></svg>
+    <a class="customer-home-contact__inline-social" href="https://www.facebook.com/groups/214513169304014" target="_blank" rel="noopener noreferrer" aria-label="Facebook — Dina's Corner" title="Facebook">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="#1877f2"/><path fill="#fff" d="M13.7 21v-8.2h2.8l.4-3.2h-3.2V7.5c0-.9.3-1.6 1.6-1.6H17V3.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.4v2.2H7.5v3.2h2.8V21h3.4Z"/></svg>
     </a>
     <span class="customer-home-contact__inline-divider" aria-hidden="true"></span>
-    <a class="customer-home-contact__inline-phone" href="tel:01282471226" aria-label="Call 01282471226">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 3.8 9.3 3c.8-.2 1.5.2 1.8 1l1 2.6c.2.6 0 1.2-.4 1.6l-1.5 1.3a14 14 0 0 0 5.6 5.6l1.3-1.5c.4-.5 1-.6 1.6-.4l2.6 1c.7.3 1.1 1 1 1.8l-.8 2.7c-.2.8-.9 1.3-1.7 1.3C10.3 20 4 13.7 4 5.5c0-.8.5-1.5 1.3-1.7Z" fill="currentColor"/></svg>
-    </a>
-    <strong class="customer-home-contact__inline-number" dir="ltr">01282471226</strong>
+    <div class="customer-home-contact__inline-group customer-home-contact__inline-group--instapay" aria-label="InstaPay 01282471226">
+      <a class="customer-home-contact__inline-phone" href="tel:01282471226" aria-label="Call 01282471226" title="Call 01282471226">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 3.8 9.3 3c.8-.2 1.5.2 1.8 1l1 2.6c.2.6 0 1.2-.4 1.6l-1.5 1.3a14 14 0 0 0 5.6 5.6l1.3-1.5c.4-.5 1-.6 1.6-.4l2.6 1c.7.3 1.1 1 1 1.8l-.8 2.7c-.2.8-.9 1.3-1.7 1.3C10.3 20 4 13.7 4 5.5c0-.8.5-1.5 1.3-1.7Z" fill="currentColor"/></svg>
+      </a>
+      <a class="customer-home-contact__inline-number" href="tel:01282471226" aria-label="InstaPay number 01282471226"><span dir="ltr">01282471226</span></a>
+      <span class="customer-home-contact__inline-payment customer-home-contact__inline-payment--instapay" aria-label="InstaPay" title="InstaPay">
+        <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><defs><linearGradient id="instapayGradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ef9e35"/><stop offset="1" stop-color="#693e91"/></linearGradient></defs><rect x="1" y="1" width="46" height="46" rx="14" fill="url(#instapayGradient)"/><path d="M10 19h17l-5-5m5 5-5 5M38 29H21l5-5m-5 5 5 5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </div>
     <span class="customer-home-contact__inline-divider" aria-hidden="true"></span>
-    <span class="customer-home-contact__inline-payment customer-home-contact__inline-instapay" aria-label="InstaPay" title="InstaPay">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><defs><linearGradient id="mini-instapay-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ef9e35"/><stop offset="1" stop-color="#693e91"/></linearGradient></defs><rect x="1" y="1" width="22" height="22" rx="7" fill="url(#mini-instapay-gradient)"/><path d="M4.5 9.5h9l-2.4-2.4m2.4 2.4-2.4 2.4M19.5 14.5h-9l2.4-2.4m-2.4 2.4 2.4 2.4" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </span>
-    <span class="customer-home-contact__inline-payment customer-home-contact__inline-vodafone" aria-label="Vodafone Cash" title="Vodafone Cash">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="#e60000"/><path d="M15 4.7a7.5 7.5 0 1 0 4.1 9.7A6.5 6.5 0 1 1 15 4.7Z" fill="#fff"/><path d="M7.5 11h9v6h-9z" fill="#fff"/><path d="M9.5 13h5m-5 2h3.5" stroke="#e60000" stroke-width="1.1" stroke-linecap="round"/></svg>
-    </span>
+    <div class="customer-home-contact__inline-group customer-home-contact__inline-group--vodafone" aria-label="Vodafone Cash 01002348055">
+      <span class="customer-home-contact__inline-payment customer-home-contact__inline-payment--vodafone" aria-label="Vodafone Cash" title="Vodafone Cash">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#E60000" fill-rule="evenodd" d="M12 0A12 12 0 0 0 0 12A12 12 0 0 0 12 24A12 12 0 0 0 24 12A12 12 0 0 0 12 0M16.25 1.12C16.57 1.12 16.9 1.15 17.11 1.22C14.94 1.67 13.21 3.69 13.22 6C13.22 6.05 13.22 6.11 13.23 6.17C16.87 7.06 18.5 9.25 18.5 12.28C18.54 15.31 16.14 18.64 12.09 18.65C8.82 18.66 5.41 15.86 5.39 11.37C5.38 8.4 7 5.54 9.04 3.85C11.04 2.19 13.77 1.13 16.25 1.12Z"/></svg>
+      </span>
+      <a class="customer-home-contact__inline-number customer-home-contact__inline-number--vodafone" href="tel:01002348055" aria-label="Vodafone Cash number 01002348055"><span dir="ltr">01002348055</span></a>
+    </div>
   </div>
 </section>
 
 </main>
+
+<nav class="customer-mobile-nav" aria-label="Main customer navigation">
+  <a class="is-active" href="customer-home.html" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3.5 10.8 8.5-7 8.5 7M5.5 9.7v10h5.2v-6h2.6v6h5.2v-10"/></svg><span>Home</span></a>
+  <a href="customer-orders.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>My Order</span></a>
+  <a href="customer-locations.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5.5-8 11-8 11S4 15.5 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Location</span></a>
+  <a href="customer-rewards.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9Z"/></svg><span>Rewards</span></a>
+  <a href="customer-profile.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="4"/><path d="M4.5 21c.5-4.3 3.2-6.8 7.5-6.8s7 2.5 7.5 6.8"/></svg><span>Profile</span></a>
+</nav>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script src="../assets/tenant-config.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/tenant-branding.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/customer-navigation.js?v=20261028-poac-nav-final-v3"></script>
 <script src="../assets/config.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/app.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/customer-home-categories.js?v=20261028-home-final-categories-contact-v1"></script>
+<script src="../assets/customer-home-categories.js?v=20261028-home-bestsellers-final-v2"></script>
+<script src="../assets/customer-home-featured.js?v=20261028-home-bestsellers-final-v2"></script>
 </body>
 </html>
