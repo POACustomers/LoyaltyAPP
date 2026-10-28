@@ -26,8 +26,7 @@
   }
 
   function renderMessage(message, isError = false){
-    root.innerHTML = '<div class="home-category-message' + (isError ? ' is-error' : '') + '" role="status">' + esc(message) + '</div>' +
-      '<a class="home-category-browse-link" href="customer-menu.html">Browse full menu <span aria-hidden="true">→</span></a>';
+    root.innerHTML = '<div class="home-category-message' + (isError ? ' is-error' : '') + '" role="status">' + esc(message) + '</div>';
   }
 
   function categoryCard(category){
