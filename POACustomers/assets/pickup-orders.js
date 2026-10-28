@@ -1578,6 +1578,12 @@
   async function initStaffOrders() {
     const profile = await guardRole(['staff', 'gm', 'admin']);
     if (!profile) return;
+    // Only Admin sees the shortcut back to the System Admin dashboard.
+    const adminDashboardReturnBtn = $('adminDashboardReturnBtn');
+    if (adminDashboardReturnBtn && String(profile.role || '').toLowerCase() === 'admin') {
+      adminDashboardReturnBtn.href = '../admin/admin-dashboard.html';
+      adminDashboardReturnBtn.hidden = false;
+    }
     canViewAllBranchOrders = ['gm', 'admin'].includes(String(profile.role || '').toLowerCase());
     if (!canViewAllBranchOrders && profile.role !== 'staff') {
       showMessage('managedOrdersMessage', 'Order access is available to active Staff, GM, and Admin accounts.', true);
