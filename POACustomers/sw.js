@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v53-gm-admin-return-button";
+const CACHE = CACHE_NAMESPACE + "v54-order-note-location-cleanup";
 const SHELL = [
   "./",
   "./index.html",
@@ -21,8 +21,6 @@ const SHELL = [
   "./assets/tenant-branding.js",
   "./assets/customer-navigation.js",
   "./assets/customer-home-categories.js",
-  "./assets/customer-home.css",
-  "./assets/customer-home-featured.js",
   "./assets/pwa-install.js",
   "./assets/pwa-install.css",
   "./assets/tenant-branding/logo.png",
@@ -51,7 +49,6 @@ const SHELL = [
   "./customer/customer-profile.html",
   "./GM/gm-login.html",
   "./GM/gm-dashboard.html",
-  "./GM/gm-home-products.html",
   "./GM/gm-categories.html",
   "./GM/gm-menu.html",
   "./GM/gm-offers.html",
