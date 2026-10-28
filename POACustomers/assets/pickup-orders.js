@@ -13,6 +13,8 @@
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   let assignedStaffLocationId = null;
+  // GM/Admin may review and manage orders from every branch; Staff remain branch-scoped.
+  let canViewAllBranchOrders = false;
   let savedDeliveryAddresses = [];
   let selectedDeliveryInstructions = '';
   let selectedSavedAddressText = '';
@@ -1220,9 +1222,9 @@
     const pageSize = 300;
     const fields = 'id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at,updated_at';
     while (true) {
-      const { data, error } = await sb.from('pickup_orders')
-        .select(fields)
-        .eq('location_id', branchId)
+      let query = sb.from('pickup_orders').select(fields);
+      if (branchId) query = query.eq('location_id', branchId);
+      const { data, error } = await query
         .gte(column, sinceIso)
         .order(column, { ascending: true })
         .range(offset, offset + pageSize - 1);
@@ -1236,7 +1238,7 @@
   }
 
   async function syncLocalOrderArchive(forceFullSync = false) {
-    if (!assignedStaffLocationId || localArchiveSyncRunning) return;
+    if ((!canViewAllBranchOrders && !assignedStaffLocationId) || localArchiveSyncRunning) return;
     localArchiveSyncRunning = true;
     setLocalArchiveStatus('جارٍ التحديث…', 'loading');
     try {
@@ -1268,7 +1270,7 @@
       await localArchiveDeleteExpired();
       localArchiveLastSyncAt = Date.now();
       await renderLocalOrderArchive();
-      const visibleCount = (await localArchiveGetAll()).filter(row => String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > Date.now()).length;
+      const visibleCount = (await localArchiveGetAll()).filter(row => (canViewAllBranchOrders || String(row.location_id) === String(assignedStaffLocationId)) && Number(row.expiresAt) > Date.now()).length;
       setLocalArchiveStatus('محدّثة', 'success');
       if ($('managedPickupOrders')) await loadManagedOrders({ quiet: true });
     } catch (error) {
@@ -1299,7 +1301,7 @@
     const rows = await localArchiveGetAll();
     const now = Date.now();
     const branchRows = rows.filter(row =>
-      String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > now
+      (canViewAllBranchOrders || String(row.location_id) === String(assignedStaffLocationId)) && Number(row.expiresAt) > now
     );
     if (countEl) countEl.textContent = String(branchRows.length);
 
@@ -1436,27 +1438,28 @@
     const quiet = options.quiet === true;
     const box = $('managedPickupOrders');
     if (!box) return;
-    if (!assignedStaffLocationId) {
+    if (!canViewAllBranchOrders && !assignedStaffLocationId) {
       box.innerHTML = '<div class="pickup-error">This Staff account has no assigned branch. Ask the GM to assign this Staff account to a branch before handling orders.</div>';
       return;
     }
-    if (!quiet) box.innerHTML = '<div class="pickup-empty">Loading branch orders…</div>';
+    if (!quiet) box.innerHTML = '<div class="pickup-empty">Loading ' + (canViewAllBranchOrders ? 'all branch orders…' : 'branch orders…') + '</div>';
 
     const now = Date.now();
     let localRows = [];
     try {
       await localArchiveDeleteExpired();
       localRows = (await localArchiveGetAll()).filter(row =>
-        String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > now
+        (canViewAllBranchOrders || String(row.location_id) === String(assignedStaffLocationId)) && Number(row.expiresAt) > now
       );
     } catch (_) {
       // The live Supabase list can still be shown if local storage is unavailable.
     }
     const localById = new Map(localRows.map(row => [String(row.id), row]));
 
-    const { data, error } = await sb.from('pickup_orders')
-      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at,updated_at')
-      .eq('location_id', assignedStaffLocationId).order('created_at', { ascending: false }).limit(100);
+    let ordersQuery = sb.from('pickup_orders')
+      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at,updated_at');
+    if (!canViewAllBranchOrders) ordersQuery = ordersQuery.eq('location_id', assignedStaffLocationId);
+    const { data, error } = await ordersQuery.order('created_at', { ascending: false }).limit(100);
 
     let liveOrders = Array.isArray(data) ? data : [];
     if (error && !localRows.length) {
@@ -1573,14 +1576,15 @@
   }
 
   async function initStaffOrders() {
-    const profile = await guardRole(['staff']);
+    const profile = await guardRole(['staff', 'gm', 'admin']);
     if (!profile) return;
-    if (profile.role !== 'staff') {
-      showMessage('managedOrdersMessage', 'Order handling is restricted to Staff accounts assigned to a branch.', true);
+    canViewAllBranchOrders = ['gm', 'admin'].includes(String(profile.role || '').toLowerCase());
+    if (!canViewAllBranchOrders && profile.role !== 'staff') {
+      showMessage('managedOrdersMessage', 'Order access is available to active Staff, GM, and Admin accounts.', true);
       return;
     }
-    assignedStaffLocationId = profile.location_id || null;
-    if (!assignedStaffLocationId) {
+    assignedStaffLocationId = canViewAllBranchOrders ? null : (profile.location_id || null);
+    if (!canViewAllBranchOrders && !assignedStaffLocationId) {
       try {
         const { data: authData } = await sb.auth.getUser(), uid = authData?.user?.id;
         if (uid) {
