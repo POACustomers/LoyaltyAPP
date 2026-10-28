@@ -8,11 +8,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Dina's Corner — Our Menu</title>
 <link rel="stylesheet" href="assets/style.css?v=20261026-offers-page-v1">
-<link rel="stylesheet" href="assets/menu-display.css?v=20261028-poac-menu-rail-fix-v1">
+<link rel="stylesheet" href="assets/menu-display.css?v=20261028-menu-category-grid-v6">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script src="assets/tenant-config.js?v=20261026-offers-page-v1"></script><script src="assets/tenant-branding.js?v=20261026-offers-page-v1"></script>
 </head>
-<body data-menu-standalone>
+<body data-menu-standalone data-page="menu">
 <header class="topbar">
   <a class="brand brand-image" href="index.html" aria-label="Dina's Corner home">
     <img class="brand-logo" src="assets/dina-corner-icon.png?v=20261024-presale-candidate" alt="Dina's Corner">
@@ -31,10 +31,10 @@
   </section>
 </main>
 <script src="assets/config.js?v=20261026-offers-page-v1"></script>
-<script src="assets/menu-display.js?v=20261028-poac-menu-rail-fix-v1"></script>
+<script src="assets/menu-display.js?v=20261028-menu-category-grid-v6"></script>
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=20261024-presale-candidate').catch(() => {}));
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=20261028-menu-category-grid-v6').catch(() => {}));
 }
 </script>
 </body>
