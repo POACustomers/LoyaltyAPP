@@ -40,11 +40,17 @@
 .gm-registration-error{padding:16px;border-radius:12px;border:1px solid #f0d1cd;background:#fff7f6;color:#9c3227;font-size:12px}
 @media(max-width:760px){.gm-analytics-main{padding:24px 14px 106px}.gm-registration-kpis{grid-template-columns:1fr;gap:10px}.gm-registration-kpi{padding:13px 15px}.gm-registration-circle{width:64px;height:64px;flex-basis:64px}.gm-registration-circle strong{font-size:22px}.gm-hourly-panel{padding:16px}.gm-hourly-chart{height:178px;gap:2px}.gm-hour-track{height:150px}.gm-hour-label{font-size:8px}.gm-hour-value{font-size:9px}}
 @media(max-width:420px){.gm-hourly-header{align-items:center}.gm-hourly-header h2{font-size:18px}.gm-hourly-refresh{min-width:82px;padding-left:10px;padding-right:10px}.gm-hourly-totals{gap:8px}.gm-hourly-total{padding:11px 10px}.gm-hourly-total strong{font-size:20px}.gm-hour-label{font-size:7px}}
+
+.gm-topbar-actions{display:flex;align-items:center;gap:10px;min-width:0}
+.gm-admin-return{min-height:40px;padding:9px 12px;font-size:12px;line-height:1;text-decoration:none;white-space:nowrap}
+.gm-admin-return[hidden]{display:none!important}
+.gm-return-short{display:none}
+@media(max-width:420px){.gm-topbar-actions{gap:7px}.gm-admin-return{padding:8px 9px;font-size:11px}.gm-return-full{display:none}.gm-return-short{display:inline}}
 </style>
 <script src="../assets/tenant-config.js?v=20261024-presale-candidate"></script><script src="../assets/tenant-branding.js?v=20261024-presale-candidate"></script>
 </head>
 <body data-page="gm-dashboard">
-<header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-presale-candidate" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
+<header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-presale-candidate" alt="DINA'S CORNER"></a><div class="gm-topbar-actions"><a id="adminDashboardReturn" class="btn soft gm-admin-return" href="../admin/admin-dashboard.html" title="Return to Admin Dashboard" aria-label="Return to Admin Dashboard" hidden><span class="gm-return-full">← Admin Dashboard</span><span class="gm-return-short">← Admin</span></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></div></header>
 <main class="gm-analytics-main">
   <header class="gm-analytics-heading"><p class="eyebrow">DINA'S CORNER</p><h1 class="title">Dashboard</h1><p class="sub">New customer registrations and hourly activity.</p></header>
   <section class="card" style="margin:0 0 16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap" aria-label="Home page best-selling product photos"><div><h2 style="margin:0 0 4px;font-size:16px;color:var(--green)">Best Sellers Photos</h2><p class="sub" style="margin:0">Upload and arrange the product photos shown on the customer home page.</p></div><a class="btn primary" href="gm-home-products.html" style="text-decoration:none">MANAGE PHOTOS →</a></section>
@@ -61,5 +67,15 @@
   </section>
 </main>
 <nav class="nav"><div class="navin"><a href="gm-dashboard.html" class="active"><b>▦</b>Dashboard</a><a href="gm-menu.html"><b>☰</b>Menu</a><a href="gm-cancellations.html"><b>⊘</b>Cancellations</a><a href="gm-settings.html"><b>⚙</b>Settings</a></div></nav>
-<script src="../assets/config.js?v=20261024-presale-candidate"></script><script src="../assets/app.js?v=20261028-gm-analytics-fix"></script><script>if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script>
+<script src="../assets/config.js?v=20261024-presale-candidate"></script><script src="../assets/app.js?v=20261024-presale-candidate"></script><script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const link = document.getElementById('adminDashboardReturn');
+  if (!link || typeof getProfile !== 'function') return;
+  try {
+    const profile = await getProfile();
+    if (profile && profile.role === 'admin' && profile.is_active !== false) link.hidden = false;
+  } catch (_) { /* Keep the admin-only link hidden if the profile cannot be verified. */ }
+});
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}
+</script>
 </body></html>
