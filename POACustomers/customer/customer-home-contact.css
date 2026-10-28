@@ -1,0 +1,18 @@
+/* Customer home: payment methods and contact panel */
+.customer-home-contact{margin-top:18px;padding:20px 18px 22px;background:linear-gradient(145deg,#fffdf8 0%,#fff3ed 100%);border:1px solid rgba(188,104,126,.22);border-radius:24px;box-shadow:0 8px 24px rgba(111,83,69,.06)}
+.customer-home-contact__heading{text-align:center;margin-bottom:16px}
+.customer-home-contact__eyebrow{margin:0 0 5px;font-size:10px;letter-spacing:.16em;font-weight:800;color:#b58f59}
+.customer-home-contact__heading h2{margin:0;color:#6f7350;font-family:Georgia,serif;font-size:clamp(21px,5vw,27px);line-height:1.2}
+.customer-home-contact__heading p:last-child{margin:6px 0 0;color:#897b74;font-size:13px}
+.customer-home-contact__payments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.customer-home-payment{display:flex;align-items:center;gap:9px;min-width:0;padding:12px 10px;background:#fffaf6;border:1px solid #ead5d0;border-radius:16px}
+.customer-home-payment__mark{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:12px;background:#f8e6eb;color:#b34f70;font-weight:900;font-size:14px}
+.customer-home-payment--vodafone .customer-home-payment__mark{background:#fff0ef;color:#d52c3a}
+.customer-home-payment strong{display:block;color:#59563f;font-size:clamp(11px,3vw,14px);line-height:1.25}
+.customer-home-payment small{display:block;margin-top:3px;color:#91827b;font-size:10px;line-height:1.3}
+.customer-home-contact__phone{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px;padding:12px;border:1px solid #e7c8d0;border-radius:15px;background:#fbeaf0;color:#a64866;text-decoration:none}
+.customer-home-contact__phone>span:first-child{font-size:22px}
+.customer-home-contact__phone small{display:block;font-size:11px;color:#8e6e76;text-align:center}
+.customer-home-contact__phone strong{display:block;margin-top:3px;font-size:19px;letter-spacing:.04em;text-align:center}
+.customer-home-contact__social-note{margin-top:14px;text-align:center;color:#777853;font-size:12px;font-weight:700}
+@media(max-width:360px){.customer-home-contact{padding:16px 12px}.customer-home-contact__payments{gap:7px}.customer-home-payment{padding:10px 7px;gap:7px}.customer-home-payment__mark{flex-basis:31px;width:31px;height:31px}.customer-home-payment small{font-size:9px}}

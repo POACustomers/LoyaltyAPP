@@ -8,6 +8,7 @@
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261024-home-image-cards-v1">
 <title>Customer Home</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261028-poac-nav-final-v3">
+<link rel="stylesheet" href="../assets/customer-home-contact.css?v=20261028-payments-v1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
@@ -17,7 +18,6 @@
 <header class="topbar customer-topbar">
 <a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-home-image-cards-v1" alt="DINA'S CORNER"></a>
 <div class="customer-header-actions">
-<a class="customer-header-basket" href="customer-menu.html" aria-label="Open basket"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L22 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span>Basket</span></a>
 <details class="customer-top-menu" data-customer-top-menu>
   <summary aria-label="Open customer navigation" title="Open customer navigation"><svg class="customer-top-menu-symbol" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 6h16M4 12h16M4 18h16" /></svg></summary>
   <nav class="customer-menu-popup" aria-label="Customer menu">
@@ -60,32 +60,28 @@
   </div>
 </section>
 
-<section class="card customer-home-shortcuts" aria-labelledby="homeShortcutsTitle">
-  <div class="home-shortcuts-heading">
-    <h3 id="homeShortcutsTitle">Quick Access</h3>
+
+
+<section class="card customer-home-contact" aria-labelledby="customerHomeContactTitle">
+  <div class="customer-home-contact__heading">
+    <p class="customer-home-contact__eyebrow">DINA'S CORNER</p>
+    <h2 id="customerHomeContactTitle">Payment &amp; Connect</h2>
+    <p>طرق الدفع والتواصل</p>
   </div>
-  <div class="customer-home-quick-actions customer-home-quick-actions--images">
-    <a class="customer-home-quick-action customer-home-quick-action--image" href="customer-menu.html">
-      <span class="customer-home-quick-action__image"><img src="../assets/home-cards/menu.jpg?v=20261024-home-image-cards-v1" alt="" loading="lazy" decoding="async"></span>
-      <span class="customer-home-quick-action__body"><span class="customer-home-quick-action__copy"><strong>Menu</strong><small>Browse all items</small></span><span class="customer-home-quick-action__arrow" aria-hidden="true">›</span></span>
-    </a>
-    <a class="customer-home-quick-action customer-home-quick-action--image" href="customer-profile.html">
-      <span class="customer-home-quick-action__image"><img src="../assets/home-cards/profile.jpg?v=20261024-home-image-cards-v1" alt="" loading="lazy" decoding="async"></span>
-      <span class="customer-home-quick-action__body"><span class="customer-home-quick-action__copy"><strong>My Profile</strong><small>Personal details</small></span><span class="customer-home-quick-action__arrow" aria-hidden="true">›</span></span>
-    </a>
-    <a class="customer-home-quick-action customer-home-quick-action--image" href="customer-locations.html">
-      <span class="customer-home-quick-action__image"><img src="../assets/home-cards/locations.jpg?v=20261024-home-image-cards-v1" alt="" loading="lazy" decoding="async"></span>
-      <span class="customer-home-quick-action__body"><span class="customer-home-quick-action__copy"><strong>Locations</strong><small>Find a branch</small></span><span class="customer-home-quick-action__arrow" aria-hidden="true">›</span></span>
-    </a>
-    <a class="customer-home-quick-action customer-home-quick-action--image" href="customer-card.html">
-      <span class="customer-home-quick-action__image"><img src="../assets/home-cards/loyalty-qr.jpg?v=20261024-home-image-cards-v1" alt="" loading="lazy" decoding="async"></span>
-      <span class="customer-home-quick-action__body"><span class="customer-home-quick-action__copy"><strong>My QR Code</strong><small>Share loyalty code</small></span><span class="customer-home-quick-action__arrow" aria-hidden="true">›</span></span>
-    </a>
-    <a class="customer-home-quick-action customer-home-quick-action--image" href="customer-offers.html">
-      <span class="customer-home-quick-action__image"><img src="../assets/home-cards/offers.jpg?v=20261024-home-image-cards-v1" alt="" loading="lazy" decoding="async"></span>
-      <span class="customer-home-quick-action__body"><span class="customer-home-quick-action__copy"><strong>Offers</strong><small>See special offers</small></span><span class="customer-home-quick-action__arrow" aria-hidden="true">›</span></span>
-    </a>
+  <div class="customer-home-contact__payments">
+    <div class="customer-home-payment customer-home-payment--instapay">
+      <span class="customer-home-payment__mark" aria-hidden="true">IP</span>
+      <div><strong>InstaPay</strong><small>الدفع عبر إنستا باي</small></div>
+    </div>
+    <div class="customer-home-payment customer-home-payment--vodafone">
+      <span class="customer-home-payment__mark" aria-hidden="true">V</span>
+      <div><strong>Vodafone Cash</strong><small>فودافون كاش</small></div>
+    </div>
   </div>
+  <a class="customer-home-contact__phone" href="tel:01282471226">
+    <span aria-hidden="true">☎</span><span><small>رقم الدفع والتواصل</small><strong dir="ltr">01282471226</strong></span>
+  </a>
+  <div class="customer-home-contact__social-note">تابعوا Dina’s Corner على Instagram وFacebook</div>
 </section>
 
 </main>
