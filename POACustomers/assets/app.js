@@ -1846,17 +1846,6 @@ async function loadGmDashboard() {
   const refresh = $("refreshGmRegistrations");
   let refreshing = false;
 
-  const countBetween = async (start, end) => {
-    let query = sb.from("profiles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "customer")
-      .gte("created_at", start.toISOString());
-    if (end) query = query.lt("created_at", end.toISOString());
-    const { count, error } = await query;
-    if (error) throw error;
-    return Number(count || 0);
-  };
-
   const render = async () => {
     if (refreshing) return;
     refreshing = true;
@@ -1871,27 +1860,35 @@ async function loadGmDashboard() {
       const daysSinceMonday = (startWeek.getDay() + 6) % 7;
       startWeek.setDate(startWeek.getDate() - daysSinceMonday);
       const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-      // Display 24 complete, local-time hour buckets. The current partial hour is excluded
-      // so the hourly average is always based on a full 24-hour observation window.
       const endHour = new Date(now);
       endHour.setMinutes(0, 0, 0);
       const startHour = new Date(endHour.getTime() - 24 * 60 * 60 * 1000);
-      const hours = Array.from({ length: 24 }, (_, i) => ({
-        start: new Date(startHour.getTime() + i * 60 * 60 * 1000),
-        end: new Date(startHour.getTime() + (i + 1) * 60 * 60 * 1000),
-        count: 0
+
+      // The SECURITY DEFINER RPC returns aggregates only; the browser never receives
+      // customer profile rows and GM access does not require direct SELECT on profiles.
+      const { data, error } = await sb.rpc("get_gm_registration_analytics", {
+        p_start_today: startToday.toISOString(),
+        p_start_week: startWeek.toISOString(),
+        p_start_month: startMonth.toISOString(),
+        p_start_hour: startHour.toISOString(),
+        p_end_now: now.toISOString(),
+        p_end_hour: endHour.toISOString()
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      if (rows.length !== 24) {
+        throw new Error("Registration analytics returned an incomplete hourly result. Run the included Supabase SQL setup, then refresh.");
+      }
+
+      const totals = rows[0];
+      const todayCount = Number(totals.today_count || 0);
+      const weekCount = Number(totals.week_count || 0);
+      const monthCount = Number(totals.month_count || 0);
+      const hours = rows.map(row => ({
+        start: new Date(row.hour_start),
+        count: Number(row.hour_count || 0)
       }));
 
-      // Exact head counts avoid API row-limit problems and count profile creation, not point transactions.
-      const [todayCount, weekCount, monthCount, ...hourCounts] = await Promise.all([
-        countBetween(startToday, now),
-        countBetween(startWeek, now),
-        countBetween(startMonth, now),
-        ...hours.map(hour => countBetween(hour.start, hour.end))
-      ]);
-
-      hours.forEach((hour, i) => { hour.count = Number(hourCounts[i] || 0); });
       if (todayEl) todayEl.textContent = moneyPoints(todayCount);
       if (weekEl) weekEl.textContent = moneyPoints(weekCount);
       if (monthEl) monthEl.textContent = moneyPoints(monthCount);
@@ -1906,7 +1903,8 @@ async function loadGmDashboard() {
           const height = hour.count === 0 ? 3 : Math.max(7, Math.round((hour.count / maxCount) * 130));
           const label = hour.start.toLocaleTimeString([], { hour: "numeric" });
           const showLabel = index % 3 === 0 || index === 23;
-          const title = `${hour.start.toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric" })}–${hour.end.toLocaleTimeString([], { hour: "numeric" })}: ${hour.count} new customer${hour.count === 1 ? "" : "s"}`;
+          const nextHour = new Date(hour.start.getTime() + 60 * 60 * 1000);
+          const title = `${hour.start.toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric" })}–${nextHour.toLocaleTimeString([], { hour: "numeric" })}: ${hour.count} new customer${hour.count === 1 ? "" : "s"}`;
           return `<div class="gm-hour-slot" title="${esc(title)}"><div class="gm-hour-track"><span class="gm-hour-value" style="--bar-height:${height}px">${hour.count ? esc(hour.count) : ""}</span><span class="gm-hour-bar${hour.count ? " has-registrations" : ""}" style="--bar-height:${height}px;height:${height}px" aria-hidden="true"></span></div><span class="gm-hour-label">${showLabel ? esc(label) : ""}</span></div>`;
         }).join("");
       }
@@ -1917,7 +1915,7 @@ async function loadGmDashboard() {
           : `${total} new customer${total === 1 ? "" : "s"} registered in the last 24 completed hours, averaging ${(total / 24).toFixed(1)} new customers per hour. The current incomplete hour is excluded.`;
       }
     } catch (error) {
-      if (chart) chart.innerHTML = '<div class="gm-registration-error">Could not load registration analytics. Check the profiles table read permission for the GM account, then refresh.</div>';
+      if (chart) chart.innerHTML = '<div class="gm-registration-error">Could not load registration analytics. Run the included Supabase SQL setup, then refresh.</div>';
       if (notice) notice.textContent = error?.message || "Could not load customer registration data.";
       [todayEl, weekEl, monthEl, totalEl, averageEl].forEach(el => { if (el) el.textContent = "—"; });
       toast(error?.message || "Could not load customer registration analytics.", false);
