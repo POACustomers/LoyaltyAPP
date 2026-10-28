@@ -2,8 +2,14 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#C65F78">
 <link rel="manifest" href="../manifest.webmanifest"><title>Branch Orders — Staff</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261028-gm-all-branch-orders-v1"><link rel="stylesheet" href="../assets/pickup-orders.css?v=20261028-gm-all-branch-orders-v1"><link rel="stylesheet" href="../assets/cancellation-dialog.css?v=20261028-gm-all-branch-orders-v1">
+<link rel="stylesheet" href="../assets/style.css?v=20261028-admin-dashboard-return-v1"><link rel="stylesheet" href="../assets/pickup-orders.css?v=20261028-admin-dashboard-return-v1"><link rel="stylesheet" href="../assets/cancellation-dialog.css?v=20261028-admin-dashboard-return-v1">
 <style>
+/* Admin-only shortcut back to the system admin dashboard. */
+.admin-dashboard-return{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid #e8b8c5;border-radius:11px;background:#fff1f4;color:#9d3f58;font-family:inherit;font-weight:700;font-size:12px;line-height:1.1;text-decoration:none;white-space:nowrap;box-shadow:0 1px 2px #7a30400d}
+.admin-dashboard-return:hover{background:#fce4eb;border-color:#d98ba0}
+.admin-dashboard-return:focus-visible{outline:2px solid #a53d59;outline-offset:2px}
+.admin-dashboard-return[hidden]{display:none!important}
+@media(max-width:560px){.topbar{gap:8px}.admin-dashboard-return{padding:0 8px;min-height:33px;font-size:10px}.topbar .icon{flex:0 0 auto}}
 /* Keep the receipt printer compact in the upper-right corner of each order card. */
 .pickup-main .pickup-order-head{display:flex;flex-direction:row;justify-content:space-between;align-items:flex-start;gap:10px}
 .pickup-order-head-main{flex:1;min-width:0}
@@ -15,10 +21,10 @@
 .pickup-print-icon:disabled{opacity:.55;cursor:wait}
 @media(max-width:560px){.pickup-main .pickup-order-head{flex-direction:row!important;align-items:flex-start}.pickup-order-head-tools{gap:5px;max-width:58%;flex-wrap:wrap}.pickup-order-head-main .pickup-order-number{overflow-wrap:anywhere}.pickup-order-head-tools .pickup-status{max-width:120px}}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="../assets/tenant-config.js?v=20261028-gm-all-branch-orders-v1"></script><script src="../assets/tenant-branding.js?v=20261028-gm-all-branch-orders-v1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="../assets/tenant-config.js?v=20261028-admin-dashboard-return-v1"></script><script src="../assets/tenant-branding.js?v=20261028-admin-dashboard-return-v1"></script>
 </head>
 <body data-page="staff-orders">
-<header class="topbar"><a class="brand brand-image" href="staff-scan.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261028-gm-all-branch-orders-v1" alt="Dina's Corner"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
+<header class="topbar"><a class="brand brand-image" href="staff-scan.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261028-admin-dashboard-return-v1" alt="Dina's Corner"></a><a id="adminDashboardReturnBtn" class="admin-dashboard-return" href="../admin/admin-dashboard.html" hidden>↩ Admin Dashboard</a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
 <main class="pickup-main"><header class="pickup-heading"><p class="eyebrow">CUSTOMER SERVICE</p><h1 class="title">Branch Orders</h1><p class="sub">Staff handles orders for the assigned branch. GM and Admin can review and manage orders across all branches.</p></header>
 <div id="managedOrdersMessage" hidden aria-live="polite"></div>
 <div id="cancelOrderDialog" class="cancel-order-dialog" hidden>
@@ -51,6 +57,6 @@
 </section>
 <section class="card pickup-panel"><div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h2 style="margin:0">Customer orders</h2><button id="refreshManagedOrdersBtn" class="btn soft" type="button">REFRESH</button></div><div id="managedPickupOrders" class="pickup-orders-list" style="margin-top:14px"><div class="pickup-empty">Loading branch orders…</div></div></section></main>
 <nav class="nav"><div class="navin"><a href="staff-scan.html"><b>⌗</b>Scan</a><a href="staff-orders.html" class="active"><b>▣</b>Orders</a><a href="staff-customer.html"><b>●</b>Customer</a><a href="staff-history.html"><b>↺</b>History</a><a href="staff-profile.html"><b>●</b>Profile</a></div></nav>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="../assets/config.js?v=20261028-gm-all-branch-orders-v1"></script><script src="../assets/app.js?v=20261028-gm-all-branch-orders-v1"></script><script src="../assets/pickup-orders.js?v=20261028-gm-all-branch-orders-v1"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="../assets/config.js?v=20261028-admin-dashboard-return-v1"></script><script src="../assets/app.js?v=20261028-admin-dashboard-return-v1"></script><script src="../assets/pickup-orders.js?v=20261028-admin-dashboard-return-v1"></script>
 
 </body></html>
