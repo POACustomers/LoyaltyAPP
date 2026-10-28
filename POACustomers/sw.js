@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v57-menu-category-grid-restore";
+const CACHE = CACHE_NAMESPACE + "v58-menu-route-fix";
 const SHELL = [
   "./",
   "./index.html",
