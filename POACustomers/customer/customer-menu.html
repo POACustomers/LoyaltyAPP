@@ -9,8 +9,8 @@
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
 <title>Dina's Corner Menu</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261026-offers-page-v1">
-<link rel="stylesheet" href="../assets/menu-display.css?v=20261028-poac-menu-rail-fix-v1">
-<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261026-offers-large-image-v1">
+<link rel="stylesheet" href="../assets/menu-display.css?v=20261028-menu-cart-icon-nav-v5">
+<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261028-menu-cart-icon-nav-v5">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
@@ -19,18 +19,17 @@
 <header class="topbar customer-topbar">
 <a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a>
 <div class="customer-header-actions">
-  <button class="menu-cart-trigger" id="menuCartButton" type="button" aria-label="Open shopping basket" aria-haspopup="dialog" aria-controls="menu-cart">
+  <button class="menu-cart-trigger menu-cart-trigger--icon-only" id="menuCartButton" type="button" aria-label="Open shopping basket" aria-haspopup="dialog" aria-controls="menu-cart">
     <span class="menu-cart-trigger-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" focusable="false"><path d="M3 4h2l2.2 11.1a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L22 8H6"/><circle cx="10" cy="20" r="1.2"/><circle cx="18" cy="20" r="1.2"/></svg>
       <span class="menu-cart-trigger-count" id="menuCartButtonCount" hidden>0</span>
     </span>
-    <span class="menu-cart-trigger-total" id="menuCartButtonTotal">Basket</span>
   </button>
 <details class="customer-top-menu" data-customer-top-menu>
   <summary aria-label="Open customer navigation" title="Open customer navigation"><svg class="customer-top-menu-symbol" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 6h16M4 12h16M4 18h16" /></svg></summary>
   <nav class="customer-menu-popup" aria-label="Customer menu">
     <a href="customer-home.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">⌂</span><span>Home</span></a>
-    <a href="customer-menu.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">☰</span><span>Menu &amp; Basket</span></a>
+    <a href="customer-menu.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">☰</span><span>Menu</span></a>
     <a href="customer-offers.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">★</span><span>Offers</span></a>
     <a href="customer-card.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">▦</span><span>My QR Code</span></a>
     <a href="customer-rewards.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">★</span><span>Rewards</span></a>
@@ -65,31 +64,31 @@
   <a href="customer-home.html">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3.5 10.8 8.5-7 8.5 7M5.5 9.7v10h5.2v-6h2.6v6h5.2v-10"/></svg><span>Home</span>
   </a>
-  <a class="is-active" href="customer-menu.html" aria-current="page">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16M4 12h16M4 18.5h16"/></svg><span>Menu</span>
+  <a href="customer-orders.html">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>My Order</span>
   </a>
-  <a href="customer-offers.html">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg><span>Offers</span>
+  <a href="customer-locations.html">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5.5-8 11-8 11S4 15.5 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Location</span>
   </a>
   <a href="customer-rewards.html">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14v12H5zM8 8V5.5a2 2 0 0 1 4 0V8m0 0V5.5a2 2 0 0 1 4 0V8M5 12h14M12 12v8"/></svg><span>Rewards</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9Z"/></svg><span>Rewards</span>
   </a>
-  <a href="customer-card.html">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 14h2M18 18h2M14 18v2"/></svg><span>My QR</span>
+  <a href="customer-profile.html">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="4"/><path d="M4.5 21c.5-4.3 3.2-6.8 7.5-6.8s7 2.5 7.5 6.8"/></svg><span>Profile</span>
   </a>
 </nav>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="../assets/tenant-config.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/tenant-branding.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/customer-navigation.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/config.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/app.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/pickup-orders.js?v=20261026-offers-large-image-v1"></script>
+<script src="../assets/tenant-config.js?v=20261028-menu-cart-icon-nav-v5"></script>
+<script src="../assets/tenant-branding.js?v=20261028-menu-cart-icon-nav-v5"></script>
+<script src="../assets/customer-navigation.js?v=20261028-menu-cart-icon-nav-v5"></script>
+<script src="../assets/config.js?v=20261028-menu-cart-icon-nav-v5"></script>
+<script src="../assets/app.js?v=20261028-menu-cart-icon-nav-v5"></script>
+<script src="../assets/pickup-orders.js?v=20261028-menu-cart-icon-nav-v5"></script>
 
 
 
-<script src="../assets/menu-display.js?v=20261028-poac-menu-rail-fix-v1"></script>
+<script src="../assets/menu-display.js?v=20261028-menu-cart-icon-nav-v5"></script>
 
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}
