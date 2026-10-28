@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v47-mobile-location-share-fix";
+const CACHE = CACHE_NAMESPACE + "v53-admin-dashboard-return";
 const SHELL = [
   "./",
   "./index.html",
@@ -28,7 +28,6 @@ const SHELL = [
   "./assets/menu-display.css",
   "./assets/menu-display.js",
   "./assets/pickup-orders.css",
-  "./assets/cancellation-dialog.css",
   "./assets/pickup-orders.js",
   "./assets/customer-addresses.css",
   "./assets/customer-addresses.js",
