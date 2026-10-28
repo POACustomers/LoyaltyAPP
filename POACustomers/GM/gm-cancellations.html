@@ -6,10 +6,10 @@
 <meta name="theme-color" content="#C65F78">
 <link rel="manifest" href="../manifest.webmanifest">
 <title>Order Cancellation Log — GM</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261027-cancellation-reason-v1">
+<link rel="stylesheet" href="../assets/style.css?v=20261028-gm-cancellation-receipt-v1">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="../assets/tenant-config.js?v=20261027-cancellation-reason-v1"></script>
-<script src="../assets/tenant-branding.js?v=20261027-cancellation-reason-v1"></script>
+<script src="../assets/tenant-config.js?v=20261028-gm-cancellation-receipt-v1"></script>
+<script src="../assets/tenant-branding.js?v=20261028-gm-cancellation-receipt-v1"></script>
 <style>
 .cancel-log-main{max-width:1100px;margin:0 auto;padding:28px 16px 110px}
 .cancel-log-card{margin-top:18px;padding:16px;border-radius:18px;background:var(--paper,#fff);border:1px solid var(--line,#e4e6ea)}
@@ -20,6 +20,8 @@
 .cancel-log-table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#677184)}
 .cancel-log-reason{white-space:pre-wrap;overflow-wrap:anywhere;max-width:440px}
 .cancel-log-notice{padding:14px;border-radius:12px;background:var(--paper,#fff);color:var(--muted,#677184)}
+.cancel-log-download{white-space:nowrap;padding:8px 10px;font-size:11px;min-height:34px}
+.cancel-log-table{min-width:790px}
 .cancel-log-error{border:1px solid #f0c7c3;background:#fff7f6;color:#9f3027}
 @media(max-width:600px){.cancel-log-main{padding:22px 12px 104px}.cancel-log-card{padding:12px}}
 </style>
@@ -35,15 +37,16 @@
     <div id="cancellationLogNotice" class="cancel-log-notice" role="status" aria-live="polite">Loading cancellation records…</div>
     <div class="cancel-log-table-wrap">
       <table class="cancel-log-table">
-        <thead><tr><th>Order</th><th>Customer</th><th>Branch</th><th>Reason for cancellation</th><th>Cancelled at</th></tr></thead>
+        <thead><tr><th>Order</th><th>Customer</th><th>Branch</th><th>Reason for cancellation</th><th>Cancelled at</th><th>Invoice</th></tr></thead>
         <tbody id="cancellationLogRows"></tbody>
       </table>
     </div>
   </section>
 </main>
 <nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html"><b>☰</b>Menu</a><a href="gm-cancellations.html" class="active"><b>⊘</b>Cancellations</a><a href="gm-settings.html"><b>⚙</b>Settings</a></div></nav>
-<script src="../assets/config.js?v=20261027-cancellation-reason-v1"></script>
-<script src="../assets/app.js?v=20261027-cancellation-reason-v1"></script>
+<script src="../assets/config.js?v=20261028-gm-cancellation-receipt-v1"></script>
+<script src="../assets/app.js?v=20261028-gm-cancellation-receipt-v1"></script>
+<script src="../assets/pickup-orders.js?v=20261028-gm-cancellation-receipt-v1"></script>
 <script>
 (function () {
   'use strict';
@@ -76,8 +79,49 @@
         if (index === 3) td.className = 'cancel-log-reason';
         tr.appendChild(td);
       });
+      const actionCell = document.createElement('td');
+      const downloadButton = document.createElement('button');
+      downloadButton.type = 'button';
+      downloadButton.className = 'btn soft cancel-log-download';
+      downloadButton.textContent = 'DOWNLOAD INVOICE';
+      downloadButton.dataset.downloadInvoice = String(row.id || '');
+      downloadButton.dataset.orderNumber = String(row.order_number || row.id || 'order');
+      downloadButton.disabled = !row.id;
+      downloadButton.setAttribute('aria-label', 'Download invoice for ' + String(row.order_number || row.id || 'order'));
+      actionCell.appendChild(downloadButton);
+      tr.appendChild(actionCell);
       rowsRoot.appendChild(tr);
     }
+    rowsRoot.querySelectorAll('[data-download-invoice]').forEach(button => {
+      button.addEventListener('click', async () => {
+        const orderId = button.dataset.downloadInvoice;
+        if (!orderId || typeof window.POADownloadOrderReceiptPng !== 'function') {
+          setNotice('Invoice tools could not be loaded. Refresh the page and try again.', true);
+          return;
+        }
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'PREPARING…';
+        try {
+          const { data: order, error: orderError } = await sb.from('pickup_orders')
+            .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at')
+            .eq('id', orderId).maybeSingle();
+          if (orderError) throw orderError;
+          if (!order) throw new Error('لم يتم العثور على الطلب.');
+          const { data: items, error: itemsError } = await sb.from('pickup_order_items')
+            .select('id,order_id,item_name,quantity,unit_price,line_total')
+            .eq('order_id', orderId).order('created_at', { ascending: true });
+          if (itemsError) throw itemsError;
+          await window.POADownloadOrderReceiptPng(order, items || []);
+          setNotice('Invoice downloaded for ' + (order.order_number || orderId) + '.', false);
+        } catch (error) {
+          setNotice(error?.message || 'Could not download this invoice. Check Supabase order permissions and try again.', true);
+        } finally {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      });
+    });
     setNotice('Showing ' + rows.length + ' recent cancellation record(s).', false);
   }
 
