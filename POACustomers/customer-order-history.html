@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C65F78">
+<meta name="description" content="View your previous Dina's Corner orders and their status.">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261028-order-tracking-nav-v1">
+<title>Order History</title>
+<link rel="stylesheet" href="../assets/style.css?v=20261028-order-tracking-nav-v1">
+<link rel="stylesheet" href="../assets/pickup-orders.css?v=20261028-order-tracking-nav-v1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dina's Corner">
+<style>
+.customer-history-main{max-width:940px;margin:0 auto;padding:24px 16px calc(100px + env(safe-area-inset-bottom))}
+.customer-history-panel{margin-top:16px}
+.customer-history-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.customer-history-heading h2{margin:0}
+@media(max-width:560px){.customer-history-main{padding:18px 12px calc(100px + env(safe-area-inset-bottom))}.customer-history-panel{padding:14px}}
+.customer-mobile-nav{box-sizing:border-box;position:fixed;z-index:999;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;align-items:stretch;padding:7px 8px calc(7px + env(safe-area-inset-bottom));border-top:1px solid rgba(224,196,190,.8);background:rgba(255,251,247,.96);box-shadow:0 -4px 16px rgba(98,73,63,.06);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.customer-mobile-nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:53px;padding:5px 2px;border-radius:15px;color:#817773;text-decoration:none;font-size:9px;font-weight:800;line-height:1.1;white-space:nowrap}
+.customer-mobile-nav svg{display:block;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.customer-mobile-nav a.is-active{background:#fae7eb;color:#a13f60}
+</style>
+</head>
+<body data-page="customer-order-history">
+<header class="topbar customer-topbar">
+<a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261028-order-tracking-nav-v1" alt="DINA'S CORNER"></a>
+<details class="customer-top-menu" data-customer-top-menu>
+  <summary aria-label="Open customer navigation" title="Open customer navigation"><svg class="customer-top-menu-symbol" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 6h16M4 12h16M4 18h16" /></svg></summary>
+  <nav class="customer-menu-popup" aria-label="Customer menu">
+    <a href="customer-home.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">⌂</span><span>Home</span></a>
+    <a href="customer-menu.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">☰</span><span>Menu &amp; Basket</span></a>
+    <a href="customer-card.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">▦</span><span>My QR Code</span></a>
+    <a href="customer-rewards.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">★</span><span>Rewards</span></a>
+    <a href="customer-locations.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">⌖</span><span>Branches</span></a>
+    <a href="customer-order-history.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">▣</span><span>Order History</span></a>
+    <a href="customer-profile.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">●</span><span>My Profile</span></a>
+  <button class="customer-menu-logout" type="button" onclick="logout()" aria-label="Sign out">Sign Out</button></nav>
+</details>
+</header>
+<main class="customer-history-main">
+  <header class="pickup-heading">
+    <p class="eyebrow">YOUR ACCOUNT</p>
+    <h1 class="title">Order History</h1>
+    <p class="sub">Review previous orders, branch details, totals and the latest recorded status.</p>
+  </header>
+  <section class="card pickup-panel customer-history-panel" aria-labelledby="customerHistoryTitle">
+    <div class="customer-history-heading"><h2 id="customerHistoryTitle">Previous orders</h2><button id="refreshPickupOrdersBtn" class="btn soft" type="button">REFRESH</button></div>
+    <div id="pickupOrdersMessage" hidden style="margin-top:12px" aria-live="polite"></div>
+    <div id="pickupOrdersList" class="pickup-orders-list" style="margin-top:14px"><div class="pickup-empty">Loading your orders…</div></div>
+  </section>
+  <div style="margin-top:16px"><a class="btn soft" href="customer-menu.html">Back to menu</a></div>
+</main>
+
+<nav class="customer-mobile-nav" aria-label="Main customer navigation">
+  <a href="customer-home.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3.5 10.8 8.5-7 8.5 7M5.5 9.7v10h5.2v-6h2.6v6h5.2v-10"/></svg><span>Home</span></a>
+  <a class="is-active" href="customer-order-history.html" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>My Order</span></a>
+  <a href="customer-locations.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5.5-8 11-8 11S4 15.5 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Location</span></a>
+  <a href="customer-rewards.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9Z"/></svg><span>Rewards</span></a>
+  <a href="customer-profile.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="4"/><path d="M4.5 21c.5-4.3 3.2-6.8 7.5-6.8s7 2.5 7.5 6.8"/></svg><span>Profile</span></a>
+</nav>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<script src="../assets/tenant-config.js?v=20261028-order-tracking-nav-v1"></script>
+<script src="../assets/tenant-branding.js?v=20261028-order-tracking-nav-v1"></script>
+<script src="../assets/customer-navigation.js?v=20261028-order-tracking-nav-v1"></script>
+<script src="../assets/config.js?v=20261028-order-tracking-nav-v1"></script>
+<script src="../assets/app.js?v=20261028-order-tracking-nav-v1"></script>
+<script src="../assets/pickup-orders.js?v=20261028-customer-comment-only-v2"></script>
+
+
+<script>
+(() => {
+  const refresh = () => {
+    if (document.visibilityState === 'visible') document.getElementById('refreshPickupOrdersBtn')?.click();
+  };
+  const timer = window.setInterval(refresh, 15000);
+  document.addEventListener('visibilitychange', refresh);
+  window.addEventListener('pagehide', () => { window.clearInterval(timer); }, { once: true });
+})();
+</script>
+</body>
+</html>
