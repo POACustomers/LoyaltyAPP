@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v54-order-note-location-cleanup";
+const CACHE = CACHE_NAMESPACE + "v55-gm-cancellation-invoice-download";
 const SHELL = [
   "./",
   "./index.html",
@@ -49,6 +49,7 @@ const SHELL = [
   "./customer/customer-profile.html",
   "./GM/gm-login.html",
   "./GM/gm-dashboard.html",
+  "./GM/gm-cancellations.html",
   "./GM/gm-categories.html",
   "./GM/gm-menu.html",
   "./GM/gm-offers.html",
