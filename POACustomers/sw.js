@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v52-home-bestsellers-final";
+const CACHE = CACHE_NAMESPACE + "v53-home-bestsellers-autoplay-3s";
 const SHELL = [
   "./",
   "./index.html",
