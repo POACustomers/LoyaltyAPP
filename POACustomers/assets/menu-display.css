@@ -199,5 +199,111 @@ body[data-page="menu"] #menuItemsView .menu-list{width:100%;}
   .customer-mobile-nav a:focus-visible { outline:2px solid #bf5e75; outline-offset:1px; }
 }
 
-/* User request: remove the menu-page basket button; basket remains in bottom navigation. */
-.menu-cart-trigger{display:none!important}
+
+/* POAC menu correction: regular two-column category layout (no horizontal carousel). */
+body[data-page="customer-menu"] #menuCategoriesView .menu-grid,
+body[data-page="menu"] #menuCategoriesView .menu-grid,
+body[data-page="customer-menu"] #menuCategoriesView .menu-grid {
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:10px !important;
+  overflow:visible !important;
+  padding:2px 0 8px !important;
+  scroll-snap-type:none !important;
+  overscroll-behavior-x:auto !important;
+}
+body[data-page="customer-menu"] #menuCategoriesView .menu-category,
+body[data-page="menu"] #menuCategoriesView .menu-category {
+  width:100% !important; min-width:0 !important; max-width:100% !important;
+  flex:none !important; padding:0 0 8px !important; border-radius:14px !important;
+}
+body[data-page="customer-menu"] #menuCategoriesView .menu-category-media,
+body[data-page="menu"] #menuCategoriesView .menu-category-media {
+  width:100% !important; aspect-ratio:1/0.92 !important; height:auto !important;
+  margin-bottom:6px !important; border-radius:13px 13px 9px 9px !important;
+}
+body[data-page="customer-menu"] #menuCategoriesView .menu-name,
+body[data-page="menu"] #menuCategoriesView .menu-name {
+  min-height:34px !important; padding:0 5px !important; font-size:11px !important;
+  line-height:1.2 !important; overflow-wrap:anywhere !important;
+}
+@media (min-width:640px) {
+ body[data-page="customer-menu"] #menuCategoriesView .menu-grid,
+ body[data-page="menu"] #menuCategoriesView .menu-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+}
+
+
+/* Final POAC menu restore: keep full menu category cards in a tidy two-column grid. */
+body[data-page="customer-menu"] #menuCategoriesView .menu-grid,
+body[data-page="menu"] #menuCategoriesView .menu-grid {
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;
+  overflow:visible!important;
+  padding:2px 0 8px!important;
+  margin:0!important;
+  scroll-snap-type:none!important;
+}
+body[data-page="customer-menu"] #menuCategoriesView .menu-category,
+body[data-page="menu"] #menuCategoriesView .menu-category {
+  width:100%!important; min-width:0!important; max-width:100%!important;
+  flex:none!important; padding:0 0 8px!important; border-radius:14px!important;
+}
+body[data-page="customer-menu"] #menuCategoriesView .menu-category-media,
+body[data-page="menu"] #menuCategoriesView .menu-category-media {
+  width:100%!important; aspect-ratio:1/0.92!important; height:auto!important;
+  margin-bottom:6px!important; border-radius:13px 13px 9px 9px!important;
+}
+body[data-page="customer-menu"] #menuCategoriesView .menu-name,
+body[data-page="menu"] #menuCategoriesView .menu-name {
+  min-height:34px!important; padding:0 5px!important; font-size:11px!important;
+  line-height:1.2!important; overflow-wrap:anywhere!important;
+}
+/* Let the page content scroll above the fixed, shared customer navigation. */
+body[data-page="customer-menu"] .menu-page{padding-bottom:calc(100px + env(safe-area-inset-bottom))!important}
+@media(max-width:679px){
+  body[data-page="customer-menu"] .customer-mobile-nav{
+    position:fixed;z-index:500;inset-inline:0;bottom:0;display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;
+    min-height:65px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+    box-sizing:border-box;border-top:1px solid rgba(224,196,190,.8);
+    background:rgba(255,251,247,.96);box-shadow:0 -4px 16px rgba(98,73,63,.06);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)
+  }
+  body[data-page="customer-menu"] .customer-mobile-nav a{
+    display:flex;min-width:0;min-height:53px;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;padding:5px 2px;border-radius:14px;color:#817773;text-decoration:none;
+    font-size:9px;font-weight:800;line-height:1.1;white-space:nowrap;-webkit-tap-highlight-color:transparent
+  }
+  body[data-page="customer-menu"] .customer-mobile-nav a svg{
+    display:block;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round
+  }
+  body[data-page="customer-menu"] .customer-mobile-nav a:focus-visible{outline:2px solid #bf5e75;outline-offset:1px}
+}
+
+
+/* Final mobile fix: basket is an icon-only trigger; My Order remains its own bottom-tab destination. */
+body[data-page="customer-menu"] .menu-cart-trigger--icon-only{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  flex:0 0 36px!important;width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;
+  padding:0!important;margin:0!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;color:var(--green,#6d714b)!important;
+}
+body[data-page="customer-menu"] .menu-cart-trigger--icon-only .menu-cart-trigger-icon,
+body[data-page="customer-menu"] .menu-cart-trigger--icon-only .menu-cart-trigger-icon svg{
+  display:block!important;width:25px!important;height:25px!important;flex:0 0 25px!important;
+}
+body[data-page="customer-menu"] .menu-cart-trigger--icon-only .menu-cart-trigger-icon svg{
+  fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important;
+}
+body[data-page="customer-menu"] .menu-cart-trigger--icon-only .menu-cart-trigger-count{
+  top:-5px!important;right:-6px!important;min-width:16px!important;height:16px!important;
+  border:1px solid var(--paper,#fffaf6)!important;background:var(--rose,#c65f78)!important;color:#fff!important;font-size:9px!important;
+}
+body[data-page="customer-menu"] .menu-cart-trigger--icon-only:focus-visible{outline:2px solid rgba(198,95,120,.4)!important;outline-offset:3px!important;border-radius:8px!important}
+@media(max-width:420px){
+  body[data-page="customer-menu"] .menu-cart-trigger--icon-only{flex-basis:34px!important;width:34px!important;min-width:34px!important;height:36px!important;min-height:36px!important}
+  body[data-page="customer-menu"] .menu-cart-trigger--icon-only .menu-cart-trigger-icon,
+  body[data-page="customer-menu"] .menu-cart-trigger--icon-only .menu-cart-trigger-icon svg{width:24px!important;height:24px!important;flex-basis:24px!important}
+}
