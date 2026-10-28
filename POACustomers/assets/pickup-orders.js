@@ -582,6 +582,13 @@
     toast('تم تنزيل صورة الفاتورة PNG. راجع مجلد التنزيلات على الكمبيوتر.');
   }
 
+  // Safe UI hook for the GM cancellation audit log. Uses the same approved receipt artwork.
+  window.POADownloadOrderReceiptPng = async function (order, items) {
+    if (!order || !(order.id || order.order_number)) throw new Error('بيانات الطلب غير مكتملة.');
+    await downloadOrderReceiptById(order, Array.isArray(items) ? items : []);
+    return true;
+  };
+
   // Print the same approved PNG receipt that is downloaded after order status changes.
   // Open the window synchronously from the button click so popup blockers are less likely to stop it.
   async function printOrderReceiptPng(order, items) {
