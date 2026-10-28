@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v55-home-avatar-80px-v6";
+const CACHE = CACHE_NAMESPACE + "v56-menu-cart-icon-nav-fix";
 const SHELL = [
   "./",
   "./index.html",
