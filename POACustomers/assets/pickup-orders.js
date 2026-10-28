@@ -84,6 +84,20 @@
     } catch (_) { return null; }
   }
 
+  // The map URL is stored inside notes for compatibility with the order RPC.
+  // Show only the customer's written comment in notes; delivery location stays in its own section.
+  function customerCommentText(notes) {
+    let text = String(notes || '');
+    text = text.replace(/(?:^|\s*\|\s*)Customer location:\s*https?:\/\/[^\s|]+/gi, ' ');
+    text = text.replace(/\s*\|\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    return text;
+  }
+
+  function customerCommentHtml(notes, label) {
+    const comment = customerCommentText(notes);
+    return comment ? '<br>' + esc(label || 'Note') + ': ' + esc(comment) : '';
+  }
+
   function setCustomerShareLocationStatus(message, kind) {
     const el = $('customerShareLocationStatus');
     if (!el) return;
@@ -208,7 +222,8 @@
     const branch = order.branch_name || 'Dina’s Corner';
     const branchAddress = order.branch_address || '';
     const fulfillment = type === 'delivery' ? 'توصيل' : 'استلام من الفرع';
-    const notes = String(order.notes || '').trim() ? '<p><strong>ملاحظات العميل:</strong> ' + esc(order.notes) + '</p>' : '';
+    const customerComment = customerCommentText(order.notes);
+    const notes = customerComment ? '<p><strong>ملاحظات العميل:</strong> ' + esc(customerComment) + '</p>' : '';
     printWindow.document.open();
     printWindow.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>إيصال الطلب ${esc(orderNo)}</title><style>
       *{box-sizing:border-box}body{margin:0;background:#f7f2ef;color:#3d3031;font-family:Tahoma,Arial,sans-serif;font-size:14px;line-height:1.6}.page{max-width:760px;margin:24px auto;padding:28px;background:#fffdfa;border:1px solid #ead9d3;border-radius:16px}.top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;border-bottom:2px solid #c65f78;padding-bottom:18px;margin-bottom:18px}.brand{font-size:25px;font-weight:800;color:#a74860}.subtitle{color:#776a6a;font-size:12px}.ticket{background:#f8e9ed;border:1px solid #efd2db;padding:8px 12px;border-radius:9px;font-weight:700;white-space:nowrap}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;margin-bottom:20px}.field{border-bottom:1px solid #eee1dd;padding:6px 0}.field small{display:block;color:#897b7b;font-size:11px}.field strong{font-size:13px;overflow-wrap:anywhere}.status{display:inline-block;background:#f2efd9;border-radius:20px;padding:3px 10px;font-size:12px}.status.cancelled{background:#fce4e8;color:#9d2945}.section-title{font-weight:800;margin:20px 0 8px}table{width:100%;border-collapse:collapse}th,td{padding:10px 7px;border-bottom:1px solid #eadfdb;text-align:right;vertical-align:top}th{background:#fbf2f3;color:#80505b;font-size:12px}.num{text-align:center;white-space:nowrap}.totals{margin:18px 0 0 auto;max-width:360px}.total-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #e4d7d2}.grand{font-size:19px;font-weight:800;color:#a74860;border-top:2px solid #c65f78;margin-top:6px;padding-top:12px}.reason{margin-top:16px;padding:12px;background:#fff0f2;border:1px solid #efc8d0;border-radius:8px;color:#773b48}.notice{margin-top:22px;padding:10px;background:#f8f5f3;border-radius:8px;text-align:center;color:#746969;font-size:11px}.actions{display:flex;gap:10px;justify-content:center;margin:0 auto 20px}.actions button{border:0;border-radius:8px;padding:11px 18px;background:#c65f78;color:#fff;font-weight:700;cursor:pointer}.actions .secondary{background:#e8dddd;color:#4d3d3f}@media(max-width:600px){.page{margin:0;padding:16px;border-radius:0}.grid{grid-template-columns:1fr 1fr}.top{gap:10px}.brand{font-size:20px}}@media print{@page{size:A5 portrait;margin:9mm}body{background:#fff;font-size:11px}.page{max-width:none;margin:0;padding:0;border:0;border-radius:0}.actions{display:none}.top{padding-bottom:10px;margin-bottom:10px}.brand{font-size:20px}th,td{padding:6px 4px}.notice{margin-top:14px}}
@@ -367,7 +382,7 @@
     const totalsY = tableBottom + 12;
     const paymentY = totalsY + 145;
     const notesY = paymentY + 250;
-    const notesText = String(order.notes || '').trim();
+    const notesText = customerCommentText(order.notes);
     const noteLines = wrapReceiptText(notesText || '—', 66, 2);
     const cancelReason = String(order.cancellation_reason || '').trim();
     const cancelLines = cancelReason ? wrapReceiptText(cancelReason, 66, 2) : [];
@@ -1110,7 +1125,7 @@
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>Branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + '<br>' + esc(statusHint(order.status, type)) +
-        deliveryDetailsHtml(order, false) + (order.notes ? '<br>Note: ' + esc(order.notes) : '') + (order.status === 'cancelled' && String(order.cancellation_reason || '').trim() ? '<div class="pickup-cancellation-reason" role="note" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48"><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) + '</div>' : '') + '</div>' +
+        deliveryDetailsHtml(order, false) + customerCommentHtml(order.notes, 'Note') + (order.status === 'cancelled' && String(order.cancellation_reason || '').trim() ? '<div class="pickup-cancellation-reason" role="note" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48"><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) + '</div>' : '') + '</div>' +
         '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'To be confirmed by branch' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div>' +
         (canCancel ? '<button class="btn danger" type="button" data-cancel-order="' + esc(order.id) + '">Cancel order</button>' : '') + '</div></article>';
     }).join('');
@@ -1522,7 +1537,7 @@
         (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '');
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div class="pickup-order-head-main"><div class="pickup-order-number">' + esc(order.order_number || order.id) + '</div><small class="pickup-order-date">' + esc(dateLabel) + '</small></div><div class="pickup-order-head-tools"><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span><button class="pickup-print-icon" type="button" data-print-unified-order="' + esc(order.id) + '" title="طباعة الفاتورة" aria-label="طباعة الفاتورة"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M7 14h10v7H7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="11" r=".9" fill="currentColor"/></svg></button></div></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>Handling branch: ' + esc(order.branch_name || '—') + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + (order.branch_address ? '<br>Branch address: ' + esc(order.branch_address) : '') +
-        deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + cancellation + localBadge + '</div>' +
+        deliveryDetailsHtml(order, true) + customerCommentHtml(order.notes, 'Customer note') + cancellation + localBadge + '</div>' +
         '<div class="pickup-order-items">' + (itemHtml || '<small>No saved item details are available for this order.</small>') + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + esc(total) + '</strong></div></div>' +
         (orderActionButtons ? '<div class="pickup-next-actions">' + orderActionButtons + '</div>' : '') + '</article>';
     }).join('');
