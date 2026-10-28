@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#FFF4ED">
+<link rel="manifest" href="../manifest.webmanifest"><title>Dina's Corner — Best Sellers</title>
+<link rel="stylesheet" href="../assets/style.css?v=20261028-home-bestsellers-final-v2">
+<style>
+.gm-best-main{padding-bottom:112px}.gm-best-head{margin:16px 0 18px}.gm-best-form{display:grid;gap:12px}.gm-best-upload{display:block;width:100%;min-height:44px;padding:9px;border:1px solid var(--line);border-radius:12px;background:#fffaf6}.gm-best-help{font-size:11px;line-height:1.5;color:var(--muted)}.gm-best-actions{display:flex;gap:8px;flex-wrap:wrap}.gm-best-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.gm-best-item{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:#fffaf6}.gm-best-item img{display:block;width:100%;height:130px;object-fit:cover;background:#f8e9e4}.gm-best-item__name{padding:8px 9px 0;font-size:10px;line-height:1.35;color:var(--muted);overflow-wrap:anywhere}.gm-best-item__controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:8px}.gm-best-item__controls .btn{min-width:0;padding:8px 2px;font-size:10px}.gm-best-empty{padding:20px 12px;border:1px dashed var(--line);border-radius:14px;text-align:center;color:var(--muted);font-size:12px}.gm-best-msg{white-space:pre-wrap;line-height:1.55;margin-top:10px}.gm-best-dashboard-link{display:inline-flex;align-items:center;justify-content:center;margin-top:12px;text-decoration:none}@media(min-width:640px){.gm-best-list{grid-template-columns:repeat(4,minmax(0,1fr))}.gm-best-item img{height:160px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="../assets/tenant-config.js?v=20261028-home-bestsellers-final-v2"></script><script src="../assets/tenant-branding.js?v=20261028-home-bestsellers-final-v2"></script>
+</head>
+<body data-page="gm-home-products">
+<header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" type="button" title="Sign out" aria-label="Sign out">↪</button></header>
+<main class="container gm-best-main">
+  <header class="gm-best-head"><p class="eyebrow">GM MANAGEMENT</p><h1 class="title">Best Sellers Photos</h1><p class="sub">Upload the product photos you want customers to see at the top of the home page. Images appear as a swipeable photo strip without product names.</p></header>
+  <section class="card"><h2 style="margin:0 0 8px">Add product photos</h2><div class="gm-best-form"><div class="field"><label for="bestSellerImages">Choose product photos</label><input id="bestSellerImages" class="gm-best-upload" type="file" accept="image/*" multiple><small class="gm-best-help">Select multiple pictures at once (up to 30 MB each). Images are resized and compressed before upload.</small></div><button id="uploadBestSellerImages" class="btn primary" type="button">UPLOAD PHOTOS</button></div><div id="bestSellerMsg" class="note gm-best-msg" role="status" aria-live="polite"></div><a href="gm-dashboard.html" class="btn soft gm-best-dashboard-link">← Back to dashboard</a></section>
+  <section class="card" style="margin-top:14px"><div class="row" style="align-items:center;justify-content:space-between;gap:10px"><h2 style="margin:0">Home page photos</h2><button id="refreshBestSellers" class="btn soft" type="button">Refresh</button></div><p class="gm-best-help" style="margin:8px 0 0">Use the arrows to change the order shown to customers.</p><div id="bestSellerList" class="gm-best-list"><div class="gm-best-empty">Loading photos…</div></div></section>
+</main>
+<nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html"><b>☰</b>Menu</a><a href="gm-categories.html"><b>▧</b>Categories</a><a href="gm-settings.html"><b>⚙</b>Settings</a></div></nav>
+<script src="../assets/config.js?v=20261028-home-bestsellers-final-v2"></script><script src="../assets/app.js?v=20261028-home-bestsellers-final-v2"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id),BUCKET='poac-home-featured-products',TABLE='home_featured_products';
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  let profile=null,rows=[];
+  function message(text,bad=false){const node=$('bestSellerMsg');node.textContent=text;node.style.color=bad?'#a33':'';}
+  function safeName(name){return String(name||'product-photo').replace(/[^a-z0-9._-]+/gi,'-').slice(0,80)||'product-photo';}
+  async function loadRows(){
+    const {data,error}=await sb.from(TABLE).select('id,image_url,storage_path,image_name,sort_order,is_active,created_at').order('sort_order',{ascending:true}).order('created_at',{ascending:true});
+    if(error)throw error;rows=Array.isArray(data)?data:[];render();
+  }
+  function render(){
+    const list=$('bestSellerList');
+    if(!rows.length){list.innerHTML='<div class="gm-best-empty">No photos added yet. Upload your first best-selling product photo above.</div>';return;}
+    list.innerHTML=rows.map((row,index)=>'<article class="gm-best-item"><img src="'+esc(row.image_url)+'" alt="'+esc(row.image_name||'Best-selling product photo')+'" loading="lazy" onerror="this.style.opacity=.35"><div class="gm-best-item__name">'+esc(row.image_name||'Product photo')+'</div><div class="gm-best-item__controls"><button class="btn soft" type="button" data-up="'+esc(row.id)+'" '+(index===0?'disabled':'')+' aria-label="Move photo up">↑</button><button class="btn soft" type="button" data-down="'+esc(row.id)+'" '+(index===rows.length-1?'disabled':'')+' aria-label="Move photo down">↓</button><button class="btn danger" type="button" data-delete="'+esc(row.id)+'" aria-label="Delete photo">×</button></div></article>').join('');
+    list.querySelectorAll('[data-up]').forEach(btn=>btn.addEventListener('click',()=>move(btn.dataset.up,-1)));
+    list.querySelectorAll('[data-down]').forEach(btn=>btn.addEventListener('click',()=>move(btn.dataset.down,1)));
+    list.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>remove(btn.dataset.delete)));
+  }
+  async function move(id,delta){
+    const idx=rows.findIndex(row=>String(row.id)===String(id)),other=idx+delta;if(idx<0||other<0||other>=rows.length)return;
+    const changed=[...rows];[changed[idx],changed[other]]=[changed[other],changed[idx]];
+    message('Saving photo order…');
+    for(let i=0;i<changed.length;i++){
+      const {error}=await sb.from(TABLE).update({sort_order:i+1,updated_at:new Date().toISOString()}).eq('id',changed[i].id);
+      if(error){message('Could not save the new order: '+error.message,true);return;}
+    }
+    await loadRows();message('Photo order saved.');
+  }
+  async function remove(id){
+    const row=rows.find(item=>String(item.id)===String(id));if(!row)return;
+    if(!confirm('Remove this photo from Best Sellers?'))return;
+    message('Removing photo…');
+    if(row.storage_path){const {error:storageError}=await sb.storage.from(BUCKET).remove([row.storage_path]);if(storageError){message('Could not remove the stored image: '+storageError.message,true);return;}}
+    const {error}=await sb.from(TABLE).delete().eq('id',row.id);if(error){message('Image storage was removed but its record could not be deleted: '+error.message,true);return;}
+    await loadRows();message('Photo removed.');
+  }
+  async function upload(){
+    const files=Array.from($('bestSellerImages').files||[]);if(!files.length){message('Choose one or more image files first.',true);return;}
+    const button=$('uploadBestSellerImages');button.disabled=true;const old=button.textContent;button.textContent='UPLOADING…';
+    let saved=0;
+    try{
+      for(const file of files){
+        if(!String(file.type||'').startsWith('image/'))throw new Error('Each selected file must be an image.');
+        if(file.size>30*1024*1024)throw new Error('Each image must be 30 MB or smaller.');
+        const compressed=await window.POA_PREPARE_IMAGE(file,{maxInputMB:30,maxDimension:1000,quality:.8,maxOutputMB:1.1});
+        const path=profile.id+'/home-featured/'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.jpg';
+        const {error:uploadError}=await sb.storage.from(BUCKET).upload(path,compressed,{upsert:false,contentType:'image/jpeg',cacheControl:'31536000'});
+        if(uploadError)throw new Error(uploadError.message+'. Run the included home bestseller setup SQL in Supabase first.');
+        const image_url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+        const nextOrder=rows.length+1;
+        const {error:insertError}=await sb.from(TABLE).insert({image_url,storage_path:path,image_name:safeName(file.name),sort_order:nextOrder,is_active:true,created_by:profile.id,updated_at:new Date().toISOString()});
+        if(insertError){await sb.storage.from(BUCKET).remove([path]);throw new Error(insertError.message);}
+        rows.push({id:'pending-'+saved,image_url,storage_path:path,image_name:safeName(file.name),sort_order:nextOrder,is_active:true});saved++;
+        message('Uploaded '+saved+' of '+files.length+' photo(s)…');
+      }
+      $('bestSellerImages').value='';await loadRows();message(saved+' photo(s) uploaded and published to the customer home page.');
+    }catch(error){await loadRows().catch(()=>{});message((saved?'Uploaded '+saved+' photo(s) before the error. ':'')+(error?.message||'Could not upload photos.'),true);}
+    finally{button.disabled=false;button.textContent=old;}
+  }
+  async function init(){
+    try{
+      profile=await guardRole(['gm','admin']);if(!profile)return;
+      await loadRows();
+    }catch(error){message(error?.message||'Could not open Best Sellers management.',true);}
+  }
+  $('uploadBestSellerImages').addEventListener('click',upload);
+  $('refreshBestSellers').addEventListener('click',()=>loadRows().then(()=>message('Photos refreshed.')).catch(e=>message(e.message,true)));
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else void init();
+})();
+</script>
+<script>if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script>
+</body></html>
