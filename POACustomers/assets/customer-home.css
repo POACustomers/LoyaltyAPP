@@ -85,3 +85,20 @@ body[data-page="customer-home"] .home-category-message.is-error { color:#a34d63;
 .customer-home-contact svg{overflow:hidden;max-width:100%;height:auto}
 .customer-home-contact__payment svg,.customer-home-contact__phone-icon svg,.customer-home-contact__payment-mini svg{height:100%}
 @media(max-width:350px){.customer-home-contact{padding:12px 9px}.customer-home-payment{gap:5px;padding:7px 5px}.customer-home-payment__logo,.customer-home-payment__logo svg{flex-basis:27px;width:27px;height:27px;max-width:27px;max-height:27px}.customer-home-payment__text strong{font-size:10px}.customer-home-contact__socials{gap:7px}.customer-home-social{flex-basis:132px;gap:4px;padding:6px 7px;font-size:10px}.customer-home-contact__phone{gap:5px;padding:7px 5px}.customer-home-contact__phone-copy strong{font-size:15px}.customer-home-contact__payment-mini{gap:3px}.customer-home-contact__payment-mini-insta,.customer-home-contact__payment-mini-vodafone,.customer-home-contact__payment-mini svg{flex-basis:18px;width:18px;height:18px;max-width:18px;max-height:18px}}
+
+/* Final approved mobile contact row: icons only, no payment frame or labels. */
+body[data-page="customer-home"] .customer-home-contact--inline{box-sizing:border-box;margin:14px 0 18px;padding:10px 0;background:transparent;border:0;border-radius:0;box-shadow:none;overflow:visible;width:100%;max-width:100%;}
+body[data-page="customer-home"] .customer-home-contact--inline .customer-home-contact__inline-row{display:flex;align-items:center;justify-content:center;gap:clamp(7px,2.2vw,13px);width:100%;min-width:0;}
+body[data-page="customer-home"] .customer-home-contact--inline a{display:grid;place-items:center;text-decoration:none;flex:0 0 auto;}
+body[data-page="customer-home"] .customer-home-contact__inline-social{width:30px;height:30px;}
+body[data-page="customer-home"] .customer-home-contact__inline-phone{width:29px;height:29px;color:#a64866;border:1px solid #f0d9dc;border-radius:50%;background:#fffaf9;box-shadow:0 2px 5px rgba(166,72,102,.06);}
+body[data-page="customer-home"] .customer-home-contact__inline-social svg{display:block;width:100%;height:100%;}
+body[data-page="customer-home"] .customer-home-contact__inline-phone svg{display:block;width:17px;height:17px;}
+body[data-page="customer-home"] .customer-home-contact__inline-number{font-size:clamp(14px,4.1vw,19px);line-height:1.1;letter-spacing:0;color:#a13f60;white-space:nowrap;font-variant-numeric:tabular-nums;flex:0 1 auto;}
+body[data-page="customer-home"] .customer-home-contact__inline-divider{width:1px;height:27px;background:#edc8d0;flex:0 0 1px;}
+body[data-page="customer-home"] .customer-home-contact__inline-payment{display:grid;place-items:center;width:25px;height:25px;flex:0 0 25px;overflow:hidden;}
+body[data-page="customer-home"] .customer-home-contact__inline-payment svg{display:block;width:25px;height:25px;max-width:25px;max-height:25px;}
+/* The offers card keeps its title and image; hide only the counter and slider controls. */
+body[data-page="customer-home"] .home-offer-count,
+body[data-page="customer-home"] .home-offer-controls{display:none!important;}
+@media(max-width:360px){body[data-page="customer-home"] .customer-home-contact--inline .customer-home-contact__inline-row{gap:6px}body[data-page="customer-home"] .customer-home-contact__inline-social{width:26px;height:26px}body[data-page="customer-home"] .customer-home-contact__inline-number{font-size:14px}body[data-page="customer-home"] .customer-home-contact__inline-payment,body[data-page="customer-home"] .customer-home-contact__inline-payment svg{width:22px;height:22px;max-width:22px;max-height:22px;flex-basis:22px}}
