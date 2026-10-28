@@ -1,0 +1,12 @@
+إصلاح خطأ لوحة GM — Registration Analytics
+
+المشكلة في الصورة ناتجة عن أن حساب GM لا يستطيع تنفيذ SELECT/COUNT مباشرة على جدول public.profiles بسبب سياسات RLS. هذا التعديل لا يفتح قراءة صفوف العملاء؛ بل يستدعي دالة Supabase تتحقق من أن المستخدم الحالي GM أو Admin وتعيد الأعداد المجمعة فقط.
+
+خطوات التطبيق:
+1) خذ نسخة احتياطية من assets/app.js الحالي.
+2) افتح Supabase الخاص بـ Dina’s Corner ثم SQL Editor.
+3) افتح ملف SUPABASE-GM-REGISTRATION-ANALYTICS-FIX.sql وانسخ محتواه كاملًا إلى SQL Editor ثم اضغط Run مرة واحدة.
+4) استبدل assets/app.js في المستودع بملف assets/app.js الموجود داخل هذا الـZIP، في نفس المسار بالضبط. واستبدل GM/gm-dashboard.html بالنسخة المرفقة لتحديث رابط كاش ملف JavaScript.
+5) ارفع التعديل وانتظر نشر GitHub Pages، ثم افتح لوحة GM واعمل تحديثًا كاملًا للصفحة.
+
+مهم: يعتمد الإصلاح على وجود public.profiles مع الأعمدة id وrole وcreated_at، وعلى أن profiles.id يطابق auth.uid()، كما يستخدمه نظام الدخول الحالي. لا يمنح حساب GM صلاحية قراءة أسماء العملاء أو هواتفهم من لوحة الإحصاءات.
