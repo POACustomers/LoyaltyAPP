@@ -7,21 +7,18 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../assets/icons/icon-192.png?v=20261024-home-image-cards-v1">
 <title>Customer Home</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261028-fixed-customer-bottom-nav-v1">
+<link rel="stylesheet" href="../assets/style.css?v=20261028-poac-nav-final-v3">
+<link rel="stylesheet" href="../assets/customer-home.css?v=20261028-home-final-categories-contact-v1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dina's Corner">
-<link rel="stylesheet" href="../assets/customer-home-contact.css?v=20261028-poac-contact-v6">
 </head>
 <body data-page="customer-home">
 
 <header class="topbar customer-topbar">
 <a class="brand brand-image" href="customer-home.html" aria-label="Dina's Corner Home"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261024-home-image-cards-v1" alt="DINA'S CORNER"></a>
-<a class="customer-header-points" href="customer-card.html" title="Open your loyalty card" aria-label="Open your loyalty card">
-  <svg class="customer-header-points__icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m12 2.8 2.75 5.57 6.15.89-4.45 4.34 1.05 6.12L12 16.83l-5.5 2.89 1.05-6.12L3.1 9.26l6.15-.89L12 2.8Z"/></svg>
-  <strong><span data-points>0</span><span class="customer-header-points__divider">/</span>50</strong>
-  <span class="customer-header-points__label">PTS</span>
-</a>
+<div class="customer-header-actions">
+
 <details class="customer-top-menu" data-customer-top-menu>
   <summary aria-label="Open customer navigation" title="Open customer navigation"><svg class="customer-top-menu-symbol" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 6h16M4 12h16M4 18h16" /></svg></summary>
   <nav class="customer-menu-popup" aria-label="Customer menu">
@@ -35,12 +32,37 @@
     <a href="customer-profile.html" data-customer-link><span aria-hidden="true" class="customer-menu-icon">●</span><span>My Profile</span></a>
   <button class="customer-menu-logout" type="button" onclick="logout()" aria-label="Sign out">Sign Out</button></nav>
 </details>
+</div>
 </header>
-<main class="container">
+<main class="container customer-home-page">
 
+<section class="customer-home-hero" aria-labelledby="customerHomeHeroTitle">
+  <div class="customer-home-hero__copy">
+    <p class="customer-home-hero__eyebrow"><span class="customer-home-hero__eyebrow-mark" aria-hidden="true">✦</span> DINA'S CORNER <span aria-hidden="true">·</span> MADE WITH LOVE</p>
+    <h1 id="customerHomeHeroTitle"><span>Great rewards.</span></h1>
+    <p class="customer-home-hero__description">Discover your favourites and earn rewards with every visit.</p>
+  </div>
+  <span class="customer-home-hero__sparkle customer-home-hero__sparkle--one" aria-hidden="true">✦</span>
+  <span class="customer-home-hero__sparkle customer-home-hero__sparkle--two" aria-hidden="true">✧</span>
+</section>
 
+<section class="customer-home-hero__loyalty" aria-label="Your loyalty journey">
+  <div class="customer-home-hero__loyalty-head"><span class="customer-home-hero__loyalty-star" aria-hidden="true">✦</span><span class="customer-home-hero__loyalty-label">YOUR LOYALTY JOURNEY</span></div>
+  <p class="customer-home-hero__loyalty-caption">Your points balance</p>
+  <div class="poac-loyalty-balance"><strong><span data-points>0</span></strong><span>/ 50 points</span></div>
+  <div class="poac-loyalty-progress" aria-hidden="true"><span></span></div>
+  <div class="poac-loyalty-bottom"><span>Every visit brings you closer.</span><a href="customer-card.html">View my card <span aria-hidden="true">→</span></a></div>
+</section>
 
 <section class="home-categories-card" aria-label="Menu categories">
+  <div class="home-categories-intro">
+    <div>
+      <p class="home-categories-eyebrow">DINA'S CORNER</p>
+      <h2 class="title">Menu Categories</h2>
+      <p class="sub">اسحب للشمال علشان تشوف باقي الأقسام</p>
+    </div>
+    <a class="home-categories-view-all" href="customer-menu.html">Full Menu <span aria-hidden="true">→</span></a>
+  </div>
   <div id="homeMenuCategories" class="home-menu-categories" aria-live="polite" aria-label="Menu categories">
     <div class="home-category-message" role="status">Loading menu categories…</div>
   </div>
@@ -52,6 +74,7 @@
     <p class="sub">Loading current offers…</p>
   </div>
 </section>
+
 
 
 
@@ -98,13 +121,14 @@
     </span>
   </a>
 </section>
+
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script src="../assets/tenant-config.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/tenant-branding.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/customer-navigation.js?v=20261028-fixed-customer-bottom-nav-v1"></script>
+<script src="../assets/customer-navigation.js?v=20261028-poac-nav-final-v3"></script>
 <script src="../assets/config.js?v=20261026-offers-large-image-v1"></script>
 <script src="../assets/app.js?v=20261026-offers-large-image-v1"></script>
-<script src="../assets/customer-home-categories.js?v=20261028-poac-clean-mobile-v2"></script>
+<script src="../assets/customer-home-categories.js?v=20261028-home-final-categories-contact-v1"></script>
 </body>
 </html>
