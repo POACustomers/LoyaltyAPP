@@ -26,20 +26,44 @@
       console.warn('Could not load customer profile photo for loyalty card:', error?.message || error);
     }
   }
-  function wireRailDrag(rail){
-    if (!rail) return;
-    let down=false,startX=0,startLeft=0,dragged=false,suppressClick=false;
-    rail.addEventListener('pointerdown',event=>{if(event.pointerType!=='mouse'||event.button!==0)return;down=true;dragged=false;startX=event.clientX;startLeft=rail.scrollLeft;});
-    window.addEventListener('pointermove',event=>{if(!down)return;const dx=event.clientX-startX;if(Math.abs(dx)>5){dragged=true;rail.classList.add('is-dragging');rail.scrollLeft=startLeft-dx;event.preventDefault();}},{passive:false});
-    window.addEventListener('pointerup',()=>{if(!down)return;down=false;rail.classList.remove('is-dragging');if(dragged){suppressClick=true;window.setTimeout(()=>{suppressClick=false;},240);}});
-    rail.addEventListener('click',event=>{if(suppressClick){event.preventDefault();event.stopPropagation();}},true);
-  }
   function renderProducts(rows){
     if(!root)return;
-    const active = (Array.isArray(rows)?rows:[]).filter(row=>row&&row.is_active!==false&&safeImage(row.image_url));
-    if(!active.length){root.innerHTML='<p class="customer-home-best-sellers__status" role="status">Popular products coming soon.</p>';return;}
-    root.innerHTML=active.map((row,index)=>'<img class="customer-home-best-seller-image" src="'+esc(safeImage(row.image_url))+'" alt="Best-selling product '+(index+1)+'" loading="'+(index<3?'eager':'lazy')+'" decoding="async" draggable="false">').join('');
-    wireRailDrag(root);
+    const active=(Array.isArray(rows)?rows:[]).filter(row=>row&&row.is_active!==false&&safeImage(row.image_url));
+    if(!active.length){
+      root.innerHTML='<p class="customer-home-best-sellers__status" role="status">Popular products coming soon.</p>';
+      return;
+    }
+    const slideBasis=100/active.length;
+    root.innerHTML='<div class="customer-home-best-sellers__stage" role="region" aria-label="Best-selling products" aria-roledescription="carousel">'+
+      '<div class="customer-home-best-sellers__track" style="width:'+(active.length*100)+'%">'+
+      active.map((row,index)=>'<div class="customer-home-best-sellers__slide" style="flex-basis:'+slideBasis+'%" aria-hidden="'+(index===0?'false':'true')+'">'+
+        '<img class="customer-home-best-seller-image" src="'+esc(safeImage(row.image_url))+'" alt="Best-selling product '+(index+1)+'" loading="'+(index<2?'eager':'lazy')+'" decoding="async" draggable="false">'+
+      '</div>').join('')+
+      '</div></div>';
+    const stage=root.querySelector('.customer-home-best-sellers__stage');
+    const track=root.querySelector('.customer-home-best-sellers__track');
+    const slides=Array.from(root.querySelectorAll('.customer-home-best-sellers__slide'));
+    if(!stage||!track||slides.length<2)return;
+    let index=0;
+    const step=()=>{
+      index=(index+1)%slides.length;
+      track.style.transform='translate3d(-'+(index*slideBasis)+'%,0,0)';
+      slides.forEach((slide,slideIndex)=>{
+        slide.setAttribute('aria-hidden',slideIndex===index?'false':'true');
+        const img=slide.querySelector('img');
+        if(img&&slideIndex===((index+1)%slides.length))img.loading='eager';
+      });
+    };
+    let timer=0;
+    const stop=()=>{if(timer){window.clearInterval(timer);timer=0;}};
+    const start=()=>{
+      stop();
+      if(document.visibilityState==='visible'&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+        timer=window.setInterval(step,3000);
+      }
+    };
+    document.addEventListener('visibilitychange',start);
+    start();
   }
   async function loadProducts(){
     if(!root)return;
