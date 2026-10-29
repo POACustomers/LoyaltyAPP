@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v53-order-sound-louder";
+const CACHE = CACHE_NAMESPACE + "v54-order-sound-extra-loud";
 const SHELL = [
   "./",
   "./index.html",
