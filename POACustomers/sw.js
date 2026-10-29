@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v56-cart-scroll-fix";
+const CACHE = CACHE_NAMESPACE + "v52-order-sound";
 const SHELL = [
   "./",
   "./index.html",
@@ -49,7 +49,6 @@ const SHELL = [
   "./customer/customer-profile.html",
   "./GM/gm-login.html",
   "./GM/gm-dashboard.html",
-  "./GM/gm-cancellations.html",
   "./GM/gm-categories.html",
   "./GM/gm-menu.html",
   "./GM/gm-offers.html",
