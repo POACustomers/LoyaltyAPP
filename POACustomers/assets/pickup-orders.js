@@ -50,7 +50,7 @@
       oscillator.type = 'sine';
       oscillator.frequency.setValueAtTime(note.hz, start);
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.16, start + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.24, start + 0.025);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + note.duration);
       oscillator.connect(gain);
       gain.connect(ctx.destination);
