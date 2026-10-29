@@ -13,8 +13,6 @@
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   let assignedStaffLocationId = null;
-  // GM/Admin may review and manage orders from every branch; Staff remain branch-scoped.
-  let canViewAllBranchOrders = false;
   let savedDeliveryAddresses = [];
   let selectedDeliveryInstructions = '';
   let selectedSavedAddressText = '';
@@ -26,6 +24,101 @@
   let localArchiveLastSyncAt = 0;
   let localArchivePollTimer = null;
   let localArchiveCleanupTimer = null;
+  let orderSoundContext = null;
+  let orderSoundUnlocked = false;
+  let pendingOrderSoundCount = 0;
+  let orderSoundInitialized = false;
+  const knownLiveOrderIds = new Set();
+
+  // Browsers (especially iOS Safari) require a direct user gesture before audio can play.
+  // Staff must enable the sound once on the Branch Orders screen for this page session.
+  function playOrderArrivalChime(testOnly = false) {
+    if (!orderSoundUnlocked || !orderSoundContext || orderSoundContext.state !== 'running') return;
+    const ctx = orderSoundContext;
+    const now = ctx.currentTime + 0.04;
+    const notes = testOnly
+      ? [{ at: 0, hz: 880, duration: 0.14 }, { at: 0.18, hz: 1174.66, duration: 0.22 }]
+      : [
+          { at: 0, hz: 880, duration: 0.16 }, { at: 0.2, hz: 1174.66, duration: 0.22 },
+          { at: 0.62, hz: 880, duration: 0.16 }, { at: 0.82, hz: 1174.66, duration: 0.22 },
+          { at: 1.24, hz: 880, duration: 0.16 }, { at: 1.44, hz: 1174.66, duration: 0.28 }
+        ];
+    notes.forEach(note => {
+      const start = now + note.at;
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(note.hz, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.16, start + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + note.duration);
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.start(start);
+      oscillator.stop(start + note.duration + 0.02);
+    });
+  }
+
+  async function enableOrderArrivalSound() {
+    const button = $('enableOrderSoundBtn');
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      toast('هذا المتصفح لا يدعم تنبيه الصوت. جرّب فتح الصفحة في Safari أو Chrome.', false);
+      return;
+    }
+    try {
+      if (!orderSoundContext) orderSoundContext = new AudioContextClass();
+      await orderSoundContext.resume();
+      orderSoundUnlocked = orderSoundContext.state === 'running';
+      if (!orderSoundUnlocked) throw new Error('Audio is not running');
+      if (button) {
+        button.textContent = '🔔 SOUND ON';
+        button.setAttribute('aria-pressed', 'true');
+        button.classList.add('order-sound-enabled');
+      }
+      if (pendingOrderSoundCount > 0) {
+        const pendingCount = pendingOrderSoundCount;
+        pendingOrderSoundCount = 0;
+        playOrderArrivalChime(false);
+        toast(pendingCount === 1 ? 'تنبيه الصوت مفعّل، ويوجد أوردر جديد ينتظر المراجعة.' : 'تنبيه الصوت مفعّل، ويوجد ' + pendingCount + ' أوردرات جديدة تنتظر المراجعة.');
+      } else {
+        playOrderArrivalChime(true);
+        toast('تنبيه الأوردرات مفعّل. اترك صفحة طلبات الفرع مفتوحة لسماع النغمة عند وصول أوردر جديد.');
+      }
+    } catch (_) {
+      orderSoundUnlocked = false;
+      if (button) {
+        button.textContent = '🔔 ENABLE SOUND';
+        button.setAttribute('aria-pressed', 'false');
+        button.classList.remove('order-sound-enabled');
+      }
+      toast('تعذر تفعيل الصوت. اضغط تفعيل الصوت مرة أخرى وتأكد أن الهاتف ليس على الوضع الصامت.', false);
+    }
+  }
+
+  function detectNewLiveOrders(liveOrders) {
+    if (!Array.isArray(liveOrders)) return;
+    if (!orderSoundInitialized) {
+      liveOrders.forEach(order => knownLiveOrderIds.add(String(order.id)));
+      orderSoundInitialized = true;
+      return; // Never ring for orders that already existed when this screen opened.
+    }
+    const newPlacedOrders = liveOrders.filter(order =>
+      order && order.id != null && !knownLiveOrderIds.has(String(order.id)) && order.status === 'placed'
+    );
+    liveOrders.forEach(order => {
+      if (order && order.id != null) knownLiveOrderIds.add(String(order.id));
+    });
+    if (newPlacedOrders.length) {
+      if (orderSoundUnlocked) {
+        playOrderArrivalChime(false);
+        const label = newPlacedOrders.length === 1 ? 'وصل أوردر جديد للفرع.' : 'وصل ' + newPlacedOrders.length + ' أوردرات جديدة للفرع.';
+        toast(label);
+      } else {
+        pendingOrderSoundCount += newPlacedOrders.length;
+      }
+    }
+  }
 
   function readCart() {
     try {
@@ -82,20 +175,6 @@
       const mapsHost = host === 'google.com' || host.endsWith('.google.com') || host === 'goo.gl' || host.endsWith('.goo.gl');
       return ((u.protocol === 'https:' || u.protocol === 'http:') && mapsHost) ? u.href : null;
     } catch (_) { return null; }
-  }
-
-  // The map URL is stored inside notes for compatibility with the order RPC.
-  // Show only the customer's written comment in notes; delivery location stays in its own section.
-  function customerCommentText(notes) {
-    let text = String(notes || '');
-    text = text.replace(/(?:^|\s*\|\s*)Customer location:\s*https?:\/\/[^\s|]+/gi, ' ');
-    text = text.replace(/\s*\|\s*/g, ' ').replace(/\s+/g, ' ').trim();
-    return text;
-  }
-
-  function customerCommentHtml(notes, label) {
-    const comment = customerCommentText(notes);
-    return comment ? '<br>' + esc(label || 'Note') + ': ' + esc(comment) : '';
   }
 
   function setCustomerShareLocationStatus(message, kind) {
@@ -222,8 +301,7 @@
     const branch = order.branch_name || 'Dina’s Corner';
     const branchAddress = order.branch_address || '';
     const fulfillment = type === 'delivery' ? 'توصيل' : 'استلام من الفرع';
-    const customerComment = customerCommentText(order.notes);
-    const notes = customerComment ? '<p><strong>ملاحظات العميل:</strong> ' + esc(customerComment) + '</p>' : '';
+    const notes = String(order.notes || '').trim() ? '<p><strong>ملاحظات العميل:</strong> ' + esc(order.notes) + '</p>' : '';
     printWindow.document.open();
     printWindow.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>إيصال الطلب ${esc(orderNo)}</title><style>
       *{box-sizing:border-box}body{margin:0;background:#f7f2ef;color:#3d3031;font-family:Tahoma,Arial,sans-serif;font-size:14px;line-height:1.6}.page{max-width:760px;margin:24px auto;padding:28px;background:#fffdfa;border:1px solid #ead9d3;border-radius:16px}.top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;border-bottom:2px solid #c65f78;padding-bottom:18px;margin-bottom:18px}.brand{font-size:25px;font-weight:800;color:#a74860}.subtitle{color:#776a6a;font-size:12px}.ticket{background:#f8e9ed;border:1px solid #efd2db;padding:8px 12px;border-radius:9px;font-weight:700;white-space:nowrap}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;margin-bottom:20px}.field{border-bottom:1px solid #eee1dd;padding:6px 0}.field small{display:block;color:#897b7b;font-size:11px}.field strong{font-size:13px;overflow-wrap:anywhere}.status{display:inline-block;background:#f2efd9;border-radius:20px;padding:3px 10px;font-size:12px}.status.cancelled{background:#fce4e8;color:#9d2945}.section-title{font-weight:800;margin:20px 0 8px}table{width:100%;border-collapse:collapse}th,td{padding:10px 7px;border-bottom:1px solid #eadfdb;text-align:right;vertical-align:top}th{background:#fbf2f3;color:#80505b;font-size:12px}.num{text-align:center;white-space:nowrap}.totals{margin:18px 0 0 auto;max-width:360px}.total-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #e4d7d2}.grand{font-size:19px;font-weight:800;color:#a74860;border-top:2px solid #c65f78;margin-top:6px;padding-top:12px}.reason{margin-top:16px;padding:12px;background:#fff0f2;border:1px solid #efc8d0;border-radius:8px;color:#773b48}.notice{margin-top:22px;padding:10px;background:#f8f5f3;border-radius:8px;text-align:center;color:#746969;font-size:11px}.actions{display:flex;gap:10px;justify-content:center;margin:0 auto 20px}.actions button{border:0;border-radius:8px;padding:11px 18px;background:#c65f78;color:#fff;font-weight:700;cursor:pointer}.actions .secondary{background:#e8dddd;color:#4d3d3f}@media(max-width:600px){.page{margin:0;padding:16px;border-radius:0}.grid{grid-template-columns:1fr 1fr}.top{gap:10px}.brand{font-size:20px}}@media print{@page{size:A5 portrait;margin:9mm}body{background:#fff;font-size:11px}.page{max-width:none;margin:0;padding:0;border:0;border-radius:0}.actions{display:none}.top{padding-bottom:10px;margin-bottom:10px}.brand{font-size:20px}th,td{padding:6px 4px}.notice{margin-top:14px}}
@@ -382,7 +460,7 @@
     const totalsY = tableBottom + 12;
     const paymentY = totalsY + 145;
     const notesY = paymentY + 250;
-    const notesText = customerCommentText(order.notes);
+    const notesText = String(order.notes || '').trim();
     const noteLines = wrapReceiptText(notesText || '—', 66, 2);
     const cancelReason = String(order.cancellation_reason || '').trim();
     const cancelLines = cancelReason ? wrapReceiptText(cancelReason, 66, 2) : [];
@@ -581,13 +659,6 @@
     await downloadOrderReceiptPng(orderSnapshot, items);
     toast('تم تنزيل صورة الفاتورة PNG. راجع مجلد التنزيلات على الكمبيوتر.');
   }
-
-  // Safe UI hook for the GM cancellation audit log. Uses the same approved receipt artwork.
-  window.POADownloadOrderReceiptPng = async function (order, items) {
-    if (!order || !(order.id || order.order_number)) throw new Error('بيانات الطلب غير مكتملة.');
-    await downloadOrderReceiptById(order, Array.isArray(items) ? items : []);
-    return true;
-  };
 
   // Print the same approved PNG receipt that is downloaded after order status changes.
   // Open the window synchronously from the button click so popup blockers are less likely to stop it.
@@ -1132,7 +1203,7 @@
       const typeBadge = '<span class="fulfillment-badge">' + (type === 'delivery' ? '⌖ DELIVERY' : '⌂ PICKUP') + '</span>';
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div><div class="pickup-order-number">' + esc(order.order_number) + '</div><small class="pickup-order-date">' + esc(new Date(order.created_at).toLocaleString()) + '</small></div><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>Branch: ' + esc(order.branch_name) + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + '<br>' + esc(statusHint(order.status, type)) +
-        deliveryDetailsHtml(order, false) + customerCommentHtml(order.notes, 'Note') + (order.status === 'cancelled' && String(order.cancellation_reason || '').trim() ? '<div class="pickup-cancellation-reason" role="note" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48"><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) + '</div>' : '') + '</div>' +
+        deliveryDetailsHtml(order, false) + (order.notes ? '<br>Note: ' + esc(order.notes) : '') + (order.status === 'cancelled' && String(order.cancellation_reason || '').trim() ? '<div class="pickup-cancellation-reason" role="note" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff0f2;border:1px solid #efc8d0;color:#773b48"><strong>Cancellation reason:</strong> ' + esc(order.cancellation_reason) + '</div>' : '') + '</div>' +
         '<div class="pickup-order-items">' + itemHtml + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + (order.total_amount != null ? money(order.total_amount) : order.subtotal === null ? 'To be confirmed by branch' : money(Number(order.subtotal) + Number(order.delivery_fee || 0))) + '</strong></div>' +
         (canCancel ? '<button class="btn danger" type="button" data-cancel-order="' + esc(order.id) + '">Cancel order</button>' : '') + '</div></article>';
     }).join('');
@@ -1244,9 +1315,9 @@
     const pageSize = 300;
     const fields = 'id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at,updated_at';
     while (true) {
-      let query = sb.from('pickup_orders').select(fields);
-      if (branchId) query = query.eq('location_id', branchId);
-      const { data, error } = await query
+      const { data, error } = await sb.from('pickup_orders')
+        .select(fields)
+        .eq('location_id', branchId)
         .gte(column, sinceIso)
         .order(column, { ascending: true })
         .range(offset, offset + pageSize - 1);
@@ -1260,7 +1331,7 @@
   }
 
   async function syncLocalOrderArchive(forceFullSync = false) {
-    if ((!canViewAllBranchOrders && !assignedStaffLocationId) || localArchiveSyncRunning) return;
+    if (!assignedStaffLocationId || localArchiveSyncRunning) return;
     localArchiveSyncRunning = true;
     setLocalArchiveStatus('جارٍ التحديث…', 'loading');
     try {
@@ -1292,7 +1363,7 @@
       await localArchiveDeleteExpired();
       localArchiveLastSyncAt = Date.now();
       await renderLocalOrderArchive();
-      const visibleCount = (await localArchiveGetAll()).filter(row => (canViewAllBranchOrders || String(row.location_id) === String(assignedStaffLocationId)) && Number(row.expiresAt) > Date.now()).length;
+      const visibleCount = (await localArchiveGetAll()).filter(row => String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > Date.now()).length;
       setLocalArchiveStatus('محدّثة', 'success');
       if ($('managedPickupOrders')) await loadManagedOrders({ quiet: true });
     } catch (error) {
@@ -1323,7 +1394,7 @@
     const rows = await localArchiveGetAll();
     const now = Date.now();
     const branchRows = rows.filter(row =>
-      (canViewAllBranchOrders || String(row.location_id) === String(assignedStaffLocationId)) && Number(row.expiresAt) > now
+      String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > now
     );
     if (countEl) countEl.textContent = String(branchRows.length);
 
@@ -1460,30 +1531,30 @@
     const quiet = options.quiet === true;
     const box = $('managedPickupOrders');
     if (!box) return;
-    if (!canViewAllBranchOrders && !assignedStaffLocationId) {
+    if (!assignedStaffLocationId) {
       box.innerHTML = '<div class="pickup-error">This Staff account has no assigned branch. Ask the GM to assign this Staff account to a branch before handling orders.</div>';
       return;
     }
-    if (!quiet) box.innerHTML = '<div class="pickup-empty">Loading ' + (canViewAllBranchOrders ? 'all branch orders…' : 'branch orders…') + '</div>';
+    if (!quiet) box.innerHTML = '<div class="pickup-empty">Loading branch orders…</div>';
 
     const now = Date.now();
     let localRows = [];
     try {
       await localArchiveDeleteExpired();
       localRows = (await localArchiveGetAll()).filter(row =>
-        (canViewAllBranchOrders || String(row.location_id) === String(assignedStaffLocationId)) && Number(row.expiresAt) > now
+        String(row.location_id) === String(assignedStaffLocationId) && Number(row.expiresAt) > now
       );
     } catch (_) {
       // The live Supabase list can still be shown if local storage is unavailable.
     }
     const localById = new Map(localRows.map(row => [String(row.id), row]));
 
-    let ordersQuery = sb.from('pickup_orders')
-      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at,updated_at');
-    if (!canViewAllBranchOrders) ordersQuery = ordersQuery.eq('location_id', assignedStaffLocationId);
-    const { data, error } = await ordersQuery.order('created_at', { ascending: false }).limit(100);
+    const { data, error } = await sb.from('pickup_orders')
+      .select('id,order_number,customer_name,customer_phone,location_id,branch_name,branch_city,branch_address,fulfillment_type,delivery_address,delivery_map_url,delivery_latitude,delivery_longitude,delivery_zone_id,delivery_zone_name,delivery_distance_meters,delivery_fee,total_amount,status,notes,subtotal,currency,cancellation_reason,cancelled_at,created_at,updated_at')
+      .eq('location_id', assignedStaffLocationId).order('created_at', { ascending: false }).limit(100);
 
     let liveOrders = Array.isArray(data) ? data : [];
+    if (!error && Array.isArray(data)) detectNewLiveOrders(liveOrders);
     if (error && !localRows.length) {
       box.innerHTML = '<div class="pickup-error">Could not load branch orders and no local copies are available. Details: ' + esc(error.message) + '</div>';
       return;
@@ -1544,7 +1615,7 @@
         (canCancel ? '<button class="btn danger" type="button" data-order-status="' + esc(order.id) + '" data-order-type="' + esc(type) + '" data-next-status="cancelled">CANCEL ORDER</button>' : '');
       return '<article class="pickup-order-card"><div class="pickup-order-head"><div class="pickup-order-head-main"><div class="pickup-order-number">' + esc(order.order_number || order.id) + '</div><small class="pickup-order-date">' + esc(dateLabel) + '</small></div><div class="pickup-order-head-tools"><span class="pickup-status" data-status="' + esc(order.status) + '">' + esc(statusLabel(order.status, type)) + '</span><button class="pickup-print-icon" type="button" data-print-unified-order="' + esc(order.id) + '" title="طباعة الفاتورة" aria-label="طباعة الفاتورة"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M7 14h10v7H7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="11" r=".9" fill="currentColor"/></svg></button></div></div>' +
         '<div class="pickup-order-meta">' + typeBadge + '<br><strong>' + esc(order.customer_name || 'Customer') + '</strong>' + (order.customer_phone ? ' · ' + esc(order.customer_phone) : '') + '<br><strong>Handling branch: ' + esc(order.branch_name || '—') + '</strong>' + (order.branch_city ? ' · ' + esc(order.branch_city) : '') + (order.branch_address ? '<br>Branch address: ' + esc(order.branch_address) : '') +
-        deliveryDetailsHtml(order, true) + customerCommentHtml(order.notes, 'Customer note') + cancellation + localBadge + '</div>' +
+        deliveryDetailsHtml(order, true) + (order.notes ? '<br>Customer note: ' + esc(order.notes) : '') + cancellation + localBadge + '</div>' +
         '<div class="pickup-order-items">' + (itemHtml || '<small>No saved item details are available for this order.</small>') + '</div><div class="pickup-order-footer"><div class="pickup-order-total">Order total<strong>' + esc(total) + '</strong></div></div>' +
         (orderActionButtons ? '<div class="pickup-next-actions">' + orderActionButtons + '</div>' : '') + '</article>';
     }).join('');
@@ -1598,21 +1669,14 @@
   }
 
   async function initStaffOrders() {
-    const profile = await guardRole(['staff', 'gm', 'admin']);
+    const profile = await guardRole(['staff']);
     if (!profile) return;
-    // Only Admin sees the shortcut back to the System Admin dashboard.
-    const adminDashboardReturnBtn = $('adminDashboardReturnBtn');
-    if (adminDashboardReturnBtn && String(profile.role || '').toLowerCase() === 'admin') {
-      adminDashboardReturnBtn.href = '../admin/admin-dashboard.html';
-      adminDashboardReturnBtn.hidden = false;
-    }
-    canViewAllBranchOrders = ['gm', 'admin'].includes(String(profile.role || '').toLowerCase());
-    if (!canViewAllBranchOrders && profile.role !== 'staff') {
-      showMessage('managedOrdersMessage', 'Order access is available to active Staff, GM, and Admin accounts.', true);
+    if (profile.role !== 'staff') {
+      showMessage('managedOrdersMessage', 'Order handling is restricted to Staff accounts assigned to a branch.', true);
       return;
     }
-    assignedStaffLocationId = canViewAllBranchOrders ? null : (profile.location_id || null);
-    if (!canViewAllBranchOrders && !assignedStaffLocationId) {
+    assignedStaffLocationId = profile.location_id || null;
+    if (!assignedStaffLocationId) {
       try {
         const { data: authData } = await sb.auth.getUser(), uid = authData?.user?.id;
         if (uid) {
@@ -1622,6 +1686,7 @@
       } catch (_) {}
     }
     initCancellationDialog();
+    $('enableOrderSoundBtn')?.addEventListener('click', enableOrderArrivalSound);
     bindLocalArchiveControls();
     await renderLocalOrderArchive().catch(() => {});
     $('refreshManagedOrdersBtn')?.addEventListener('click', async () => {
