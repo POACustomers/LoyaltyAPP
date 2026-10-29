@@ -297,3 +297,35 @@ body[data-page="menu"] #menuCategoriesView .menu-category-image {
   object-fit: cover !important;
   padding: 0 !important;
 }
+
+
+/* 2026-10-29 iPhone basket fix: keep checkout visible and let item rows scroll independently. */
+body[data-page="customer-menu"] .menu-cart-backdrop {
+  z-index: 1000 !important; /* above the fixed customer bottom navigation */
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+body[data-page="customer-menu"] .menu-cart-drawer {
+  height: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden !important;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+body[data-page="customer-menu"] .menu-cart-lines {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  padding-bottom: 6px;
+}
+body[data-page="customer-menu"] .menu-cart-header,
+body[data-page="customer-menu"] .menu-cart-order-total,
+body[data-page="customer-menu"] .menu-cart-footer {
+  flex-shrink: 0;
+}
