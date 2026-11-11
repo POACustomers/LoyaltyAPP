@@ -2029,7 +2029,7 @@ async function loadGmLocations() {
     box.innerHTML = locations.map(location => {
       const address = [location.address, location.city].filter(Boolean).join(", ");
       const detail = [address, location.phone ? `Phone: ${location.phone}` : ""].filter(Boolean).join(" · ");
-      return `<article class="branch-manage-card"><div class="branch-card-top"><div class="branch-card-icon" aria-hidden="true">⌖</div><div class="grow"><h4 class="branch-card-title">${esc(location.name || "Branch")}</h4>${detail ? `<small class="branch-card-meta">${esc(detail)}</small>` : ""}<small class="branch-card-meta">${location.is_active ? "Active · visible to customers" : "Inactive · hidden from customers"}</small></div></div><div class="branch-card-actions"><a class="btn soft" href="${esc(mapLinkFor(location))}" target="_blank" rel="noopener noreferrer">OPEN MAP</a><button class="btn" type="button" data-location-edit="${esc(location.id)}">EDIT</button><button class="btn danger" type="button" data-location-delete="${esc(location.id)}">DELETE</button></div></article>`;
+      return `<article class="branch-manage-card"><div class="branch-card-top"><div class="branch-card-icon" aria-hidden="true">⌖</div><div class="grow"><h4 class="branch-card-title">${esc(location.name || "Branch")}</h4>${detail ? `<small class="branch-card-meta">${esc(detail)}</small>` : ""}<small class="branch-card-meta">${location.is_active ? "Active · visible to customers" : "Inactive · hidden from customers"}</small></div></div><div class="branch-card-actions"><a class="btn soft" href="${esc(mapLinkFor(location))}" target="_blank" rel="noopener noreferrer">OPEN MAP</a><button class="btn soft" type="button" data-copy-nfc-link="${esc(location.id)}">COPY NFC MENU LINK</button><button class="btn" type="button" data-location-edit="${esc(location.id)}">EDIT</button><button class="btn danger" type="button" data-location-delete="${esc(location.id)}">DELETE</button></div></article>`;
     }).join("");
     box.querySelectorAll("[data-location-edit]").forEach(button => button.addEventListener("click", () => {
       const location = locations.find(row => row.id === button.dataset.locationEdit);
@@ -2046,6 +2046,26 @@ async function loadGmLocations() {
       if (cancelButton) cancelButton.hidden = false;
       setMessage("");
       window.scrollTo({ top: 0, behavior: "smooth" });
+    }));
+    box.querySelectorAll("[data-copy-nfc-link]").forEach(button => button.addEventListener("click", async () => {
+      const location = locations.find(row => String(row.id) === String(button.dataset.copyNfcLink));
+      if (!location) return;
+      const nfcUrl = new URL("../menu.html", window.location.href);
+      nfcUrl.searchParams.set("location_id", location.id);
+      const value = nfcUrl.toString();
+      try {
+        if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(value);
+        else {
+          const field = document.createElement("textarea");
+          field.value = value; field.style.position = "fixed"; field.style.opacity = "0";
+          document.body.appendChild(field); field.select();
+          const copied = document.execCommand("copy"); field.remove();
+          if (!copied) throw new Error("Clipboard unavailable");
+        }
+        setMessage(`NFC menu link copied for ${location.name}. Write this link to this branch's NFC tag.`);
+      } catch (_) {
+        setMessage(`Copy this NFC link manually: ${value}`, true);
+      }
     }));
     box.querySelectorAll("[data-location-delete]").forEach(button => button.addEventListener("click", async () => {
       const location = locations.find(row => row.id === button.dataset.locationDelete);
