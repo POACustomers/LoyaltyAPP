@@ -5,11 +5,15 @@
 </style><script src="../assets/tenant-config.js?v=20261026-offers-large-image-v1"></script><script src="../assets/tenant-branding.js?v=20261026-offers-large-image-v1"></script>
 </head>
 <body data-page="gm-menu"><header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261026-offers-large-image-v1" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
-<main class="container menu-management-main"><header class="menu-management-heading"><p class="eyebrow">GM MANAGEMENT</p><h1 class="title">Menu Management</h1><p class="sub">Manage menu items, prices, pictures, and availability. Create categories from Settings → Categories.</p><p style="margin-top:12px"><a class="btn soft" href="../menu.html" target="_blank" rel="noopener">VIEW PUBLIC MENU</a></p></header>
+<main class="container menu-management-main"><header class="menu-management-heading"><p class="eyebrow">GM MANAGEMENT</p><h1 class="title">Menu Management</h1><p class="sub">Manage menu items, prices, pictures, and the full details shown on the public menu. Create categories from Settings → Categories.</p></header>
 <section class="card"><h3 id="menuFormTitle">Add Menu Item</h3><input type="hidden" id="gmMenuId"><div class="menu-form-grid">
 <div class="field"><label for="gmItemCategory">Category *</label><select class="input" id="gmItemCategory" required><option value="">Loading categories…</option></select></div>
 <div class="field"><label for="gmMenuName">Item Name *</label><input class="input" id="gmMenuName" maxlength="160" placeholder="e.g. Spanish Latte" required></div>
-<div class="field"><label for="gmMenuDescription">Description</label><input class="input" id="gmMenuDescription" maxlength="500" placeholder="Short product description"></div>
+<div class="field"><label for="gmMenuDescription">Description</label><textarea class="input" id="gmMenuDescription" maxlength="1200" rows="3" placeholder="Full product description"></textarea></div>
+<div class="field"><label for="gmMenuIngredients">Ingredients</label><textarea class="input" id="gmMenuIngredients" maxlength="1200" rows="2" placeholder="Main ingredients"></textarea></div>
+<div class="field"><label for="gmMenuSizes">Available sizes</label><textarea class="input" id="gmMenuSizes" maxlength="800" rows="2" placeholder="e.g. Small, Medium, Large — include prices if they differ"></textarea></div>
+<div class="field"><label for="gmMenuExtras">Extras & additions</label><textarea class="input" id="gmMenuExtras" maxlength="1000" rows="2" placeholder="Available extras and their prices"></textarea></div>
+<div class="field"><label for="gmMenuAllergens">Allergen information</label><textarea class="input" id="gmMenuAllergens" maxlength="800" rows="2" placeholder="Known allergens and important notes"></textarea></div>
 <div class="field"><label for="gmMenuPrice">Price (EGP) (optional)</label><input class="input" id="gmMenuPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Leave blank if price is not set"></div>
 <div class="field"><label for="gmMenuImage">Item Image (optional)</label><input class="input" id="gmMenuImage" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/svg+xml"><small class="sub">Choose an image up to 30 MB. It is resized and compressed before upload; no image URL is required.</small><div class="menu-management-preview" id="gmItemPreviewWrap" hidden><img id="gmItemPreview" alt="Selected menu item image preview"></div></div>
 <div class="field"><label for="gmMenuStatus">Status</label><select class="input" id="gmMenuStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
@@ -70,18 +74,18 @@
    box.querySelectorAll('[data-item-delete]').forEach(button=>button.addEventListener('click',()=>remove(button.dataset.itemDelete)));
  }
  async function loadItems(){
-   const {data,error}=await sb.from('menu_items').select('id,name,description,price,image_url,status,is_active,category_id,created_at').order('created_at',{ascending:false});
+   const {data,error}=await sb.from('menu_items').select('id,name,description,ingredients,sizes,extras,allergen_notes,price,image_url,status,is_active,category_id,created_at').order('created_at',{ascending:false});
    if(error){$('gmMenuList').innerHTML='<div class="alert">Could not load menu items. Run the menu setup SQL in Supabase. Details: '+esc(error.message)+'</div>';return;}
    items=Array.isArray(data)?data:[];renderItems();
  }
  function edit(id){
    const item=items.find(row=>row.id===id);if(!item)return;
-   $('gmMenuId').value=item.id;$('gmItemCategory').value=item.category_id||'';$('gmMenuName').value=item.name||'';$('gmMenuDescription').value=item.description||'';$('gmMenuPrice').value=item.price??'';$('gmMenuImage').value='';$('gmMenuStatus').value=item.status||'active';
+   $('gmMenuId').value=item.id;$('gmItemCategory').value=item.category_id||'';$('gmMenuName').value=item.name||'';$('gmMenuDescription').value=item.description||'';$('gmMenuIngredients').value=item.ingredients||'';$('gmMenuSizes').value=item.sizes||'';$('gmMenuExtras').value=item.extras||'';$('gmMenuAllergens').value=item.allergen_notes||'';$('gmMenuPrice').value=item.price??'';$('gmMenuImage').value='';$('gmMenuStatus').value=item.status||'active';
    $('gmItemPreviewWrap').hidden=!item.image_url;if(item.image_url)$('gmItemPreview').src=item.image_url;
    $('menuFormTitle').textContent='Edit Menu Item';$('saveMenuBtn').textContent='SAVE CHANGES';$('cancelEditBtn').hidden=false;message('');window.scrollTo({top:0,behavior:'smooth'});
  }
  function clearForm(){
-   $('gmMenuId').value='';$('gmItemCategory').value='';$('gmMenuName').value='';$('gmMenuDescription').value='';$('gmMenuPrice').value='';$('gmMenuImage').value='';$('gmMenuStatus').value='active';$('gmItemPreviewWrap').hidden=true;$('gmItemPreview').removeAttribute('src');$('menuFormTitle').textContent='Add Menu Item';$('saveMenuBtn').textContent='SAVE MENU ITEM';$('cancelEditBtn').hidden=true;
+   $('gmMenuId').value='';$('gmItemCategory').value='';$('gmMenuName').value='';$('gmMenuDescription').value='';$('gmMenuIngredients').value='';$('gmMenuSizes').value='';$('gmMenuExtras').value='';$('gmMenuAllergens').value='';$('gmMenuPrice').value='';$('gmMenuImage').value='';$('gmMenuStatus').value='active';$('gmItemPreviewWrap').hidden=true;$('gmItemPreview').removeAttribute('src');$('menuFormTitle').textContent='Add Menu Item';$('saveMenuBtn').textContent='SAVE MENU ITEM';$('cancelEditBtn').hidden=true;
  }
  async function remove(id){
    const item=items.find(row=>row.id===id);if(!item||!confirm('Delete menu item “'+item.name+'”?'))return;
@@ -89,7 +93,7 @@
    message('Menu item deleted.');await loadItems();
  }
  async function save(){
-   const id=$('gmMenuId').value.trim(),category_id=$('gmItemCategory').value,name=$('gmMenuName').value.trim(),description=$('gmMenuDescription').value.trim(),priceRaw=$('gmMenuPrice').value.trim(),price=priceRaw===''?null:Number(priceRaw),status=$('gmMenuStatus').value;
+   const id=$('gmMenuId').value.trim(),category_id=$('gmItemCategory').value,name=$('gmMenuName').value.trim(),description=$('gmMenuDescription').value.trim(),ingredients=$('gmMenuIngredients').value.trim(),sizes=$('gmMenuSizes').value.trim(),extras=$('gmMenuExtras').value.trim(),allergen_notes=$('gmMenuAllergens').value.trim(),priceRaw=$('gmMenuPrice').value.trim(),price=priceRaw===''?null:Number(priceRaw),status=$('gmMenuStatus').value;
    if(!category_id){message('Select a category. Create one from Settings → Categories if the list is empty.',true);return;}
    if(!name){message('Item name is required.',true);$('gmMenuName').focus();return;}
    if(priceRaw!==''&&(!Number.isFinite(price)||price<0)){message('Enter a valid price ('+(window.POA_GET_CURRENCY_CODE?window.POA_GET_CURRENCY_CODE():'EGP')+' 0 or more), or leave it blank.',true);$('gmMenuPrice').focus();return;}
@@ -98,7 +102,7 @@
    const button=$('saveMenuBtn');button.disabled=true;const oldText=button.textContent;button.textContent='SAVING…';
    try{
      const file=$('gmMenuImage').files?.[0];if(file)image_url=await uploadMenuImage(file);
-     const payload={category_id,name,description:description||null,price,image_url,status,is_active:status==='active',updated_at:new Date().toISOString()};
+     const payload={category_id,name,description:description||null,ingredients:ingredients||null,sizes:sizes||null,extras:extras||null,allergen_notes:allergen_notes||null,price,image_url,status,is_active:status==='active',updated_at:new Date().toISOString()};
      const result=id?await sb.from('menu_items').update(payload).eq('id',id):await sb.from('menu_items').insert({...payload,created_by:profile.id});
      if(result.error)throw result.error;
      clearForm();message(id?'Menu item updated successfully.':'Menu item saved successfully.');await loadItems();
