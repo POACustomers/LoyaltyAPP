@@ -1,4 +1,5 @@
 (function(){
+  const isStandaloneMenu=document.body.hasAttribute('data-menu-standalone');
   const categoriesView=document.getElementById('menuCategoriesView');
   const itemsView=document.getElementById('menuItemsView');
   const cartPanel=document.getElementById('menu-cart');
@@ -168,6 +169,7 @@
 
   async function openCategory(name){
     activeCategoryName=name;
+    if(isStandaloneMenu){history.pushState({poacMenuCategory:name},'',location.pathname+'?category='+encodeURIComponent(name));window.scrollTo({top:0,behavior:'smooth'});}
     categoriesView.hidden=true;
     itemsView.hidden=false;
     itemsView.innerHTML='<div class="menu-loading">Loading menu items…</div>';
@@ -180,11 +182,40 @@
     }
   }
 
+  function detailBlock(title,value){
+    const text=String(value??'').trim();
+    if(!text)return '';
+    return '<section class="public-detail-block"><h3>'+esc(title)+'</h3><p>'+esc(text).replace(/\r?\n/g,'<br>')+'</p></section>';
+  }
+  function renderItemDetails(item, categoryName){
+    const category=categories.find(c=>c.name===categoryName);
+    const image=item.image_url
+      ?'<img class="public-detail-image" src="'+esc(item.image_url)+'" alt="'+esc(item.name||'Menu item')+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="public-detail-image-fallback" hidden>'+esc(category?.icon||'☕')+'</div>'
+      :'<div class="public-detail-image-fallback">'+esc(category?.icon||'☕')+'</div>';
+    const price=normalizePrice(item.price);
+    itemsView.hidden=false;categoriesView.hidden=true;
+    window.scrollTo({top:0,behavior:'smooth'});
+    itemsView.innerHTML='<div class="public-detail-top"><button class="public-menu-back" type="button" data-detail-back aria-label="Back to '+esc(categoryName)+'">‹</button><div><span class="public-menu-kicker">DINA\'S CORNER</span><h2>'+esc(categoryName)+'</h2></div></div>'+
+      '<article class="public-item-detail">'+image+'<div class="public-item-detail-copy"><p class="public-detail-eyebrow">MENU ITEM</p><h1>'+esc(item.name||'Menu item')+'</h1>'+(price!==null?'<div class="public-detail-price">'+esc(money(price))+'</div>':'')+
+      (item.description?'<p class="public-detail-description">'+esc(item.description).replace(/\r?\n/g,'<br>')+'</p>':'')+
+      '<div class="public-detail-sections">'+detailBlock('Ingredients',item.ingredients)+detailBlock('Available sizes',item.sizes)+detailBlock('Extras & additions',item.extras)+detailBlock('Allergen information',item.allergen_notes)+'</div></div></article>';
+    itemsView.querySelector('[data-detail-back]')?.addEventListener('click',()=>{
+      if(history.state&&history.state.poacMenuItem)history.back();
+      else {history.replaceState({},'',location.pathname+'?category='+encodeURIComponent(categoryName));renderItems(categoryName);}
+    });
+  }
+  function openItemDetails(item, categoryName){
+    if(isStandaloneMenu){
+      history.pushState({poacMenuItem:String(item.id)},'',location.pathname+'?category='+encodeURIComponent(categoryName)+'&item='+encodeURIComponent(item.id));
+      renderItemDetails(item,categoryName);
+    }
+  }
   function renderItems(name){
     activeCategoryName=name;
     const cat=categories.find(c=>c.name===name);
     const filtered=items.filter(item=>isActiveItem(item)&&categoryForItem(item)?.name===name);
     itemsView.hidden=false;categoriesView.hidden=true;
+    if(isStandaloneMenu)window.scrollTo({top:0,behavior:'smooth'});
     const rows=filtered.length?filtered.map(item=>{
       const image=item.image_url
         ?'<img class="menu-item-image" src="'+esc(item.image_url)+'" alt="'+esc(item.name||'Menu item')+'" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="menu-placeholder" aria-hidden="true" hidden>'+esc(cat?.icon||'☕')+'</div>'
@@ -192,12 +223,24 @@
       const desc=item.description?'<small class="menu-item-description">'+esc(item.description)+'</small>':'';
       const rawPrice=normalizePrice(item.price);
       const price=rawPrice!==null?money(rawPrice):'';
+      if(isStandaloneMenu){
+        return '<button type="button" class="public-menu-item-card" data-open-menu-item="'+esc(item.id)+'">'+image+'<span class="public-menu-item-copy"><strong class="menu-item-name">'+esc(item.name||'Menu item')+'</strong>'+desc+(price?'<span class="menu-item-price">'+esc(price)+'</span>':'')+'</span><span class="public-menu-item-arrow" aria-hidden="true">›</span></button>';
+      }
       const qty=itemQuantity(item.id);
       const pickupAction=qty>0
         ?'<div class="menu-qty-control" role="group" aria-label="Quantity for '+esc(item.name||'item')+'"><button type="button" class="menu-qty-btn" data-menu-minus="'+esc(item.id)+'" aria-label="Decrease quantity">−</button><output aria-live="polite">'+qty+'</output><button type="button" class="menu-qty-btn menu-qty-plus" data-add-to-order="'+esc(item.id)+'" aria-label="Increase quantity">+</button></div>'
         :'<button type="button" class="menu-add-order" data-add-to-order="'+esc(item.id)+'">+ Add</button>';
       return '<article class="menu-item">'+image+'<div class="menu-item-copy"><strong class="menu-item-name">'+esc(item.name||'Menu item')+'</strong>'+desc+(price?'<span class="menu-item-price">'+esc(price)+'</span>':'')+pickupAction+'</div></article>';
     }).join(''):'<div class="menu-empty">No items in this category yet.</div>';
+    if(isStandaloneMenu){
+      itemsView.innerHTML='<div class="public-detail-top"><button class="public-menu-back" type="button" aria-label="Back to categories" data-return-menu>‹</button><div><span class="public-menu-kicker">DINA\'S CORNER MENU</span><h2>'+esc(name)+'</h2><p>'+filtered.length+' items</p></div></div><div class="public-menu-list">'+rows+'</div>';
+      itemsView.querySelector('[data-return-menu]')?.addEventListener('click',()=>{history.replaceState({},'',location.pathname);renderCategories();});
+      itemsView.querySelectorAll('[data-open-menu-item]').forEach(btn=>btn.addEventListener('click',()=>{
+        const item=filtered.find(row=>String(row.id)===String(btn.dataset.openMenuItem));
+        if(item)openItemDetails(item,name);
+      }));
+      return;
+    }
     itemsView.innerHTML='<div class="menu-head menu-head--no-icon"><button class="menu-back" type="button" aria-label="Back to categories">‹</button><div class="menu-head-copy"><h2>'+esc(name)+'</h2><p>'+filtered.length+' item'+(filtered.length===1?'':'s')+'</p></div></div><p class="menu-small-note">Tap the back arrow to return to all categories.</p><div class="menu-list">'+rows+'</div>';
     itemsView.querySelector('.menu-back').addEventListener('click',renderCategories);
     itemsView.querySelectorAll('[data-menu-minus]').forEach(btn=>btn.addEventListener('click',()=>{
@@ -211,6 +254,15 @@
       else alert('Order cart is not ready. Refresh the page and try again.');
     }));
   }
+  window.addEventListener('popstate',()=>{
+    if(!isStandaloneMenu||!itemsLoaded)return;
+    const params=new URLSearchParams(location.search);
+    const itemId=params.get('item');
+    const categoryName=params.get('category');
+    if(itemId){const item=items.find(row=>String(row.id)===itemId);if(item&&isActiveItem(item)){renderItemDetails(item,categoryForItem(item)?.name||categoryName||'Menu');return;}}
+    if(categoryName&&categories.some(c=>c.name===categoryName)){renderItems(categoryName);return;}
+    renderCategories();
+  });
 
   async function loadMenu(){
     if(!window.sb)throw new Error('Supabase configuration is not available.');
@@ -220,16 +272,22 @@
     if(categoryResult.error)throw categoryResult.error;
     categories=normalizeCategoryRows(Array.isArray(categoryResult.data)?categoryResult.data:[]);
     renderCategories();
-    renderCartPanel();
-    const requestedCategory = new URLSearchParams(window.location.search).get('category');
+    if(!isStandaloneMenu)renderCartPanel();
+    const params=new URLSearchParams(window.location.search);
+    const requestedItem=params.get('item');
+    if(isStandaloneMenu&&requestedItem){
+      await ensureItemsLoaded();
+      const item=items.find(row=>String(row.id)===requestedItem&&isActiveItem(row));
+      if(item){renderItemDetails(item,categoryForItem(item)?.name||params.get('category')||'Menu');return;}
+    }
+    const requestedCategory = params.get('category');
     if (requestedCategory) {
       const match = categories.find(category => category.name === requestedCategory);
       if (match) void openCategory(match.name);
     }
   }
 
-  renderCartPanel();
-  if(location.hash==='#menu-cart')openCart();
+  if(!isStandaloneMenu){renderCartPanel();if(location.hash==='#menu-cart')openCart();}
   loadMenu().catch(err=>{
     categories=[];items=[];categoriesView.hidden=false;itemsView.hidden=true;
     categoriesView.innerHTML='<div class="menu-error"><strong>Menu could not be loaded from the database.</strong><br>'+esc(err?.message||'Please try again later.')+'<br><small>Ask the company administrator to verify the menu database setup.</small></div>';

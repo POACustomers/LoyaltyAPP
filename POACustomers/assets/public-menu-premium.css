@@ -1,0 +1,52 @@
+/* Dina's Corner — independent premium, read-only public menu. Uses the existing tenant palette. */
+body[data-menu-standalone]{padding:0!important;background:var(--tenant-page-background,#fff4ed)!important;color:#4d3d37}
+body[data-menu-standalone] .public-menu-shell{width:min(100%,760px);min-height:100dvh;margin:0 auto;padding:0 0 calc(34px + env(safe-area-inset-bottom));background:linear-gradient(180deg,#fffaf6 0%,#fff4ed 46%,#fffaf6 100%);overflow:hidden}
+body[data-menu-standalone] .public-menu-brand{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 22px 24px;background:linear-gradient(145deg,#fff9f4,#fbe8e6 74%,#f8dedf);border-bottom:1px solid rgba(198,95,120,.18)}
+body[data-menu-standalone] .public-menu-logo{display:block;width:94px;height:76px;object-fit:contain;object-position:center;margin:0 auto 6px;border-radius:14px}
+body[data-menu-standalone] .public-menu-kicker{margin:0;color:var(--olive,#73774e);font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase}
+body[data-menu-standalone] .public-menu-brand h1{margin:9px 0 4px;color:#7c4050;font:700 clamp(31px,8vw,43px)/1.05 Georgia,serif;letter-spacing:-.8px}
+body[data-menu-standalone] .public-menu-brand>p:not(.public-menu-kicker){margin:5px 0 0;color:#8d7770;font-size:13px}
+body[data-menu-standalone] .public-menu-divider{display:flex;align-items:center;gap:14px;margin-top:15px;color:var(--gold,#ba9a64);font-size:16px}
+body[data-menu-standalone] .public-menu-divider:before,body[data-menu-standalone] .public-menu-divider:after{content:"";display:block;width:56px;height:1px;background:linear-gradient(90deg,transparent,var(--gold,#ba9a64))}
+body[data-menu-standalone] .public-menu-divider:after{transform:rotate(180deg)}
+body[data-menu-standalone] .public-menu-content{padding:20px 17px 8px}
+body[data-menu-standalone] #menuCategoriesView .menu-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:13px!important;padding:0!important;margin:0!important;overflow:visible!important}
+body[data-menu-standalone] .menu-category{position:relative;min-width:0!important;width:100%!important;padding:0 0 12px!important;border:1px solid rgba(198,95,120,.17)!important;border-radius:19px!important;background:#fffaf7!important;color:#754454!important;box-shadow:0 7px 20px rgba(105,61,64,.08)!important;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease}
+body[data-menu-standalone] .menu-category:active{transform:scale(.985)}
+body[data-menu-standalone] .menu-category-media{width:100%!important;height:auto!important;aspect-ratio:1.12/1!important;margin:0 0 10px!important;border-radius:0!important;background:#f8e8e3!important;overflow:hidden}
+body[data-menu-standalone] .menu-category-image{width:100%;height:100%;object-fit:cover}
+body[data-menu-standalone] .menu-icon{color:#a65b6d;background:#f8e8e3;font-size:31px}
+body[data-menu-standalone] .menu-name{padding:0 8px!important;color:#784653!important;font-size:13px!important;font-weight:850!important;line-height:1.35!important}
+body[data-menu-standalone] .public-detail-top{display:flex;align-items:center;gap:13px;margin:0 0 17px;padding:0 0 14px;border-bottom:1px solid rgba(198,95,120,.2)}
+body[data-menu-standalone] .public-menu-back{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border:1px solid rgba(198,95,120,.2);border-radius:14px;background:#fff8f5;color:#a54f66;font-size:29px;line-height:1;box-shadow:0 4px 12px rgba(105,61,64,.06)}
+body[data-menu-standalone] .public-detail-top h2{margin:3px 0 0;color:#754454;font:700 23px/1.2 Georgia,serif}
+body[data-menu-standalone] .public-detail-top p{margin:3px 0 0;color:#9b817b;font-size:11px}
+body[data-menu-standalone] .public-menu-list{display:grid;gap:13px}
+body[data-menu-standalone] .public-menu-item-card{position:relative;display:grid;grid-template-columns:104px minmax(0,1fr) 22px;align-items:center;gap:13px;width:100%;min-width:0;padding:10px;border:1px solid rgba(198,95,120,.17);border-radius:19px;background:rgba(255,251,248,.96);color:inherit;text-align:start;box-shadow:0 6px 18px rgba(105,61,64,.065);cursor:pointer;-webkit-tap-highlight-color:transparent}
+body[data-menu-standalone] .public-menu-item-card .menu-item-image,body[data-menu-standalone] .public-menu-item-card .menu-placeholder{display:block;width:104px;height:104px;flex-basis:104px;border:0;border-radius:14px;object-fit:cover;background:#f7e8e2}
+body[data-menu-standalone] .public-menu-item-copy{display:block;min-width:0}
+body[data-menu-standalone] .public-menu-item-copy .menu-item-name{display:block;color:#70414c;font:700 17px/1.25 Georgia,serif;overflow-wrap:anywhere}
+body[data-menu-standalone] .public-menu-item-copy .menu-item-description{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:6px;color:#89766f;font-size:11px;line-height:1.5}
+body[data-menu-standalone] .public-menu-item-copy .menu-item-price{display:inline-flex;margin-top:9px;padding:6px 11px;background:#f8e4e5;color:#984b61;font-size:12px;font-weight:900}
+body[data-menu-standalone] .public-menu-item-arrow{color:#bd7180;font-size:26px;font-weight:500}
+body[data-menu-standalone] .public-item-detail{overflow:hidden;border:1px solid rgba(198,95,120,.18);border-radius:24px;background:#fffaf7;box-shadow:0 10px 28px rgba(105,61,64,.08)}
+body[data-menu-standalone] .public-detail-image,body[data-menu-standalone] .public-detail-image-fallback{display:block;width:100%;height:auto;max-height:390px;aspect-ratio:1.16/1;object-fit:cover;background:#f8e7e2}
+body[data-menu-standalone] .public-detail-image-fallback{display:grid;place-items:center;color:#b36d7a;font-size:60px}
+body[data-menu-standalone] .public-item-detail-copy{padding:21px 19px 20px}
+body[data-menu-standalone] .public-detail-eyebrow{margin:0 0 7px;color:var(--olive,#73774e);font-size:9px;font-weight:900;letter-spacing:1.8px}
+body[data-menu-standalone] .public-item-detail h1{margin:0;color:#70414c;font:700 clamp(25px,6vw,32px)/1.2 Georgia,serif;overflow-wrap:anywhere}
+body[data-menu-standalone] .public-detail-price{display:inline-flex;margin:12px 0 0;padding:9px 16px;border-radius:999px;background:#b95670;color:#fff;font-size:16px;font-weight:900;box-shadow:0 4px 12px rgba(185,86,112,.16)}
+body[data-menu-standalone] .public-detail-description{margin:16px 0 0;color:#76665f;font-size:14px;line-height:1.8;white-space:normal}
+body[data-menu-standalone] .public-detail-sections{display:grid;gap:0;margin-top:17px;border-top:1px solid rgba(198,95,120,.17)}
+body[data-menu-standalone] .public-detail-block{padding:14px 0;border-bottom:1px solid rgba(198,95,120,.14)}
+body[data-menu-standalone] .public-detail-block:last-child{border-bottom:0;padding-bottom:0}
+body[data-menu-standalone] .public-detail-block h3{margin:0 0 6px;color:#8f4c5e;font-size:13px;font-weight:900}
+body[data-menu-standalone] .public-detail-block p{margin:0;color:#76665f;font-size:13px;line-height:1.75;white-space:normal;overflow-wrap:anywhere}
+body[data-menu-standalone] .public-menu-footer{padding:18px 12px 4px;text-align:center;color:#9a7b75;font:italic 16px Georgia,serif}
+body[data-menu-standalone] .public-menu-footer span{padding:0 6px;color:var(--gold,#ba9a64)}
+body[data-menu-standalone] .menu-loading,body[data-menu-standalone] .menu-empty{padding:34px 12px;color:#937b73;text-align:center}
+@media(min-width:640px){body[data-menu-standalone] .public-menu-content{padding:26px 26px 12px}body[data-menu-standalone] #menuCategoriesView .menu-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}body[data-menu-standalone] .public-menu-item-card{grid-template-columns:122px minmax(0,1fr) 22px}body[data-menu-standalone] .public-menu-item-card .menu-item-image,body[data-menu-standalone] .public-menu-item-card .menu-placeholder{width:122px;height:122px}}
+@media(max-width:380px){body[data-menu-standalone] .public-menu-content{padding-inline:12px}body[data-menu-standalone] .public-menu-item-card{grid-template-columns:86px minmax(0,1fr) 16px;gap:10px;padding:8px}body[data-menu-standalone] .public-menu-item-card .menu-item-image,body[data-menu-standalone] .public-menu-item-card .menu-placeholder{width:86px;height:86px;flex-basis:86px}body[data-menu-standalone] .public-menu-item-copy .menu-item-name{font-size:15px}}
+@media(prefers-reduced-motion:reduce){body[data-menu-standalone] .menu-category{transition:none}}
+/* GM editor detail fields */
+textarea.input{width:100%;min-height:62px;resize:vertical;line-height:1.5}
