@@ -1,0 +1,33 @@
+/* Standalone read-only public menu for Dina's Corner. */
+body[data-page="public-menu"] { min-height:100vh; padding-bottom:24px; }
+.public-menu-header {
+  position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:center;
+  gap:11px; min-height:68px; padding:10px 16px; background:rgba(255,253,248,.97);
+  border-bottom:1px solid var(--line); box-shadow:0 4px 16px rgba(19,48,37,.04);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+.public-menu-header .brand-logo { width:44px; height:44px; object-fit:contain; border-radius:12px; }
+.public-menu-brand-copy { display:flex; flex-direction:column; gap:2px; color:var(--green); line-height:1.1; }
+.public-menu-brand-copy strong { font-size:16px; font-weight:950; }
+.public-menu-brand-copy span { font-size:9px; letter-spacing:2.2px; font-weight:900; color:var(--gold); }
+.public-menu-shell { width:min(100%,900px); padding-top:22px; padding-bottom:24px; }
+.public-menu-hero { margin:0 auto 15px; text-align:center; }
+.public-menu-hero .title { font-size:clamp(26px,6vw,34px); }
+.public-menu-hero .sub { margin-bottom:0; font-size:13px; }
+.public-menu-panel { padding:clamp(12px,3vw,20px); }
+body[data-page="public-menu"] .menu-item { align-items:center; gap:13px; }
+body[data-page="public-menu"] .menu-item-image,
+body[data-page="public-menu"] .menu-placeholder { width:88px; height:88px; flex:0 0 88px; border-radius:15px; }
+body[data-page="public-menu"] .menu-item-name { font-size:15px; }
+body[data-page="public-menu"] .menu-item-description { font-size:12px; }
+body[data-page="public-menu"] .menu-item-price { font-size:12px; }
+.public-menu-footnote { margin:12px 5px 0; text-align:center; color:var(--muted); font-size:10px; line-height:1.5; }
+.public-menu-back { display:inline-flex; align-items:center; gap:8px; min-height:40px; padding:8px 12px; border:1px solid var(--line); border-radius:12px; background:#edf2eb; color:var(--green); font-weight:900; }
+.public-menu-back:focus-visible,.menu-category:focus-visible { outline:3px solid rgba(198,161,91,.35); outline-offset:3px; }
+@media(max-width:420px) {
+  .public-menu-header { min-height:60px; }
+  .public-menu-header .brand-logo { width:40px; height:40px; }
+  .public-menu-shell { padding-top:16px; }
+  body[data-page="public-menu"] .menu-item-image,
+  body[data-page="public-menu"] .menu-placeholder { width:72px; height:72px; flex-basis:72px; }
+}
