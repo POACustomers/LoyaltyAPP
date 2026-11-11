@@ -14,7 +14,7 @@
 <div class="field"><label for="gmLocationCity">City / Area</label><input class="input" id="gmLocationCity" maxlength="100" placeholder="e.g. Al Ain"></div>
 <div class="field"><label for="gmLocationPhone">Phone (optional)</label><input class="input" id="gmLocationPhone" type="tel" maxlength="40" placeholder="Branch phone number"></div>
 <div class="field full"><label for="gmLocationAddress">Address</label><input class="input" id="gmLocationAddress" maxlength="250" placeholder="Street, building, area"></div>
-<div class="field full"><label for="gmLocationMapsUrl">Google Maps link (optional)</label><input class="input" id="gmLocationMapsUrl" type="url" maxlength="1000" placeholder="Paste the branch's Google Maps link"></div>
+<div class="field full"><label for="gmLocationMapsUrl">Google Maps / review link (optional)</label><input class="input" id="gmLocationMapsUrl" type="url" maxlength="1000" placeholder="Paste this branch's Google Maps place or review link"></div>
 </div><label class="branch-active"><input id="gmLocationActive" type="checkbox" checked> Active and visible to customers</label><div class="g2"><button class="btn primary" id="gmLocationSaveBtn" type="button">SAVE BRANCH</button><button class="btn" id="gmLocationCancelBtn" type="button" hidden>CANCEL EDIT</button></div><div id="gmLocationMessage" class="note branch-message" role="status" aria-live="polite"></div></section>
 <section class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:12px"><h3 style="margin:0">Current Branches</h3><button class="btn soft" id="gmLocationRefreshBtn" type="button">REFRESH</button></div><div class="branch-list" id="gmLocationsList" style="margin-top:14px"><div class="branch-empty">Loading branches…</div></div></section>
 <section class="card" aria-labelledby="gmStaffAssignmentsTitle">
@@ -24,5 +24,5 @@
   <div class="branch-list" id="gmStaffAssignments" style="margin-top:12px"><div class="branch-empty">Loading Staff accounts…</div></div>
 </section></main>
 <nav class="nav"><div class="navin"><a href="gm-dashboard.html"><b>▦</b>Dashboard</a><a href="gm-menu.html"><b>☰</b>Menu</a><a href="gm-settings.html" class="active"><b>⚙</b>Settings</a></div></nav>
-<script src="../assets/config.js?v=20261024-delivery-zones"></script><script src="../assets/app.js?v=20261024-delivery-zones"></script><script>if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script>
+<script src="../assets/config.js?v=20261024-delivery-zones"></script><script src="../assets/app.js?v=20261111-nfc-branch-link"></script><script>if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));}</script>
 </body></html>
