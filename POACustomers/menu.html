@@ -3,42 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#FFF4ED">
-<meta name="description" content="Dina's Corner public menu">
-<title>Dina's Corner | Menu</title>
-<link rel="stylesheet" href="assets/style.css?v=20261111-public-menu-v1">
-<link rel="stylesheet" href="assets/menu-display.css?v=20261111-public-menu-v1">
-<link rel="stylesheet" href="assets/public-menu.css?v=20261111-public-menu-v1">
+<meta name="theme-color" content="#C65F78">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Dina's Corner — public menu">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Dina's Corner — Our Menu</title>
+<link rel="stylesheet" href="assets/style.css?v=20261026-offers-page-v1">
+<link rel="stylesheet" href="assets/menu-display.css?v=20261111-item-detail-v1">
+<link rel="stylesheet" href="assets/public-menu-premium.css?v=20261111-v1">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="assets/tenant-config.js?v=20261111-public-menu-v1"></script>
-<script src="assets/tenant-branding.js?v=20261111-public-menu-v1"></script>
+<script src="assets/tenant-config.js?v=20261026-offers-page-v1"></script><script src="assets/tenant-branding.js?v=20261026-offers-page-v1"></script>
 </head>
-<body data-page="public-menu" data-menu-standalone>
-<header class="public-menu-header">
-  <img class="brand-logo" src="assets/dina-corner-icon.png" alt="Dina's Corner">
-  <div class="public-menu-brand-copy">
-    <strong>Dina's Corner</strong>
-    <span>MENU</span>
-  </div>
-</header>
-<main class="container menu-page public-menu-shell">
-  <section class="menu-hero public-menu-hero">
-    <p class="eyebrow">DINA'S CORNER</p>
-    <h1 class="title">Our Menu</h1>
-    <p class="sub">Choose a category to view its items.</p>
+<body data-menu-standalone data-page="menu">
+<main class="public-menu-shell" aria-label="Dina's Corner menu">
+  <header class="public-menu-brand">
+    <img src="assets/dina-corner-icon.png" alt="Dina's Corner" class="public-menu-logo">
+    <p class="public-menu-kicker">COFFEE · DESSERTS · MORE</p>
+    <h1>Our Menu</h1>
+    <p>Explore our selection</p>
+    <span class="public-menu-divider" aria-hidden="true">✦</span>
+  </header>
+  <section class="public-menu-content" aria-label="Menu">
+    <div id="menuCategoriesView"><div class="menu-loading">Loading menu…</div></div>
+    <div id="menuItemsView" hidden></div>
   </section>
-  <section class="menu-panel card public-menu-panel" aria-label="Public menu">
-    <div id="menuCategoriesView" aria-live="polite"><div class="menu-loading">Loading menu…</div></div>
-    <div id="menuItemsView" hidden aria-live="polite"></div>
-  </section>
-  <p class="public-menu-footnote">Prices and availability may change. Please confirm with the branch.</p>
+  <footer class="public-menu-footer">Dina's Corner <span>·</span> Coffee · Desserts · More</footer>
 </main>
 <script src="assets/config.js?v=20261111-public-menu-v1"></script>
-<script src="assets/public-menu.js?v=20261111-public-menu-v1"></script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=20261111-public-menu-v1').catch(() => {}));
-}
-</script>
+<script src="assets/app.js?v=20261111-public-menu-v1"></script>
+<script src="assets/menu-display.js?v=20261111-item-detail-v1"></script>
 </body>
 </html>
