@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v54-order-sound-extra-loud";
+const CACHE = CACHE_NAMESPACE + "v55-public-readonly-menu";
 const SHELL = [
   "./",
   "./index.html",
@@ -27,6 +27,8 @@ const SHELL = [
   "./assets/tenant-branding/icon.png",
   "./assets/menu-display.css",
   "./assets/menu-display.js",
+  "./assets/public-menu.css",
+  "./assets/public-menu.js",
   "./assets/pickup-orders.css",
   "./assets/pickup-orders.js",
   "./assets/customer-addresses.css",
