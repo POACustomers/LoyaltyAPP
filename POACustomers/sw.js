@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v55-public-menu-item-details";
+const CACHE = CACHE_NAMESPACE + "v54-branch-google-review";
 const SHELL = [
   "./",
   "./index.html",
@@ -26,8 +26,8 @@ const SHELL = [
   "./assets/tenant-branding/logo.png",
   "./assets/tenant-branding/icon.png",
   "./assets/menu-display.css",
-  "./assets/public-menu-premium.css",
   "./assets/menu-display.js",
+  "./POACustomers/assets/public-menu-review-link.js",
   "./assets/pickup-orders.css",
   "./assets/pickup-orders.js",
   "./assets/customer-addresses.css",
