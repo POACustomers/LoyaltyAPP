@@ -475,6 +475,10 @@
       .poa-language-globe{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 17px}.poa-language-globe svg{width:17px;height:17px;display:block}
       .poa-language-label{display:inline-block}.poa-language-chevron{font-size:13px;opacity:.7;margin-inline-start:0}
       .poa-language-floating{position:fixed!important;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));z-index:10002}
+      /* Public NFC menu: keep the language control at the opposite corner from the branch review link. */
+      body[data-menu-standalone] .poa-menu-language-compact{position:absolute!important;top:12px!important;left:12px!important;right:auto!important;z-index:7!important;width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;gap:0!important;border-radius:50%!important;box-shadow:0 2px 7px rgba(159,64,89,.08)!important}
+      body[data-menu-standalone] .poa-menu-language-compact .poa-language-label,body[data-menu-standalone] .poa-menu-language-compact .poa-language-chevron{display:none!important}
+      body[data-menu-standalone] .poa-menu-language-compact .poa-language-globe,body[data-menu-standalone] .poa-menu-language-compact .poa-language-globe svg{width:16px;height:16px;flex:0 0 16px}
       html[dir="rtl"] body{direction:rtl;text-align:right}
       html[dir="rtl"] .topbar{direction:rtl}
       html[dir="rtl"] .poa-topbar-actions{direction:rtl}
@@ -499,6 +503,16 @@
       const signOut = customerMenu.querySelector('.customer-menu-logout');
       if (signOut) customerMenu.insertBefore(button, signOut);
       else customerMenu.appendChild(button);
+      updateButton();
+      return;
+    }
+    // Public NFC menu: keep the language toggle small at the top-left, leaving the
+    // top-right corner clear for the branch-specific Google review/location link.
+    if (document.body && document.body.hasAttribute('data-menu-standalone')) {
+      button.classList.add('poa-menu-language-compact');
+      const menuHeader = document.querySelector('.public-menu-brand');
+      if (menuHeader) menuHeader.appendChild(button);
+      else document.body.appendChild(button);
       updateButton();
       return;
     }
