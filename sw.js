@@ -1,5 +1,5 @@
 const CACHE_NAMESPACE = "poac-app-";
-const CACHE = CACHE_NAMESPACE + "v54-branch-google-review";
+const CACHE = CACHE_NAMESPACE + "v55-menu-language-layout";
 const SHELL = [
   "./",
   "./index.html",
