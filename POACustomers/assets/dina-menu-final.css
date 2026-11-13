@@ -1,0 +1,127 @@
+/* Dina's Corner — final integrated header and responsive category cards */
+body[data-menu-standalone]{
+  background-color:#fff8f3!important;
+  background-image:none!important;
+  background-repeat:no-repeat!important;
+  background-attachment:scroll!important;
+}
+body[data-menu-standalone] .public-menu-shell{
+  background:linear-gradient(180deg,#fffdfb 0%,#fff8f3 55%,#fffdfb 100%)!important;
+}
+body[data-menu-standalone] .public-menu-brand{
+  position:relative!important;isolation:isolate!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  text-align:center!important;
+  padding:clamp(290px,37vw,370px) 22px 25px!important;
+  background-color:#fff8f3!important;
+  background-image:url('dina-integrated-header-desktop.jpg')!important;
+  background-repeat:no-repeat!important;background-position:center top!important;
+  background-size:100% auto!important;
+  border-bottom:1px solid rgba(143,41,70,.14)!important;
+  overflow:hidden!important;
+}
+body[data-menu-standalone] .public-menu-brand::before,
+body[data-menu-standalone] .public-menu-brand::after,
+body[data-menu-standalone] .public-menu-content::before,
+body[data-menu-standalone] .public-menu-content::after{
+  content:none!important;display:none!important;background-image:none!important;
+}
+body[data-menu-standalone] .public-menu-logo{display:none!important}
+body[data-menu-standalone] .public-menu-brand .public-menu-review-link{z-index:6}
+body[data-menu-standalone] .public-menu-brand h1{
+  margin:0!important;color:#76213d!important;
+  font-family:Georgia,"Times New Roman",serif!important;
+  font-size:clamp(30px,5vw,44px)!important;line-height:1.1!important;
+}
+body[data-menu-standalone] .public-menu-brand>p:not(.public-menu-kicker){
+  margin:6px 0 0!important;color:#8d777a!important;
+}
+body[data-menu-standalone] .public-menu-divider{color:#b64f6c!important}
+body[data-menu-standalone] .public-menu-divider::before,
+body[data-menu-standalone] .public-menu-divider::after{
+  background:linear-gradient(90deg,transparent,#d89ca4)!important;
+}
+
+/* Category cards had no determined height while their media was absolutely positioned.
+   This aspect ratio gives every card a stable image area on desktop and mobile. */
+body[data-menu-standalone] #menuCategoriesView .menu-grid{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  align-items:stretch!important;grid-auto-rows:1fr!important;
+  gap:14px!important;width:100%!important;margin:0 auto!important;
+  padding:0!important;overflow:visible!important;
+}
+body[data-menu-standalone] .menu-category{
+  position:relative!important;display:block!important;
+  width:100%!important;height:auto!important;min-width:0!important;
+  min-height:185px!important;aspect-ratio:.92/1!important;
+  padding:0!important;margin:0!important;overflow:hidden!important;
+  border:1px solid rgba(143,41,70,.18)!important;border-radius:19px!important;
+  background:#fffdfb!important;color:#76213d!important;
+  box-shadow:0 8px 22px rgba(128,77,78,.075)!important;
+}
+body[data-menu-standalone] .menu-category-media{
+  position:absolute!important;inset:0 0 46px 0!important;
+  display:block!important;width:100%!important;height:auto!important;
+  min-height:0!important;max-width:none!important;aspect-ratio:auto!important;
+  margin:0!important;padding:0!important;overflow:hidden!important;
+  border-radius:0!important;background:#f8e9e5!important;
+}
+body[data-menu-standalone] .menu-category-media::after{content:none!important;display:none!important}
+body[data-menu-standalone] .menu-category-image{
+  position:absolute!important;inset:0!important;display:block!important;
+  width:100%!important;height:100%!important;max-width:none!important;
+  padding:0!important;margin:0!important;object-fit:cover!important;
+  object-position:center!important;border:0!important;border-radius:0!important;
+}
+body[data-menu-standalone] .menu-icon{
+  display:grid!important;place-items:center!important;width:100%!important;height:100%!important;
+  min-height:0!important;background:linear-gradient(145deg,#fae9e6,#f2d8d9)!important;
+  color:#922d4b!important;font-size:clamp(36px,7vw,54px)!important;
+}
+body[data-menu-standalone] .menu-name{
+  position:absolute!important;z-index:3!important;left:0!important;right:0!important;bottom:0!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:100%!important;height:46px!important;min-height:46px!important;
+  margin:0!important;padding:7px 9px!important;
+  color:#76213d!important;background:linear-gradient(135deg,#fffdfb,#fae9e7)!important;
+  font-size:clamp(12px,1.5vw,14px)!important;line-height:1.25!important;font-weight:850!important;
+  text-align:center!important;overflow-wrap:anywhere!important;
+}
+body[data-menu-standalone] .menu-name::after{
+  content:""!important;position:absolute!important;bottom:0!important;left:26%!important;right:26%!important;
+  height:2px!important;background:linear-gradient(90deg,transparent,#d98e9a,transparent)!important;
+}
+body[data-menu-standalone] .public-menu-item-copy .menu-item-name,
+body[data-menu-standalone] .public-detail-top h2,
+body[data-menu-standalone] .public-item-detail h1{color:#76213d!important}
+body[data-menu-standalone] .menu-name{color:#76213d!important}
+body[data-menu-standalone] .public-menu-footer{
+  min-height:54px!important;padding:13px 12px 10px!important;
+  border-radius:28px 28px 0 0!important;
+  background:linear-gradient(180deg,#a94a66 0%,#812640 100%)!important;
+  color:#fff8f1!important;
+}
+@media(min-width:640px){
+  body[data-menu-standalone] .public-menu-brand{
+    padding:clamp(300px,37vw,370px) 30px 28px!important;
+  }
+  body[data-menu-standalone] #menuCategoriesView .menu-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:18px!important;
+  }
+  body[data-menu-standalone] .menu-category{min-height:210px!important;aspect-ratio:.92/1!important}
+}
+@media(max-width:600px){
+  body[data-menu-standalone] .public-menu-brand{
+    padding:clamp(215px,59vw,250px) 14px 20px!important;
+    background-image:url('dina-integrated-header-mobile.jpg')!important;
+    background-size:100% auto!important;
+  }
+  body[data-menu-standalone] #menuCategoriesView .menu-grid{gap:11px!important}
+  body[data-menu-standalone] .menu-category{min-height:178px!important;aspect-ratio:.90/1!important;border-radius:16px!important}
+  body[data-menu-standalone] .menu-category-media{inset:0 0 42px 0!important}
+  body[data-menu-standalone] .menu-name{height:42px!important;min-height:42px!important;font-size:11px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-menu-standalone] .menu-category,
+  body[data-menu-standalone] .menu-category-image{transition:none!important}
+}

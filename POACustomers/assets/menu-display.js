@@ -12,6 +12,18 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
   const slug=v=>String(v??'').trim().toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 
+  // Preserve branch identifiers from NFC URLs while browsing menu categories/items.
+  function menuStateUrl(extra = {}) {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('category');
+    params.delete('item');
+    Object.entries(extra).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && String(value) !== '') params.set(key, String(value));
+    });
+    return location.pathname + (params.toString() ? '?' + params.toString() : '');
+  }
+
+
   let categories=[];
   let items=[];
   let itemsLoaded=false;
@@ -140,20 +152,6 @@
     return n?(categories.find(c=>slug(c.name)===n)||null):null;
   }
 
-  function categoryIconMarkup(name){
-    const value=String(name||'').toLowerCase();
-    let paths='';
-    if(/coffee|قهو|مشروب|beverage|drink|عصير|tea|شاي/.test(value)){
-      paths='<path d="M12 22h28M15 18h22l-2 4H17l-2-4Z"/><path d="M17 17c-2-3-2-8 0-11h18c2 3 2 8 0 11H17Z"/><path d="M35 8h5a5 5 0 0 1 0 10h-5M22 3c-2 2 2 3 0 5M29 3c-2 2 2 3 0 5"/>';
-    }else if(/dessert|cake|حل|كيك|cupcake|حلو/.test(value)){
-      paths='<path d="M14 13h24l-3 11H17l-3-11Z"/><path d="M13 13c0-4 3-6 7-6 1-4 7-5 10-1 5-1 9 2 9 7H13Z"/><path d="M17 24v5h18v-5M20 29v5M26 29v5M32 29v5"/>';
-    }else if(/bakery|خبز|مخبوز|croissant|معجن/.test(value)){
-      paths='<path d="M10 25c1-10 8-17 17-17 8 0 15 6 17 15-5 7-11 10-18 10-7 0-12-2-16-8Z"/><path d="m18 13 6 18M28 9l3 23M38 14l-2 15"/>';
-    }else{
-      paths='<path d="M12 10h28v22H12zM18 16h16M18 22h16M18 28h9"/><path d="M9 6h34v30H9z"/>';
-    }
-    return '<svg viewBox="0 0 52 42" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">'+paths+'</g></svg>';
-  }
   function renderCategories(){
     activeCategoryName=null;
     itemsView.hidden=true;
@@ -163,7 +161,7 @@
     categoriesView.innerHTML='<div class="menu-grid">'+categories.map(cat=>
       '<button class="menu-category" type="button" data-category="'+esc(cat.name)+'"><div class="menu-category-media">'+
       (cat.image_url?'<img class="menu-category-image" src="'+esc(cat.image_url)+'" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false">':'')+
-      '<div class="menu-icon" aria-hidden="true"'+(cat.image_url?' hidden':'')+'>'+categoryIconMarkup(cat.name)+'</div></div><span class="menu-name">'+esc(cat.name)+'</span></button>'
+      '<div class="menu-icon" aria-hidden="true"'+(cat.image_url?' hidden':'')+'>'+esc(cat.icon||'☕')+'</div></div><span class="menu-name">'+esc(cat.name)+'</span></button>'
     ).join('')+'</div>';
     categoriesView.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>openCategory(btn.dataset.category)));
   }
@@ -183,7 +181,7 @@
 
   async function openCategory(name){
     activeCategoryName=name;
-    if(isStandaloneMenu){history.pushState({poacMenuCategory:name},'',location.pathname+'?category='+encodeURIComponent(name));window.scrollTo({top:0,behavior:'smooth'});}
+    if(isStandaloneMenu){history.pushState({poacMenuCategory:name},'',menuStateUrl({category:name}));window.scrollTo({top:0,behavior:'smooth'});}
     categoriesView.hidden=true;
     itemsView.hidden=false;
     itemsView.innerHTML='<div class="menu-loading">Loading menu items…</div>';
@@ -215,12 +213,12 @@
       '<div class="public-detail-sections">'+detailBlock('Ingredients',item.ingredients)+detailBlock('Available sizes',item.sizes)+detailBlock('Extras & additions',item.extras)+detailBlock('Allergen information',item.allergen_notes)+'</div></div></article>';
     itemsView.querySelector('[data-detail-back]')?.addEventListener('click',()=>{
       if(history.state&&history.state.poacMenuItem)history.back();
-      else {history.replaceState({},'',location.pathname+'?category='+encodeURIComponent(categoryName));renderItems(categoryName);}
+      else {history.replaceState({},'',menuStateUrl({category:categoryName}));renderItems(categoryName);}
     });
   }
   function openItemDetails(item, categoryName){
     if(isStandaloneMenu){
-      history.pushState({poacMenuItem:String(item.id)},'',location.pathname+'?category='+encodeURIComponent(categoryName)+'&item='+encodeURIComponent(item.id));
+      history.pushState({poacMenuItem:String(item.id)},'',menuStateUrl({category:categoryName,item:item.id}));
       renderItemDetails(item,categoryName);
     }
   }
@@ -248,7 +246,7 @@
     }).join(''):'<div class="menu-empty">No items in this category yet.</div>';
     if(isStandaloneMenu){
       itemsView.innerHTML='<div class="public-detail-top"><button class="public-menu-back" type="button" aria-label="Back to categories" data-return-menu>‹</button><div><span class="public-menu-kicker">DINA\'S CORNER MENU</span><h2>'+esc(name)+'</h2><p>'+filtered.length+' items</p></div></div><div class="public-menu-list">'+rows+'</div>';
-      itemsView.querySelector('[data-return-menu]')?.addEventListener('click',()=>{history.replaceState({},'',location.pathname);renderCategories();});
+      itemsView.querySelector('[data-return-menu]')?.addEventListener('click',()=>{history.replaceState({},'',menuStateUrl());renderCategories();});
       itemsView.querySelectorAll('[data-open-menu-item]').forEach(btn=>btn.addEventListener('click',()=>{
         const item=filtered.find(row=>String(row.id)===String(btn.dataset.openMenuItem));
         if(item)openItemDetails(item,name);

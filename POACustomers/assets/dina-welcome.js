@@ -1,56 +1,95 @@
-(function(){
+(function () {
   'use strict';
-  const menuLink=document.getElementById('viewMenuLink');
-  const evaluateButton=document.getElementById('evaluateButton');
-  const dialog=document.getElementById('branchDialog');
-  const branchList=document.getElementById('branchList');
-  const closeButton=document.getElementById('closeBranchDialog');
-  const errorBox=document.getElementById('branchError');
-  const params=new URLSearchParams(window.location.search);
-  const locationId=(params.get('location_id')||params.get('branch_id')||'').trim();
-  if(locationId)menuLink.href='menu.html?location_id='+encodeURIComponent(locationId);
-  let branchesLoaded=false;
-  let previousFocus=null;
-  const safeUrl=value=>{try{const u=new URL(String(value||''));return u.protocol==='https:'?u.href:'';}catch(_){return '';}};
-  const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function openDialog(){previousFocus=document.activeElement;dialog.hidden=false;document.body.style.overflow='hidden';closeButton.focus();loadBranches();}
-  function closeDialog(){dialog.hidden=true;document.body.style.overflow='';previousFocus?.focus?.();}
-  async function loadBranches(){
-    if(branchesLoaded)return;
-    if(!window.sb){showError('تعذر الاتصال بالخدمة. حاول مرة أخرى بعد قليل.');return;}
-    branchList.innerHTML='<div class="dc-branch-loading">Loading branches…</div>';
-    try{
-      let query=window.sb.from('locations').select('id,name,city,address,maps_url,is_active').eq('is_active',true).order('name',{ascending:true});
-      const {data,error}=await query;
-      if(error)throw error;
-      const rows=Array.isArray(data)?data:[];
-      if(!rows.length){branchList.innerHTML='<div class="dc-branch-loading">No active branches are available yet.</div>';branchesLoaded=true;return;}
-      branchList.innerHTML=rows.map(row=>{
-        const url=safeUrl(row.maps_url);
-        const fallback=[row.name,row.address,row.city].filter(Boolean).join(' ');
-        const destination=url|| (fallback?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(fallback):'');
-        if(!destination)return '<button class="dc-branch-button" type="button" disabled>'+escapeHtml(row.name||'Dina’s Corner Branch')+'</button>';
-        return '<a class="dc-branch-button" href="'+escapeHtml(destination)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(row.name||'Dina’s Corner Branch')+'</a>';
-      }).join('');
-      branchesLoaded=true;
-    }catch(err){
-      branchList.innerHTML='<div class="dc-branch-loading">Could not load branches.</div>';
-      showError('لم نتمكن من تحميل الفروع. تأكد من اتصال الإنترنت وإعدادات الفروع.');
-      console.error('Dina Corner branch list:',err);
+  const $ = (id) => document.getElementById(id);
+  const menuLink = $('viewMenuLink');
+  const evaluateButton = $('evaluateButton');
+  const backdrop = $('branchDialog');
+  const closeButton = $('closeBranchDialog');
+  const branchList = $('branchList');
+  const errorBox = $('branchError');
+
+  if (menuLink) {
+    const incoming = new URLSearchParams(window.location.search);
+    const destination = new URL('menu.html', window.location.href);
+    ['location_id', 'branch_id'].forEach((key) => {
+      const value = (incoming.get(key) || '').trim();
+      if (value) destination.searchParams.set(key, value);
+    });
+    menuLink.href = destination.pathname + destination.search;
+  }
+
+  const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[char]));
+
+  function safeMapsUrl(location) {
+    const supplied = String(location.maps_url || '').trim();
+    try {
+      const url = new URL(supplied);
+      if (url.protocol === 'https:') return url.href;
+    } catch (_) {}
+    const query = [location.name, location.address, location.city].filter(Boolean).join(' ');
+    return query ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query) : '';
+  }
+
+  async function loadBranches() {
+    if (!branchList) return;
+    branchList.innerHTML = '<div class="dc-branch-loading">Loading branches…</div>';
+    if (errorBox) errorBox.hidden = true;
+    try {
+      const client = window.sb;
+      if (!client || typeof client.from !== 'function') {
+        throw new Error('Branch information is not available. Please refresh the page.');
+      }
+      const { data, error } = await client.from('locations')
+        .select('id,name,city,address,maps_url,is_active')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      const branches = (Array.isArray(data) ? data : []).filter((row) => row && row.name);
+      if (!branches.length) {
+        branchList.innerHTML = '<div class="dc-branch-loading">No active branches are available right now.</div>';
+        return;
+      }
+      branchList.innerHTML = branches.map((branch) => {
+        const url = safeMapsUrl(branch);
+        if (!url) return '';
+        const detail = [branch.city, branch.address].filter(Boolean).join(' · ');
+        return '<a class="dc-branch-button" href="' + escapeHtml(url) +
+          '" target="_blank" rel="noopener noreferrer"><span><strong>' +
+          escapeHtml(branch.name) + '</strong>' +
+          (detail ? '<small class="dc-branch-detail">' + escapeHtml(detail) + '</small>' : '') +
+          '</span></a>';
+      }).join('') || '<div class="dc-branch-loading">Review links are not set up yet.</div>';
+    } catch (error) {
+      console.error('Dina’s Corner branch list could not be loaded:', error);
+      if (branchList) branchList.innerHTML = '';
+      if (errorBox) {
+        errorBox.textContent = error && error.message ? error.message : 'Could not load branches. Please try again later.';
+        errorBox.hidden = false;
+      }
     }
   }
-  function showError(message){errorBox.textContent=message;errorBox.hidden=false;}
-  evaluateButton?.addEventListener('click',async()=>{
-    if(!locationId){openDialog();return;}
-    if(!window.sb){openDialog();return;}
-    try{
-      const {data,error}=await window.sb.from('locations').select('name,maps_url,address,city,is_active').eq('id',locationId).eq('is_active',true).maybeSingle();
-      if(error||!data){openDialog();return;}
-      const destination=safeUrl(data.maps_url)||('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent([data.name,data.address,data.city].filter(Boolean).join(' ')));
-      if(destination)window.open(destination,'_blank','noopener,noreferrer');else openDialog();
-    }catch(_){openDialog();}
+
+  function openDialog() {
+    if (!backdrop) return;
+    backdrop.hidden = false;
+    document.body.style.overflow = 'hidden';
+    loadBranches();
+    if (closeButton) closeButton.focus();
+  }
+  function closeDialog() {
+    if (!backdrop) return;
+    backdrop.hidden = true;
+    document.body.style.overflow = '';
+    if (evaluateButton) evaluateButton.focus();
+  }
+  if (evaluateButton) evaluateButton.addEventListener('click', openDialog);
+  if (closeButton) closeButton.addEventListener('click', closeDialog);
+  if (backdrop) backdrop.addEventListener('click', (event) => {
+    if (event.target === backdrop) closeDialog();
   });
-  closeButton?.addEventListener('click',closeDialog);
-  dialog?.addEventListener('click',event=>{if(event.target===dialog)closeDialog();});
-  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog&&!dialog.hidden)closeDialog();});
-})();
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && backdrop && !backdrop.hidden) closeDialog();
+  });
+}());
