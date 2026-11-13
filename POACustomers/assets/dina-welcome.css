@@ -157,3 +157,78 @@ body.dc-welcome-page{
     background-size:100% auto;background-position:center top
   }
 }
+
+
+/* Approved homepage composition: elegant illustrated action icons and payment links */
+.dc-action-card{min-height:236px;padding:18px 12px 15px;border:1px solid #e7aab5;
+  background:linear-gradient(155deg,rgba(255,253,251,.96),rgba(255,237,237,.92));
+  box-shadow:0 10px 24px rgba(111,31,55,.09),inset 0 0 0 3px rgba(255,255,255,.7)}
+.dc-action-icon{width:100%;height:112px;flex:0 0 112px;margin:0 auto 10px;
+  border-radius:0;background:transparent;color:#922d4b}
+.dc-action-icon svg{width:100px;height:100px;fill:rgba(222,117,140,.10);
+  stroke:currentColor;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 3px 1px rgba(143,41,70,.10))}
+.dc-menu-icon svg{stroke:#8f2946}
+.dc-review-icon svg{stroke:#9e3d59}
+.dc-action-title{font-size:clamp(18px,4vw,23px)}
+.dc-action-copy{font-size:12px}
+.dc-action-arrow{width:36px;height:36px;margin-top:10px;font-size:27px;
+  font-family:Georgia,serif;background:linear-gradient(135deg,#c45a79,#812640);
+  box-shadow:0 4px 10px rgba(111,31,55,.18)}
+.dc-payment-section{margin:18px 0 0}
+.dc-section-heading{display:flex;align-items:center;justify-content:center;gap:12px;
+  margin:0 auto 13px;color:#76213d;font:700 23px/1.2 Georgia,"Times New Roman",serif}
+.dc-section-heading:before,.dc-section-heading:after{content:"";height:1.5px;flex:1;
+  max-width:105px;background:linear-gradient(90deg,transparent,#b64f6c)}
+.dc-section-heading:after{transform:scaleX(-1)}
+.dc-section-heading span{padding:8px 22px;border-radius:30px;background:#f9dce0}
+.dc-payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dc-payment-card{min-width:0;display:flex;align-items:center;justify-content:center;flex-direction:column;
+  gap:9px;padding:13px 8px;border:1px solid #e7aab5;border-radius:19px;
+  background:linear-gradient(145deg,#fffefd,#fff0ef);box-shadow:0 7px 18px rgba(111,31,55,.07);
+  color:#76213d;text-decoration:none}
+.dc-payment-brand{display:flex;align-items:center;justify-content:center;gap:6px;
+  min-height:30px;font-size:clamp(15px,3.5vw,21px);font-weight:900;white-space:nowrap}
+.dc-instapay-brand{font-style:italic;color:#26336f;font-size:clamp(19px,4.4vw,26px);letter-spacing:-1px}
+.dc-instapay-brand span{color:#e45a38}
+.dc-vodafone-brand{color:#c62828;font-size:clamp(13px,3vw,18px)}
+.dc-vodafone-brand svg{width:27px;height:27px;fill:none;stroke:#c62828;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dc-payment-number{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0}
+.dc-payment-number strong{font-size:clamp(13px,3.2vw,19px);letter-spacing:.1px;white-space:nowrap}
+.dc-phone-icon{display:grid;place-items:center;flex:0 0 31px;width:31px;height:31px;border-radius:50%;
+  background:linear-gradient(135deg,#c45a79,#812640);color:white;font-size:17px}
+.dc-instagram-link{display:flex;align-items:center;justify-content:center;gap:11px;
+  width:max-content;max-width:100%;margin:15px auto 2px;padding:9px 11px 9px 14px;
+  border:1.5px solid #d77d96;border-radius:40px;background:rgba(255,250,248,.86);
+  color:#76213d;text-decoration:none;font-size:14px;font-weight:800;
+  box-shadow:0 5px 14px rgba(111,31,55,.05)}
+.dc-instagram-link svg{width:31px;height:31px;flex:0 0 31px;fill:none;stroke:#c13e85;stroke-width:2.8}
+.dc-instagram-link .dc-ig-dot{fill:#c13e85;stroke:none}
+.dc-instagram-arrow{display:grid;place-items:center;width:31px;height:31px;border-radius:50%;
+  background:#fae1e4;color:#8f2946;font:26px/1 Georgia,serif}
+.dc-welcome-footer{margin-top:14px}
+@media(max-width:520px){
+  .dc-action-grid{grid-template-columns:1fr 1fr;gap:9px}
+  .dc-action-card{display:flex;min-height:190px;padding:13px 7px 11px;text-align:center;border-radius:17px}
+  .dc-action-icon{width:100%;height:82px;flex-basis:82px;margin:0 auto 7px}
+  .dc-action-icon svg{width:76px;height:76px}
+  .dc-action-copy-wrap{align-items:center;gap:4px}
+  .dc-action-title{font-size:clamp(14px,4vw,18px);line-height:1.15}
+  .dc-action-copy{font-size:10px}
+  .dc-action-arrow{width:30px;height:30px;margin-top:8px;font-size:24px}
+  .dc-payment-grid{gap:8px}
+  .dc-payment-card{padding:11px 5px;border-radius:15px;gap:7px}
+  .dc-payment-number{gap:5px}
+  .dc-payment-number strong{font-size:clamp(11px,3vw,14px)}
+  .dc-phone-icon{flex-basis:25px;width:25px;height:25px;font-size:14px}
+  .dc-section-heading{font-size:20px}
+  .dc-section-heading span{padding:7px 15px}
+  .dc-instagram-link{font-size:12px;gap:8px}
+}
+@media(max-width:360px){
+  .dc-payment-brand{font-size:14px}
+  .dc-instapay-brand{font-size:19px}
+  .dc-vodafone-brand{font-size:12px}
+  .dc-payment-number strong{font-size:10.5px}
+  .dc-instagram-link{font-size:11px}
+}
