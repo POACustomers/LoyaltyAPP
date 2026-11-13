@@ -1,6 +1,5 @@
 (function(){
   const isStandaloneMenu=document.body.hasAttribute('data-menu-standalone');
-  const database=window.POA_PUBLIC_MENU_DB||window.sb||null;
   const categoriesView=document.getElementById('menuCategoriesView');
   const itemsView=document.getElementById('menuItemsView');
   const cartPanel=document.getElementById('menu-cart');
@@ -12,17 +11,6 @@
 
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
   const slug=v=>String(v??'').trim().toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  function withTimeout(promise,milliseconds,label){
-    return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label||'The request timed out. Please try again.')),milliseconds))]);
-  }
-  function buildMenuStateUrl(categoryName,itemId){
-    const url=new URL(window.location.href);
-    url.searchParams.delete('category');
-    url.searchParams.delete('item');
-    if(categoryName)url.searchParams.set('category',String(categoryName));
-    if(itemId)url.searchParams.set('item',String(itemId));
-    return url.pathname+url.search+url.hash;
-  }
 
   let categories=[];
   let items=[];
@@ -152,6 +140,20 @@
     return n?(categories.find(c=>slug(c.name)===n)||null):null;
   }
 
+  function categoryIconMarkup(name){
+    const value=String(name||'').toLowerCase();
+    let paths='';
+    if(/coffee|قهو|مشروب|beverage|drink|عصير|tea|شاي/.test(value)){
+      paths='<path d="M12 22h28M15 18h22l-2 4H17l-2-4Z"/><path d="M17 17c-2-3-2-8 0-11h18c2 3 2 8 0 11H17Z"/><path d="M35 8h5a5 5 0 0 1 0 10h-5M22 3c-2 2 2 3 0 5M29 3c-2 2 2 3 0 5"/>';
+    }else if(/dessert|cake|حل|كيك|cupcake|حلو/.test(value)){
+      paths='<path d="M14 13h24l-3 11H17l-3-11Z"/><path d="M13 13c0-4 3-6 7-6 1-4 7-5 10-1 5-1 9 2 9 7H13Z"/><path d="M17 24v5h18v-5M20 29v5M26 29v5M32 29v5"/>';
+    }else if(/bakery|خبز|مخبوز|croissant|معجن/.test(value)){
+      paths='<path d="M10 25c1-10 8-17 17-17 8 0 15 6 17 15-5 7-11 10-18 10-7 0-12-2-16-8Z"/><path d="m18 13 6 18M28 9l3 23M38 14l-2 15"/>';
+    }else{
+      paths='<path d="M12 10h28v22H12zM18 16h16M18 22h16M18 28h9"/><path d="M9 6h34v30H9z"/>';
+    }
+    return '<svg viewBox="0 0 52 42" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">'+paths+'</g></svg>';
+  }
   function renderCategories(){
     activeCategoryName=null;
     itemsView.hidden=true;
@@ -161,7 +163,7 @@
     categoriesView.innerHTML='<div class="menu-grid">'+categories.map(cat=>
       '<button class="menu-category" type="button" data-category="'+esc(cat.name)+'"><div class="menu-category-media">'+
       (cat.image_url?'<img class="menu-category-image" src="'+esc(cat.image_url)+'" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false">':'')+
-      '<div class="menu-icon" aria-hidden="true"'+(cat.image_url?' hidden':'')+'>'+esc(cat.icon||'☕')+'</div></div><span class="menu-name">'+esc(cat.name)+'</span></button>'
+      '<div class="menu-icon" aria-hidden="true"'+(cat.image_url?' hidden':'')+'>'+categoryIconMarkup(cat.name)+'</div></div><span class="menu-name">'+esc(cat.name)+'</span></button>'
     ).join('')+'</div>';
     categoriesView.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>openCategory(btn.dataset.category)));
   }
@@ -170,8 +172,7 @@
     if(itemsLoaded)return;
     if(itemsLoading)return itemsLoading;
     itemsLoading=(async()=>{
-      if(!database)throw new Error('Public menu database client is not available.');
-      const result=await withTimeout(database.from('menu_items').select('id,name,description,ingredients,sizes,extras,allergen_notes,price,image_url,status,is_active,category_id,created_at').order('created_at',{ascending:true}),15000,'Loading menu items took too long. Please retry.');
+      const result=await sb.from('menu_items').select('*').order('created_at',{ascending:true});
       if(result.error)throw result.error;
       items=Array.isArray(result.data)?result.data:[];
       window.POACurrentMenuItems=items;
@@ -182,7 +183,7 @@
 
   async function openCategory(name){
     activeCategoryName=name;
-    if(isStandaloneMenu){history.pushState({poacMenuCategory:name},'',buildMenuStateUrl(name));window.scrollTo({top:0,behavior:'smooth'});}
+    if(isStandaloneMenu){history.pushState({poacMenuCategory:name},'',location.pathname+'?category='+encodeURIComponent(name));window.scrollTo({top:0,behavior:'smooth'});}
     categoriesView.hidden=true;
     itemsView.hidden=false;
     itemsView.innerHTML='<div class="menu-loading">Loading menu items…</div>';
@@ -190,9 +191,8 @@
       await ensureItemsLoaded();
       renderItems(name);
     }catch(error){
-      itemsView.innerHTML='<div class="menu-error"><strong>Menu items could not be loaded.</strong><br>'+esc(error?.message||'Please check your connection and try again.')+'<br><button class="menu-back" type="button" data-return-categories>Back to categories</button><button class="public-menu-retry" type="button" data-retry-items>Retry</button></div>';
-      itemsView.querySelector('[data-return-categories]')?.addEventListener('click',()=>{history.replaceState({},'',buildMenuStateUrl());renderCategories();});
-      itemsView.querySelector('[data-retry-items]')?.addEventListener('click',()=>openCategory(name));
+      itemsView.innerHTML='<div class="menu-error"><strong>Menu items could not be loaded.</strong><br>'+esc(error?.message||'Please check your connection and try again.')+'<br><button class="menu-back" type="button" data-return-categories>Back to categories</button></div>';
+      itemsView.querySelector('[data-return-categories]')?.addEventListener('click',renderCategories);
     }
   }
 
@@ -215,12 +215,12 @@
       '<div class="public-detail-sections">'+detailBlock('Ingredients',item.ingredients)+detailBlock('Available sizes',item.sizes)+detailBlock('Extras & additions',item.extras)+detailBlock('Allergen information',item.allergen_notes)+'</div></div></article>';
     itemsView.querySelector('[data-detail-back]')?.addEventListener('click',()=>{
       if(history.state&&history.state.poacMenuItem)history.back();
-      else {history.replaceState({poacMenuCategory:categoryName},'',buildMenuStateUrl(categoryName));renderItems(categoryName);}
+      else {history.replaceState({},'',location.pathname+'?category='+encodeURIComponent(categoryName));renderItems(categoryName);}
     });
   }
   function openItemDetails(item, categoryName){
     if(isStandaloneMenu){
-      history.pushState({poacMenuItem:String(item.id),poacMenuCategory:categoryName},'',buildMenuStateUrl(categoryName,item.id));
+      history.pushState({poacMenuItem:String(item.id)},'',location.pathname+'?category='+encodeURIComponent(categoryName)+'&item='+encodeURIComponent(item.id));
       renderItemDetails(item,categoryName);
     }
   }
@@ -248,7 +248,7 @@
     }).join(''):'<div class="menu-empty">No items in this category yet.</div>';
     if(isStandaloneMenu){
       itemsView.innerHTML='<div class="public-detail-top"><button class="public-menu-back" type="button" aria-label="Back to categories" data-return-menu>‹</button><div><span class="public-menu-kicker">DINA\'S CORNER MENU</span><h2>'+esc(name)+'</h2><p>'+filtered.length+' items</p></div></div><div class="public-menu-list">'+rows+'</div>';
-      itemsView.querySelector('[data-return-menu]')?.addEventListener('click',()=>{history.replaceState({},'',buildMenuStateUrl());renderCategories();});
+      itemsView.querySelector('[data-return-menu]')?.addEventListener('click',()=>{history.replaceState({},'',location.pathname);renderCategories();});
       itemsView.querySelectorAll('[data-open-menu-item]').forEach(btn=>btn.addEventListener('click',()=>{
         const item=filtered.find(row=>String(row.id)===String(btn.dataset.openMenuItem));
         if(item)openItemDetails(item,name);
@@ -279,10 +279,10 @@
   });
 
   async function loadMenu(){
-    if(!database)throw new Error('Public menu database connection is not ready. Check the Supabase configuration and public read permissions.');
+    if(!window.sb)throw new Error('Supabase configuration is not available.');
     // Render categories as soon as their query returns. Menu items are fetched only
     // when a category is opened, so a large catalogue does not hold back the first screen.
-    const categoryResult=await withTimeout(database.from('menu_categories').select('id,name,icon,image_url,sort_order,is_active,status').order('sort_order',{ascending:true}),15000,'Loading menu categories took too long. Please retry.');
+    const categoryResult=await sb.from('menu_categories').select('id,name,icon,image_url,sort_order,is_active,status').order('sort_order',{ascending:true});
     if(categoryResult.error)throw categoryResult.error;
     categories=normalizeCategoryRows(Array.isArray(categoryResult.data)?categoryResult.data:[]);
     renderCategories();
@@ -303,12 +303,7 @@
 
   if(!isStandaloneMenu){renderCartPanel();if(location.hash==='#menu-cart')openCart();}
   loadMenu().catch(err=>{
-    console.error('Standalone public menu failed to load:',err);
     categories=[];items=[];categoriesView.hidden=false;itemsView.hidden=true;
-    categoriesView.innerHTML='<div class="menu-error"><strong>Menu is temporarily unavailable / المنيو غير متاح مؤقتًا</strong><p>Please check your connection and try again.</p><button class="public-menu-retry" type="button">Retry / إعادة المحاولة</button></div>';
-    categoriesView.querySelector('.public-menu-retry')?.addEventListener('click',()=>{
-      categoriesView.innerHTML='<div class="menu-loading">Loading menu…</div>';
-      loadMenu().catch(error=>{console.error('Public menu retry failed:',error);categoriesView.innerHTML='<div class="menu-error">Menu is still unavailable. Please try again later.</div>';});
-    });
+    categoriesView.innerHTML='<div class="menu-error"><strong>Menu could not be loaded from the database.</strong><br>'+esc(err?.message||'Please try again later.')+'<br><small>Ask the company administrator to verify the menu database setup.</small></div>';
   });
 })();
