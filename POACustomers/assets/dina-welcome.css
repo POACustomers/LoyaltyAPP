@@ -232,3 +232,25 @@ body.dc-welcome-page{
   .dc-payment-number strong{font-size:10.5px}
   .dc-instagram-link{font-size:11px}
 }
+
+
+/* Exact approved Dina's Corner artwork, with live accessible tap targets. */
+html,body.dc-artwork-mode{margin:0!important;min-height:100%!important;background:#fff0f1!important}
+body.dc-artwork-mode{padding:0!important;overflow-x:hidden}
+.dc-artwork-page{position:relative;width:min(100%,768px);margin:0 auto;line-height:0}
+.dc-artwork-image{display:block;width:100%;height:auto;margin:0;padding:0;border:0}
+.dc-artwork-hotspot{position:absolute;display:block;z-index:5;border:0;padding:0;margin:0;
+  background:transparent;cursor:pointer;text-decoration:none;line-height:normal;
+  -webkit-tap-highlight-color:transparent}
+.dc-artwork-hotspot:focus-visible{outline:3px solid #7c203e;outline-offset:3px;border-radius:24px}
+.dc-hotspot-menu{left:7.2%;top:44.8%;width:42%;height:23.5%}
+.dc-hotspot-review{left:51.2%;top:44.8%;width:42%;height:23.5%}
+.dc-hotspot-instapay{left:7.3%;top:74.8%;width:42%;height:9.5%}
+.dc-hotspot-vodafone{left:51.2%;top:74.8%;width:42%;height:9.5%}
+.dc-hotspot-instagram{left:24.5%;top:86.1%;width:51%;height:6.2%}
+@media(min-width:769px){
+  .dc-artwork-page{width:min(100%,640px)}
+}
+@media(max-width:520px){
+  .dc-artwork-page{width:100%}
+}
