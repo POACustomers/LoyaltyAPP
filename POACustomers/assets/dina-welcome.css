@@ -14,3 +14,20 @@
 .dc-floral,.dc-floral-tl,.dc-floral-tr{display:none!important;background-image:none!important}
 .dc-corner-logo{display:block;width:min(220px,62vw);height:auto;max-height:235px;object-fit:contain;margin:0 auto 12px;border:0;border-radius:0;background:transparent;box-shadow:none;clip-path:none;mix-blend-mode:multiply}
 @media(max-width:380px){.dc-corner-logo{width:min(195px,60vw);max-height:210px}}
+
+/* Remove the unintended vertical separator beside the official logo */
+.dc-welcome-header,
+.dc-welcome-header > *,
+.dc-welcome-header::before,
+.dc-welcome-header::after,
+.dc-corner-logo {
+  border-left: 0 !important;
+  border-right: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+.dc-welcome-header::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
