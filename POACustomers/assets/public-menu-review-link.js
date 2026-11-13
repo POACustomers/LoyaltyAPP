@@ -38,12 +38,10 @@
   const back=document.getElementById('backToRatingLink');
   if(!back)return;
   const params=new URLSearchParams(window.location.search);
-  params.set('show_rating','1');
   const destination=new URL('welcome.html',window.location.href);
   ['location_id','branch_id'].forEach(key=>{
     const value=(new URLSearchParams(window.location.search).get(key)||'').trim();
     if(value)destination.searchParams.set(key,value);
   });
-  destination.searchParams.set('show_rating','1');
   back.href=destination.pathname+destination.search;
 })();
