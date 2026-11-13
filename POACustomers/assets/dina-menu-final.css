@@ -125,3 +125,36 @@ body[data-menu-standalone] .public-menu-footer{
   body[data-menu-standalone] .menu-category,
   body[data-menu-standalone] .menu-category-image{transition:none!important}
 }
+
+
+/* Minimal public menu header: remove brand/title and provide a clear return-to-rating action. */
+body[data-menu-standalone] .public-menu-brand.dc-menu-minimal-header{
+  display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  min-height:0!important;height:auto!important;
+  padding:14px 16px!important;margin:0!important;
+  background:transparent!important;background-image:none!important;
+  border:0!important;box-shadow:none!important;overflow:visible!important;
+}
+body[data-menu-standalone] .public-menu-brand.dc-menu-minimal-header::before,
+body[data-menu-standalone] .public-menu-brand.dc-menu-minimal-header::after{display:none!important;content:none!important}
+body[data-menu-standalone] .dc-menu-minimal-header h1,
+body[data-menu-standalone] .dc-menu-minimal-header p,
+body[data-menu-standalone] .dc-menu-minimal-header .public-menu-divider,
+body[data-menu-standalone] .dc-menu-minimal-header .public-menu-logo,
+body[data-menu-standalone] .dc-menu-minimal-header .public-menu-review-link{display:none!important}
+body[data-menu-standalone] .dc-back-rating{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;
+  min-height:44px!important;padding:9px 17px!important;
+  border:1px solid #d88a9e!important;border-radius:999px!important;
+  background:linear-gradient(135deg,#fffdfb,#f9e3e5)!important;
+  color:#76213d!important;text-decoration:none!important;
+  font:700 15px/1.1 Georgia,"Times New Roman",serif!important;
+  box-shadow:0 4px 12px rgba(111,31,55,.08)!important;
+}
+body[data-menu-standalone] .dc-back-rating svg{width:21px!important;height:21px!important;
+  fill:none!important;stroke:currentColor!important;stroke-width:2.2!important;
+  stroke-linecap:round!important;stroke-linejoin:round!important}
+@media(max-width:600px){
+  body[data-menu-standalone] .public-menu-brand.dc-menu-minimal-header{padding:10px 12px!important}
+  body[data-menu-standalone] .dc-back-rating{min-height:42px!important;font-size:14px!important}
+}

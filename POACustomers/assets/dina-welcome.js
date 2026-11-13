@@ -85,6 +85,11 @@
     if (evaluateButton) evaluateButton.focus();
   }
   if (evaluateButton) evaluateButton.addEventListener('click', openDialog);
+  const welcomeParams = new URLSearchParams(window.location.search);
+  if (welcomeParams.get('show_rating') === '1') {
+    window.setTimeout(openDialog, 180);
+  }
+
   if (closeButton) closeButton.addEventListener('click', closeDialog);
   if (backdrop) backdrop.addEventListener('click', (event) => {
     if (event.target === backdrop) closeDialog();
