@@ -7,92 +7,19 @@
 <meta name="color-scheme" content="light">
 <meta name="description" content="Dina's Corner — view our menu and rate your experience.">
 <title>Dina's Corner | Welcome</title>
-<link rel="stylesheet" href="assets/dina-welcome.css?v=20261113-integrated-bg-v6">
+<link rel="stylesheet" href="assets/dina-welcome.css?v=20261113-final-artwork-v10">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script src="assets/tenant-config.js?v=20261113-integrated-bg-v6"></script>
 </head>
-<body class="dc-welcome-page">
-<main class="dc-welcome-shell">
-  <header class="dc-welcome-header">
-    <p class="dc-welcome-eyebrow">A LITTLE MOMENT, A LOT OF JOY</p>
-    <h1><span class="dc-welcome-line">Welcome to</span><span class="dc-welcome-brand">Dina’s Corner</span></h1>
-    <div class="dc-welcome-rule" aria-hidden="true"><span>♡</span></div>
-    <p class="dc-welcome-intro">Discover our menu and share your experience</p>
-  </header>
+<body class="dc-welcome-page dc-artwork-mode">
+<main class="dc-artwork-page" aria-label="Dina’s Corner welcome page">
+  <img class="dc-artwork-image" src="assets/dina-welcome-approved-artwork.jpg?v=20261113-final-v10" alt="Dina’s Corner welcome page with menu, evaluation, payment and Instagram information">
 
-  <section class="dc-action-grid" aria-label="Choose a service">
-    <a class="dc-action-card dc-menu-card" id="viewMenuLink" href="menu.html">
-      <span class="dc-action-icon dc-menu-icon" aria-hidden="true">
-        <svg viewBox="0 0 96 96" role="img">
-          <path d="M25 13h43a8 8 0 0 1 8 8v58H34a9 9 0 0 1-9-9V13Z"/>
-          <path d="M25 22h-4a8 8 0 0 0-8 8v42a11 11 0 0 0 11 11h52"/>
-          <path d="M34 28h28M34 39h24M34 50h19"/>
-          <path d="M51 65c-7-7-17-1-11 7l11 9 11-9c6-8-4-14-11-7Z"/>
-          <path d="M69 13v14M62 20h14"/>
-          <path d="M18 18c-4 3-6 7-6 12M79 34c5 3 8 8 8 14"/>
-        </svg>
-      </span>
-      <span class="dc-action-copy-wrap">
-        <strong class="dc-action-title">View Our Menu</strong>
-        <small class="dc-action-copy">Explore our selection</small>
-      </span>
-      <span class="dc-action-arrow" aria-hidden="true">›</span>
-    </a>
-    <button class="dc-action-card dc-review-card" id="evaluateButton" type="button" aria-haspopup="dialog" aria-controls="branchDialog">
-      <span class="dc-action-icon dc-review-icon" aria-hidden="true">
-        <svg viewBox="0 0 96 96" role="img">
-          <path d="M19 15h58a7 7 0 0 1 7 7v48a7 7 0 0 1-7 7H48L31 88V77h-5a7 7 0 0 1-7-7V22a7 7 0 0 1 7-7Z"/>
-          <path d="m34 36 3-6 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z"/>
-          <path d="m57 36 3-6 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z"/>
-          <path d="M31 60h35M31 68h24"/>
-          <path d="m69 17 8-8 8 8-8 8Z"/>
-        </svg>
-      </span>
-      <span class="dc-action-copy-wrap">
-        <strong class="dc-action-title">Evaluate Us</strong>
-        <small class="dc-action-copy">Tell us about your visit</small>
-      </span>
-      <span class="dc-action-arrow" aria-hidden="true">›</span>
-    </button>
-  </section>
-
-
-  <section class="dc-payment-section" aria-label="Payment methods">
-    <div class="dc-section-heading"><span>Pay with Ease</span></div>
-    <div class="dc-payment-grid">
-      <a class="dc-payment-card" href="tel:01282471226" aria-label="InstaPay 01282471226">
-        <span class="dc-payment-brand dc-instapay-brand">Insta<span>Pay</span></span>
-        <span class="dc-payment-number">
-          <span class="dc-phone-icon" aria-hidden="true">☎</span>
-          <strong>0128 247 1226</strong>
-        </span>
-      </a>
-      <a class="dc-payment-card" href="tel:01002348055" aria-label="Vodafone Cash 01002348055">
-        <span class="dc-payment-brand dc-vodafone-brand">
-          <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="5" y="2.5" width="15" height="23" rx="3"/><path d="M10 6h5M11 21h3"/><path d="M18 10c4 0 6 3 6 6s-2 6-6 6"/></svg>
-          Vodafone Cash
-        </span>
-        <span class="dc-payment-number">
-          <span class="dc-phone-icon" aria-hidden="true">☎</span>
-          <strong>0100 234 8055</strong>
-        </span>
-      </a>
-    </div>
-  </section>
-
-  <a class="dc-instagram-link" href="https://www.instagram.com/dinas_corner_healthy?vrfl=MWVqN2J4ejN4M2F5cA==" target="_blank" rel="noopener noreferrer">
-    <svg viewBox="0 0 32 32" aria-hidden="true">
-      <rect x="4" y="4" width="24" height="24" rx="7"/>
-      <circle cx="16" cy="16" r="5.5"/>
-      <circle cx="23.2" cy="8.9" r="1.3" class="dc-ig-dot"/>
-    </svg>
-    <span>Follow Us on Instagram</span>
-    <span class="dc-instagram-arrow" aria-hidden="true">›</span>
-  </a>
-  <footer class="dc-welcome-footer">
-    <span>Dina’s Corner</span>
-    <small>Made with care, served with love</small>
-  </footer>
+  <a class="dc-artwork-hotspot dc-hotspot-menu" id="viewMenuLink" href="menu.html" aria-label="View Our Menu"></a>
+  <button class="dc-artwork-hotspot dc-hotspot-review" id="evaluateButton" type="button" aria-label="Evaluate Us" aria-haspopup="dialog" aria-controls="branchDialog"></button>
+  <a class="dc-artwork-hotspot dc-hotspot-instapay" href="tel:01282471226" aria-label="Call InstaPay number 01282471226"></a>
+  <a class="dc-artwork-hotspot dc-hotspot-vodafone" href="tel:01002348055" aria-label="Call Vodafone Cash number 01002348055"></a>
+  <a class="dc-artwork-hotspot dc-hotspot-instagram" href="https://www.instagram.com/dinas_corner_healthy?vrfl=MWVqN2J4ejN4M2F5cA==" target="_blank" rel="noopener noreferrer" aria-label="Follow Dina’s Corner on Instagram"></a>
 </main>
 
 <div class="dc-dialog-backdrop" id="branchDialog" hidden>
@@ -108,6 +35,6 @@
 
 <script src="assets/config.js?v=20261113-integrated-bg-v6"></script>
 <script src="assets/app.js?v=20261113-integrated-bg-v6"></script>
-<script src="assets/dina-welcome.js?v=20261113-rating-return-v8"></script>
+<script src="assets/dina-welcome.js?v=20261113-final-artwork-v10"></script>
 </body>
 </html>
