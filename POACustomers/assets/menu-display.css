@@ -105,7 +105,16 @@ body.menu-cart-open{overflow:hidden!important}
 
 
 /* Dina's Corner menu refinement: remove outer page frame, keep individual item cards. */
-body[data-page="customer-menu"]::before{display:none!important;content:none!important}
+/* Remove the fixed decorative viewport frame from both menu experiences.
+   Keep individual category/item card borders and shadows unchanged. */
+body[data-page="customer-menu"]::before,
+body[data-page="menu"]::before,
+body[data-menu-standalone]::before {
+  content: none !important;
+  display: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
 body[data-page="customer-menu"] .menu-panel.card{padding:4px 0!important;border:0!important;box-shadow:none!important;background:transparent!important;border-radius:0!important}
 body[data-page="customer-menu"] .menu-icon{font-size:21px!important}
 body[data-page="customer-menu"] .menu-head-icon{width:36px!important;height:36px!important;flex-basis:36px!important;border-radius:11px!important;font-size:17px!important}
