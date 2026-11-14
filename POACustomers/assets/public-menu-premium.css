@@ -169,7 +169,6 @@ body[data-menu-standalone] .menu-category-media{background:#fae8e5!important}
 body[data-menu-standalone] .menu-icon{background:linear-gradient(140deg,#f9e7e4,#fff2ed);color:var(--dc-rose-dark)}
 body[data-menu-standalone] .menu-name{background:linear-gradient(135deg,#fffdfb,#fff0ed);color:var(--dc-rose-dark)!important}
 body[data-menu-standalone] .menu-name:after{background:linear-gradient(90deg,transparent,var(--dc-rose),transparent)}
-body[data-menu-standalone] .public-menu-back{border-color:rgba(143,41,70,.2);background:linear-gradient(145deg,#fffdfb,#fff0ed);color:var(--dc-rose-dark)}
 body[data-menu-standalone] .public-detail-price{background:linear-gradient(135deg,#b94f6c,#922d4b)}
 body[data-menu-standalone] .public-detail-block h3{color:var(--dc-rose-dark)!important}
 body[data-menu-standalone] .public-menu-footer{background:linear-gradient(180deg,#a83d5b 0%,#852641 100%);color:#fff8f3}
