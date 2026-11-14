@@ -34,3 +34,12 @@ h1,h2,h3,.title,.menu-head h2{color:var(--green)!important}.sub,.muted{color:var
 .home-offer-item{border-color:var(--line)!important;background:#fffaf6!important}.home-offer-image-wrap{background:#fff0e8!important}.home-offer-no-image{background:linear-gradient(135deg,#c65f78,#a9435c)!important;color:#fff!important}.home-offer-no-image span,.home-offer-expiry{color:var(--gold)!important}.home-offers-link{background:#f8e3e3!important;color:var(--rose-dark)!important}
 @media(max-width:560px){body{background-size:42px 50px}body::before{inset:3px;border-radius:11px;box-shadow:inset 0 0 0 2px rgba(255,250,246,.65),inset 0 0 0 3px rgba(185,154,100,.25)}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* Public standalone menu: remove the fixed decorative viewport frame only here.
+   The loyalty/order app keeps its existing theme frame. */
+body[data-menu-standalone]::before{
+  content:none!important;
+  display:none!important;
+  border:0!important;
+  box-shadow:none!important;
+}

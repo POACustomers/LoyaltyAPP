@@ -4,7 +4,7 @@ window.POA_TENANT_CONFIG = Object.freeze({
   "BRAND_NAME": "Dina's Corner",
   "APP_NAME": "Dina's Corner Loyalty & Orders",
   "TAGLINE": "Premium Healthy Meals",
-  "THEME_ID": "dina-floral-mobile-category-full-v2",
+  "THEME_ID": "dina-floral-standalone-menu-no-frame-v3",
   "THEME_CSS": "dina-theme.css",
   "THEME_COLOR": "#C65F78",
   "PAGE_BACKGROUND": "#FFF4ED",
