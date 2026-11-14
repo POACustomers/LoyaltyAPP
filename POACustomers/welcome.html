@@ -19,12 +19,57 @@
   <button class="dc-artwork-hotspot dc-hotspot-review" id="evaluateButton" type="button" aria-label="Evaluate Us" aria-haspopup="dialog" aria-controls="branchDialog"></button>
 <a class="dc-artwork-hotspot dc-hotspot-instapay"
    href="#"
-   onclick="navigator.clipboard.writeText('01282471226'); return false;"
-   aria-label="Copy InstaPay number 01282471226"></a>
+   onclick="copyPaymentNumber('01282471226'); return false;"
+   aria-label="Copy InstaPay number"></a>
+
 <a class="dc-artwork-hotspot dc-hotspot-vodafone"
    href="#"
-   onclick="navigator.clipboard.writeText('01002348055'); return false;"
-   aria-label="Copy Vodafone Cash number 01002348055"></a>
+   onclick="copyPaymentNumber('01002348055'); return false;"
+   aria-label="Copy Vodafone Cash number"></a>
+
+<div id="copyToast" class="copy-toast">Copied Successfully!</div>
+
+<script>
+async function copyPaymentNumber(number) {
+    try {
+        await navigator.clipboard.writeText(number);
+
+        const toast = document.getElementById('copyToast');
+        toast.classList.add('show');
+
+        clearTimeout(window.copyToastTimer);
+        window.copyToastTimer = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2000);
+
+    } catch (error) {
+        alert('Copy failed. Please try again.');
+    }
+}
+</script>
+
+<style>
+.copy-toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #263b38;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 14px;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s;
+    z-index: 99999;
+}
+
+.copy-toast.show {
+    opacity: 1;
+    visibility: visible;
+}
+</style>
   <a class="dc-artwork-hotspot dc-hotspot-instagram" href="https://www.instagram.com/dinas_corner_healthy?vrfl=MWVqN2J4ejN4M2F5cA==" target="_blank" rel="noopener noreferrer" aria-label="Follow Dina’s Corner on Instagram"></a>
 </main>
 
