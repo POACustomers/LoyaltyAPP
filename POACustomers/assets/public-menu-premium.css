@@ -234,3 +234,22 @@ body[data-menu-standalone] #menuCategoriesView .menu-category {
   }
 }
 
+
+
+/* Standalone menu: let the main area take up remaining viewport height,
+   keeping the existing footer at the bottom without altering category sizing. */
+body[data-menu-standalone] .public-menu-shell {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+}
+
+body[data-menu-standalone] .public-menu-content {
+  flex: 1 0 auto !important;
+}
+
+body[data-menu-standalone] .public-menu-footer {
+  flex: 0 0 auto !important;
+  margin-top: auto !important;
+}
