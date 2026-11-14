@@ -177,3 +177,60 @@ body[data-menu-standalone] .public-menu-review-link{border-color:rgba(143,41,70,
 body[data-menu-standalone] .public-menu-review-link:active{background:#f8e4e4}
 @media(max-width:480px){body[data-menu-standalone] .public-menu-logo{width:min(190px,62vw);height:132px}}
 body[data-menu-standalone] .menu-icon svg{display:block;width:66px;height:56px;max-width:55%;color:var(--dc-rose-dark);filter:drop-shadow(0 3px 4px rgba(143,41,70,.08))}
+
+/* Dina's Corner — standalone public menu viewport and category sizing fix.
+   Scoped ONLY to the public standalone menu; customer ordering/cart pages are untouched. */
+body[data-menu-standalone] {
+  width: 100% !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+}
+
+/* Hide the decorative fixed frame supplied by dina-theme.css on this page only. */
+body[data-menu-standalone]::before {
+  content: none !important;
+  display: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Use the full viewport width; retain the existing brand background and colors. */
+body[data-menu-standalone] .public-menu-shell {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+body[data-menu-standalone] .public-menu-content {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Give the image-overlay category cards a real responsive height.
+   Keep the established 2-column mobile / 3-column larger-screen layout. */
+body[data-menu-standalone] #menuCategoriesView .menu-grid {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+}
+
+body[data-menu-standalone] #menuCategoriesView .menu-category {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  aspect-ratio: 1 / 1.08 !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-width: 640px) {
+  body[data-menu-standalone] #menuCategoriesView .menu-category {
+    aspect-ratio: 1 / 0.92 !important;
+  }
+}
+
