@@ -229,8 +229,8 @@ body.dc-welcome-page{
   .dc-payment-brand{font-size:14px}
   .dc-instapay-brand{font-size:19px}
   .dc-vodafone-brand{font-size:12px}
-  .dc-payment-number strong{font-size:10.5px}
-  .dc-instagram-link{font-size:11px}
+  .dc-payment-number strong{font-size:10px}
+  .dc-instagram-link{font-size:10px}
 }
 
 /* Mobile viewport sizing fix — keep the approved artwork and hotspot geometry intact. */
@@ -262,7 +262,7 @@ body.dc-artwork-mode {
 .dc-artwork-image {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   max-width: 100%;
   margin: 0;
   padding: 0;
@@ -299,7 +299,7 @@ body.dc-artwork-mode {
 }
 
 .dc-hotspot-menu { left: 7.2%; top: 44.8%; width: 42%; height: 23.5%; }
-.dc-hotspot-review { left: 50%; top: 50%; width: 50%; height: 50%; }
+.dc-hotspot-review { left: 51.2%; top: 44.8%; width: 42%; height: 23.5%; }
 .dc-hotspot-instapay { left: 7.3%; top: 74.8%; width: 42%; height: 9.5%; }
 .dc-hotspot-vodafone { left: 51.2%; top: 74.8%; width: 42%; height: 9.5%; }
 .dc-hotspot-instagram { left: 24.5%; top: 86.1%; width: 51%; height: 6.2%; }
