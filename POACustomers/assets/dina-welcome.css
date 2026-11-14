@@ -299,7 +299,7 @@ body.dc-artwork-mode {
 }
 
 .dc-hotspot-menu { left: 7.2%; top: 44.8%; width: 42%; height: 23.5%; }
-.dc-hotspot-review { left: 51.2%; top: 44.8%; width: 42%; height: 23.5%; }
+.dc-hotspot-review { left: 50%; top: 50%; width: 50%; height: 50%; }
 .dc-hotspot-instapay { left: 7.3%; top: 74.8%; width: 42%; height: 9.5%; }
 .dc-hotspot-vodafone { left: 51.2%; top: 74.8%; width: 42%; height: 9.5%; }
 .dc-hotspot-instagram { left: 24.5%; top: 86.1%; width: 51%; height: 6.2%; }
