@@ -241,8 +241,8 @@ body[data-menu-standalone] #menuCategoriesView .menu-category {
 body[data-menu-standalone] .public-menu-shell {
   display: flex !important;
   flex-direction: column !important;
-  min-height: 100vh !important;
-  min-height: 100dvh !important;
+  min-height: 120vh !important;
+  min-height: 120dvh !important;
 }
 
 body[data-menu-standalone] .public-menu-content {
