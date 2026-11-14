@@ -169,6 +169,7 @@ body[data-menu-standalone] .menu-category-media{background:#fae8e5!important}
 body[data-menu-standalone] .menu-icon{background:linear-gradient(140deg,#f9e7e4,#fff2ed);color:var(--dc-rose-dark)}
 body[data-menu-standalone] .menu-name{background:linear-gradient(135deg,#fffdfb,#fff0ed);color:var(--dc-rose-dark)!important}
 body[data-menu-standalone] .menu-name:after{background:linear-gradient(90deg,transparent,var(--dc-rose),transparent)}
+body[data-menu-standalone] .public-menu-back{border-color:rgba(143,41,70,.2);background:linear-gradient(145deg,#fffdfb,#fff0ed);color:var(--dc-rose-dark)}
 body[data-menu-standalone] .public-detail-price{background:linear-gradient(135deg,#b94f6c,#922d4b)}
 body[data-menu-standalone] .public-detail-block h3{color:var(--dc-rose-dark)!important}
 body[data-menu-standalone] .public-menu-footer{background:linear-gradient(180deg,#a83d5b 0%,#852641 100%);color:#fff8f3}
@@ -234,21 +235,55 @@ body[data-menu-standalone] #menuCategoriesView .menu-category {
 }
 
 
-
-/* Standalone menu: let the main area take up remaining viewport height,
-   keeping the existing footer at the bottom without altering category sizing. */
+/* 2026-11-15: standalone menu fills the viewport; keep existing visual design. */
 body[data-menu-standalone] .public-menu-shell {
   display: flex !important;
   flex-direction: column !important;
-  min-height: 100vh !important;
+  min-height: 100svh !important;
   min-height: 100dvh !important;
+  padding-bottom: env(safe-area-inset-bottom) !important;
 }
-
 body[data-menu-standalone] .public-menu-content {
   flex: 1 0 auto !important;
 }
 
-body[data-menu-standalone] .public-menu-footer {
-  flex: 0 0 auto !important;
-  margin-top: auto !important;
+/* Restore the original Back to Rating control from the approved menu version. */
+body[data-menu-standalone] .public-menu-brand { position: relative !important; }
+body[data-menu-standalone] .dc-back-rating {
+  position: absolute !important;
+  z-index: 6 !important;
+  top: 12px !important;
+  left: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 9px !important;
+  min-height: 44px !important;
+  padding: 9px 17px !important;
+  border: 1px solid #d88a9e !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg,#fffdfb,#f9e3e5) !important;
+  color: #76213d !important;
+  text-decoration: none !important;
+  font: 700 15px/1.1 Georgia,"Times New Roman",serif !important;
+  box-shadow: 0 4px 12px rgba(111,31,55,.08) !important;
+  -webkit-tap-highlight-color: transparent;
+}
+body[data-menu-standalone] .dc-back-rating svg {
+  width: 21px !important;
+  height: 21px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+@media (max-width: 600px) {
+  body[data-menu-standalone] .dc-back-rating {
+    top: 10px !important;
+    left: 10px !important;
+    min-height: 42px !important;
+    padding: 8px 13px !important;
+    font-size: 13px !important;
+  }
 }

@@ -31,3 +31,17 @@
     }
   })();
 })();
+
+/* Restore the approved Back to Rating behavior, retaining branch context. */
+(function(){
+  const back=document.getElementById('backToRatingLink');
+  if(!back)return;
+  const current=new URLSearchParams(window.location.search);
+  const destination=new URL('welcome.html',window.location.href);
+  ['location_id','branch_id'].forEach(key=>{
+    const value=(current.get(key)||'').trim();
+    if(value)destination.searchParams.set(key,value);
+  });
+  destination.searchParams.set('show_rating','1');
+  back.href=destination.pathname+destination.search;
+})();
