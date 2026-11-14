@@ -229,8 +229,8 @@ body.dc-welcome-page{
   .dc-payment-brand{font-size:14px}
   .dc-instapay-brand{font-size:19px}
   .dc-vodafone-brand{font-size:12px}
-  .dc-payment-number strong{font-size:10px}
-  .dc-instagram-link{font-size:10px}
+  .dc-payment-number strong{font-size:10.5px}
+  .dc-instagram-link{font-size:11px}
 }
 
 /* Mobile viewport sizing fix — keep the approved artwork and hotspot geometry intact. */
@@ -262,7 +262,7 @@ body.dc-artwork-mode {
 .dc-artwork-image {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
   max-width: 100%;
   margin: 0;
   padding: 0;
@@ -303,3 +303,30 @@ body.dc-artwork-mode {
 .dc-hotspot-instapay { left: 7.3%; top: 74.8%; width: 42%; height: 9.5%; }
 .dc-hotspot-vodafone { left: 51.2%; top: 74.8%; width: 42%; height: 9.5%; }
 .dc-hotspot-instagram { left: 24.5%; top: 86.1%; width: 51%; height: 6.2%; }
+
+/* Remove the outer page frame. Keep the inner page spacing and card design. */
+.dc-welcome-shell {
+  border: 0 !important;
+  outline: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+html,
+body.dc-welcome-page,
+body.dc-artwork-mode,
+.dc-artwork-page {
+  outline: 0 !important;
+}
+
+body.dc-welcome-page {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.dc-artwork-page {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
