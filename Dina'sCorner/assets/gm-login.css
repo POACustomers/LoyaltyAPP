@@ -1,0 +1,279 @@
+/* Dina's Corner GM login — scoped to the login page only. */
+body[data-page="gm-login"] {
+  min-height: 100vh;
+  padding: 0;
+  overflow-x: hidden;
+  background: #f7f1eb;
+}
+
+body[data-page="gm-login"] .gm-auth-shell {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: 100vh;
+  min-height: 100svh;
+  place-items: center;
+  padding: clamp(36px, 7vh, 76px) 20px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 12% 18%, rgba(198, 95, 120, .11), transparent 34%),
+    radial-gradient(ellipse at 88% 82%, rgba(115, 119, 78, .12), transparent 36%),
+    linear-gradient(135deg, #fffaf5 0%, #f7f1eb 52%, #f0f0e8 100%);
+}
+
+.gm-auth-floral {
+  position: absolute;
+  z-index: -1;
+  width: clamp(135px, 20vw, 245px);
+  aspect-ratio: 256 / 300;
+  background-repeat: no-repeat;
+  background-size: contain;
+  pointer-events: none;
+  opacity: .25;
+  filter: saturate(.86);
+}
+.gm-auth-floral--top {
+  top: -28px;
+  left: -35px;
+  background-image: url("./dina-floral-tl.png");
+}
+.gm-auth-floral--bottom {
+  right: -42px;
+  bottom: -42px;
+  background-image: url("./dina-floral-br.png");
+}
+
+.gm-auth-card {
+  position: relative;
+  width: min(100%, 470px);
+  padding: clamp(28px, 5vw, 42px) clamp(24px, 5vw, 42px) 25px;
+  overflow: hidden;
+  border: 1px solid rgba(222, 203, 190, .82);
+  border-radius: 30px;
+  background: rgba(255, 253, 249, .94);
+  box-shadow: 0 24px 70px rgba(54, 64, 48, .13), 0 3px 12px rgba(139, 83, 82, .05);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.gm-auth-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: linear-gradient(90deg, #c65f78 0%, #d9a0a0 46%, #b99a65 100%);
+}
+
+.gm-auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto 25px;
+}
+.gm-auth-logo-frame {
+  display: grid;
+  width: 194px;
+  height: 145px;
+  place-items: center;
+}
+.gm-auth-logo-frame .gm-auth-logo {
+  display: block;
+  width: 194px;
+  max-width: 100%;
+  height: 145px;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  object-fit: contain;
+}
+.gm-auth-logo-fallback {
+  color: #45583c;
+  font: 700 25px/1.2 Georgia, serif;
+  text-align: center;
+}
+.gm-auth-overline {
+  color: #9b6a70;
+  font: 800 10px/1.3 Inter, Arial, sans-serif;
+  letter-spacing: 2.1px;
+  text-align: center;
+}
+
+.gm-auth-heading {
+  margin: 0 0 25px;
+  text-align: center;
+}
+.gm-auth-heading-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: #a45c6e;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.35px;
+}
+.gm-auth-heading-mark i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c65f78;
+  box-shadow: 0 0 0 4px rgba(198, 95, 120, .10);
+}
+.gm-auth-heading h1 {
+  margin: 0 0 8px;
+  color: #284b3c;
+  font: 700 clamp(27px, 4vw, 32px)/1.16 Georgia, "Times New Roman", serif;
+  letter-spacing: -.35px;
+}
+.gm-auth-heading p {
+  max-width: 320px;
+  margin: 0 auto;
+  color: #788078;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.gm-auth-form { display: grid; gap: 16px; }
+.gm-auth-field { min-width: 0; }
+.gm-auth-field label {
+  display: block;
+  margin: 0 0 8px 2px;
+  color: #425746;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .15px;
+}
+.gm-auth-input-wrap {
+  display: flex;
+  align-items: center;
+  min-height: 54px;
+  padding: 0 14px;
+  border: 1px solid #e7d9d0;
+  border-radius: 14px;
+  background: #fffaf6;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.gm-auth-input-wrap:focus-within {
+  border-color: #c98291;
+  background: #fffdfb;
+  box-shadow: 0 0 0 4px rgba(198, 95, 120, .11);
+}
+.gm-auth-field-icon {
+  display: inline-flex;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin-inline-end: 10px;
+  color: #b16a79;
+}
+.gm-auth-field-icon svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gm-auth-input-wrap .input {
+  width: 100%;
+  min-width: 0;
+  height: 52px;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0;
+  outline: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #293b31;
+  font-size: 14px;
+}
+.gm-auth-input-wrap .input::placeholder { color: #a5a49a; opacity: 1; }
+
+.gm-auth-submit {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 3px;
+  border: 1px solid #234b3b;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #315b47 0%, #204735 100%);
+  color: #fffdf8;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: .15px;
+  box-shadow: 0 8px 18px rgba(38, 78, 59, .17);
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.gm-auth-submit:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 11px 22px rgba(38, 78, 59, .22);
+}
+.gm-auth-submit:active { transform: translateY(0); }
+.gm-auth-submit:focus-visible { outline: 3px solid rgba(198, 95, 120, .28); outline-offset: 3px; }
+.gm-auth-submit:disabled { cursor: wait; opacity: .72; transform: none; }
+
+.gm-auth-message {
+  margin-top: 0;
+  padding: 0;
+  border-radius: 12px;
+  color: #a14855;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.gm-auth-message:empty { display: none; }
+.gm-auth-message:not(:empty) {
+  padding: 11px 13px;
+  border: 1px solid #efd5d3;
+  background: #fff1ef;
+}
+.gm-auth-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  margin-top: 23px;
+  color: #a19a8d;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+}
+.gm-auth-footer span {
+  width: 24px;
+  height: 1px;
+  background: #e8d8ce;
+}
+
+html[dir="rtl"] .gm-auth-heading,
+html[dir="rtl"] .gm-auth-brand,
+html[dir="rtl"] .gm-auth-overline,
+html[dir="rtl"] .gm-auth-footer { text-align: center; }
+html[dir="rtl"] .gm-auth-field label { margin-right: 2px; margin-left: 0; text-align: right; }
+html[dir="rtl"] .gm-auth-input-wrap .input { direction: ltr; text-align: left; }
+
+@media (max-width: 560px) {
+  body[data-page="gm-login"] .gm-auth-shell { padding: 64px 16px 28px; }
+  .gm-auth-card { width: min(100%, 430px); border-radius: 25px; }
+  .gm-auth-logo-frame { width: 166px; height: 124px; }
+  .gm-auth-logo-frame .gm-auth-logo { width: 166px; height: 124px; }
+  .gm-auth-brand { margin-bottom: 19px; }
+  .gm-auth-heading { margin-bottom: 21px; }
+  .gm-auth-floral { width: 128px; opacity: .17; }
+  .gm-auth-floral--top { top: -18px; left: -28px; }
+  .gm-auth-floral--bottom { right: -30px; bottom: -25px; }
+}
+@media (max-height: 620px) and (min-width: 561px) {
+  body[data-page="gm-login"] .gm-auth-shell { padding-top: 24px; padding-bottom: 24px; }
+  .gm-auth-card { padding-top: 24px; padding-bottom: 20px; }
+  .gm-auth-logo-frame { height: 112px; }
+  .gm-auth-logo-frame .gm-auth-logo { height: 112px; }
+  .gm-auth-brand { margin-bottom: 15px; }
+  .gm-auth-heading { margin-bottom: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gm-auth-input-wrap, .gm-auth-submit { transition: none; }
+}

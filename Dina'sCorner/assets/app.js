@@ -1991,9 +1991,6 @@ async function loadGmLocations() {
   const cancelButton = $("gmLocationCancelBtn");
   const message = $("gmLocationMessage");
   const refreshButton = $("gmLocationRefreshBtn");
-  const staffAssignmentsBox = $("gmStaffAssignments");
-  const staffAssignmentMessage = $("gmStaffAssignmentMessage");
-  const staffAssignmentsRefreshButton = $("gmStaffAssignmentsRefreshBtn");
   if (!box || !saveButton || !nameInput) return;
 
   let locations = [];
@@ -2095,56 +2092,6 @@ async function loadGmLocations() {
     render();
   };
 
-  const setStaffAssignmentMessage = (text, bad = false) => {
-    if (!staffAssignmentMessage) return;
-    staffAssignmentMessage.textContent = text;
-    staffAssignmentMessage.style.color = bad ? "#a33" : "";
-  };
-
-  const loadStaffAssignments = async () => {
-    if (!staffAssignmentsBox) return;
-    staffAssignmentsBox.innerHTML = '<div class="branch-empty">Loading Staff assignments…</div>';
-    setStaffAssignmentMessage("");
-    const { data, error } = await sb.rpc("list_staff_branch_assignments");
-    if (error) {
-      staffAssignmentsBox.innerHTML = `<div class="alert">Could not load Staff assignments. Run the latest POACustomers-pickup-orders-setup.sql. Details: ${esc(error.message)}</div>`;
-      return;
-    }
-    const staffRows = Array.isArray(data) ? data : [];
-    if (!staffRows.length) {
-      staffAssignmentsBox.innerHTML = '<div class="branch-empty">No Staff accounts found yet. Create Staff accounts before assigning branches.</div>';
-      return;
-    }
-    const activeLocations = locations.filter(loc => loc.is_active !== false);
-    staffAssignmentsBox.innerHTML = staffRows.map(staff => {
-      const label = staff.full_name || staff.email || staff.phone || 'Staff member';
-      const currentId = staff.location_id || '';
-      const currentInactive = currentId && !activeLocations.some(loc => String(loc.id) === String(currentId));
-      const inactiveLabel = currentInactive ? `<option value="${esc(currentId)}" selected disabled>${esc(staff.location_name || 'Inactive branch')} (inactive — reassign)</option>` : '';
-      const currentOptions = activeLocations.map(loc => `<option value="${esc(loc.id)}" ${String(loc.id) === String(currentId) ? 'selected' : ''}>${esc(loc.name || 'Branch')}${loc.city ? ' — ' + esc(loc.city) : ''}</option>`).join('');
-      const selectedExists = activeLocations.some(loc => String(loc.id) === String(currentId));
-      const unassignedSelected = !currentId;
-      return `<article class="branch-manage-card"><div class="branch-card-top"><div class="branch-card-icon" aria-hidden="true">●</div><div class="grow"><h4 class="branch-card-title">${esc(label)}</h4><small class="branch-card-meta">${esc(staff.email || staff.phone || 'Staff account')}${staff.phone && staff.email ? ' · ' + esc(staff.phone) : ''}</small><small class="branch-card-meta">${staff.staff_active ? 'Active Staff account' : 'Inactive Staff account'}</small></div></div><label class="field" style="display:block;margin-top:12px">Assigned branch<select class="input" data-staff-assignment="${esc(staff.staff_id)}" data-current-location="${esc(currentId)}" style="margin-top:6px" ${staff.staff_active ? '' : 'disabled'}><option value="" ${unassignedSelected ? 'selected' : ''}>Not assigned</option>${inactiveLabel}${currentOptions}</select></label><small class="branch-card-meta">${selectedExists ? 'Orders will be routed to this branch.' : (currentInactive ? 'This assignment points to an inactive branch; choose an active branch.' : 'No orders will appear until a branch is assigned.')}</small></article>`;
-    }).join('');
-    staffAssignmentsBox.querySelectorAll('[data-staff-assignment]').forEach(select => select.addEventListener('change', async () => {
-      const staffId = select.dataset.staffAssignment;
-      const previous = select.dataset.currentLocation || '';
-      const next = select.value || null;
-      if (String(next || '') === String(previous)) return;
-      select.disabled = true;
-      try {
-        const { error: assignError } = await sb.rpc('assign_staff_to_branch', { p_staff_id: staffId, p_location_id: next });
-        if (assignError) throw assignError;
-        setStaffAssignmentMessage('Staff branch assignment saved. This Staff account will only receive orders for its assigned branch.');
-        await loadStaffAssignments();
-      } catch (e) {
-        select.value = previous;
-        setStaffAssignmentMessage(e?.message || 'Could not save the Staff branch assignment.', true);
-        select.disabled = false;
-      }
-    }));
-  };
-
   saveButton.onclick = async () => {
     const name = nameInput.value.trim();
     const mapsUrl = mapsInput.value.trim();
@@ -2184,10 +2131,8 @@ async function loadGmLocations() {
     }
   };
   if (cancelButton) cancelButton.onclick = clearForm;
-  if (refreshButton) refreshButton.onclick = async () => { await load(); await loadStaffAssignments(); };
-  if (staffAssignmentsRefreshButton) staffAssignmentsRefreshButton.onclick = loadStaffAssignments;
+  if (refreshButton) refreshButton.onclick = load;
   await load();
-  await loadStaffAssignments();
 }
 
 async function loadAdminDashboard() {
@@ -2404,7 +2349,7 @@ async function init() {
     } else if (page === "gm-login") {
       $("loginBtn").onclick = () => login("gm");
     } else if (page === "gm-dashboard") {
-      await loadGmDashboard();
+      await bindGmSettingsProfile();
     } else if (page === "gm-members") {
       await loadGmMembers();
     } else if (page === "gm-locations") {

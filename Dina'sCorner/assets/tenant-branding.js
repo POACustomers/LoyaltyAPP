@@ -184,7 +184,7 @@
     'Staff':'الموظفون', 'Users':'المستخدمون', 'GM':'المدير العام', 'General Manager':'المدير العام', 'Settings':'الإعدادات',
     'Sign Out':'تسجيل الخروج', 'Sign out':'تسجيل الخروج', 'Sign Out':'تسجيل الخروج', 'System Admin':'مدير النظام', 'Admin Login':'دخول الإدارة',
     'GM Login':'دخول المدير العام', 'Staff Login':'دخول الموظفين', 'Staff Portal':'بوابة الموظفين', 'GM Portal':'بوابة المدير العام',
-    'Secure access for Dina\'s Corner staff.':'دخول آمن لموظفي Dina\'s Corner.', 'Management operations. System Admin is a separate portal.':'إدارة العمليات. بوابة مدير النظام منفصلة.',
+    'Secure access for Dina\'s Corner staff.':'دخول آمن لموظفي Dina\'s Corner.', 'Sign in to manage your menu.':'سجّل الدخول لإدارة المنيو.', 'Management operations. System Admin is a separate portal.':'إدارة العمليات. بوابة مدير النظام منفصلة.',
     'Full system administration. This portal is separate from GM.':'إدارة النظام بالكامل. هذه البوابة منفصلة عن المدير العام.',
     'Hello,':'أهلًا،', 'Loyal Customer':'عميلنا العزيز', 'Welcome back':'أهلًا بعودتك', 'Loyal Customer • Welcome back':'عميلنا العزيز • أهلًا بعودتك', 'YOUR POINTS':'نقاطك',
     'Keep earning brighter rewards':'اجمع المزيد من النقاط واستمتع بمكافآت أفضل', 'More Rewards':'مكافآت أكثر', 'Brighter Days':'وأيام أجمل',

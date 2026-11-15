@@ -13,7 +13,7 @@ window.POA_TENANT_CONFIG = Object.freeze({
   "ACCENT_COLOR": "#BA9A64",
   "CURRENCY": "EGP",
   "CURRENCY_LOCALE": "en-EG",
-  "LOGO_FILE": "tenant-branding/logo.png",
-  "ICON_FILE": "tenant-branding/icon.png",
+  "LOGO_FILE": "dina-corner-logo.png",
+  "ICON_FILE": "dina-corner-icon.png",
   "DECORATIVE_FRAME": true
 });
