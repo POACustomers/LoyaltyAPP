@@ -5,7 +5,7 @@
 </style><script src="../assets/tenant-config.js?v=20261026-offers-large-image-v1"></script><script src="../assets/tenant-branding.js?v=20261026-offers-large-image-v1"></script>
 </head>
 <body data-page="gm-menu"><header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png?v=20261026-offers-large-image-v1" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" title="Sign out" aria-label="Sign out">↪</button></header>
-<main class="container menu-management-main"><header class="menu-management-heading"><p class="eyebrow">GM MANAGEMENT</p><h1 class="title">Menu Management</h1><p class="sub">Manage menu items, prices, pictures, and the full details shown on the public menu. Create categories from Settings → Categories.</p></header>
+<main class="container menu-management-main"><header class="menu-management-heading"><p class="eyebrow">GM MANAGEMENT</p><h1 class="title">Menu Management</h1><p class="sub">Manage menu items, prices, pictures, and the full details shown on the public menu. Create categories from the Categories section.</p></header>
 <section class="card"><h3 id="menuFormTitle">Add Menu Item</h3><input type="hidden" id="gmMenuId"><div class="menu-form-grid">
 <div class="field"><label for="gmItemCategory">Category *</label><select class="input" id="gmItemCategory" required><option value="">Loading categories…</option></select></div>
 <div class="field"><label for="gmMenuName">Item Name *</label><input class="input" id="gmMenuName" maxlength="160" placeholder="e.g. Spanish Latte" required></div>
@@ -55,7 +55,7 @@
    if(error){categories=[];select.innerHTML='<option value="">Categories unavailable</option>';message('Could not load categories. Run the menu setup SQL in Supabase. Details: '+error.message,true);return false;}
    categories=(data||[]).filter(c=>c.is_active!==false&&String(c.status||'active').toLowerCase()!=='inactive');
    select.innerHTML='<option value="">Select category</option>'+categories.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('');
-   if(!categories.length)message('No categories yet. Open Settings → Categories and add your own categories first.');
+   if(!categories.length)message('No categories yet. Open Categories and add your own categories first.');
    return true;
  }
  function renderItems(){
@@ -93,7 +93,7 @@
  }
  async function save(){
    const id=$('gmMenuId').value.trim(),category_id=$('gmItemCategory').value,name=$('gmMenuName').value.trim(),description=$('gmMenuDescription').value.trim(),ingredients=$('gmMenuIngredients').value.trim(),sizes=$('gmMenuSizes').value.trim(),extras=$('gmMenuExtras').value.trim(),allergen_notes=$('gmMenuAllergens').value.trim(),priceRaw=$('gmMenuPrice').value.trim(),price=priceRaw===''?null:Number(priceRaw),status=$('gmMenuStatus').value;
-   if(!category_id){message('Select a category. Create one from Settings → Categories if the list is empty.',true);return;}
+   if(!category_id){message('Select a category. Create one from Categories if the list is empty.',true);return;}
    if(!name){message('Item name is required.',true);$('gmMenuName').focus();return;}
    if(priceRaw!==''&&(!Number.isFinite(price)||price<0)){message('Enter a valid price ('+(window.POA_GET_CURRENCY_CODE?window.POA_GET_CURRENCY_CODE():'EGP')+' 0 or more), or leave it blank.',true);$('gmMenuPrice').focus();return;}
    const profile=await getProfile();if(!profile||!['gm','admin'].includes(profile.role)){message('GM access is required.',true);return;}
