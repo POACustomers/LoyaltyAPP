@@ -32,16 +32,15 @@
   })();
 })();
 
-/* Restore the approved Back to Rating behavior, retaining branch context. */
+/* Home returns to the welcome/home screen while retaining branch context. */
 (function(){
-  const back=document.getElementById('backToRatingLink');
-  if(!back)return;
+  const home=document.getElementById('menuHomeLink');
+  if(!home)return;
   const current=new URLSearchParams(window.location.search);
   const destination=new URL('welcome.html',window.location.href);
   ['location_id','branch_id'].forEach(key=>{
     const value=(current.get(key)||'').trim();
     if(value)destination.searchParams.set(key,value);
   });
-  destination.searchParams.set('show_rating','1');
-  back.href=destination.pathname+destination.search;
+  home.href=destination.pathname+destination.search;
 })();

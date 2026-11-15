@@ -247,19 +247,23 @@ body[data-menu-standalone] .public-menu-content {
   flex: 1 0 auto !important;
 }
 
-/* Restore the original Back to Rating control from the approved menu version. */
-body[data-menu-standalone] .public-menu-brand { position: relative !important; }
-body[data-menu-standalone] .dc-back-rating {
+/* Approved menu header: Home control at the top-right; no centered logo. */
+body[data-menu-standalone] .public-menu-brand {
+  position: relative !important;
+  padding: 62px 22px 25px !important;
+}
+body[data-menu-standalone] .public-menu-logo { display: none !important; }
+body[data-menu-standalone] .dc-menu-home {
   position: absolute !important;
-  z-index: 6 !important;
+  z-index: 7 !important;
   top: 12px !important;
-  left: 12px !important;
+  right: 12px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 9px !important;
-  min-height: 44px !important;
-  padding: 9px 17px !important;
+  gap: 8px !important;
+  min-height: 42px !important;
+  padding: 8px 17px !important;
   border: 1px solid #d88a9e !important;
   border-radius: 999px !important;
   background: linear-gradient(135deg,#fffdfb,#f9e3e5) !important;
@@ -269,21 +273,25 @@ body[data-menu-standalone] .dc-back-rating {
   box-shadow: 0 4px 12px rgba(111,31,55,.08) !important;
   -webkit-tap-highlight-color: transparent;
 }
-body[data-menu-standalone] .dc-back-rating svg {
-  width: 21px !important;
-  height: 21px !important;
+body[data-menu-standalone] .dc-menu-home svg {
+  width: 20px !important;
+  height: 20px !important;
   fill: none !important;
   stroke: currentColor !important;
-  stroke-width: 2.2 !important;
+  stroke-width: 1.9 !important;
   stroke-linecap: round !important;
   stroke-linejoin: round !important;
 }
+/* Keep the optional branch review/map link visible without overlapping Home. */
+body[data-menu-standalone] .public-menu-review-link { right: auto !important; left: 12px !important; }
 @media (max-width: 600px) {
-  body[data-menu-standalone] .dc-back-rating {
+  body[data-menu-standalone] .public-menu-brand { padding: 58px 14px 22px !important; }
+  body[data-menu-standalone] .dc-menu-home {
     top: 10px !important;
-    left: 10px !important;
-    min-height: 42px !important;
-    padding: 8px 13px !important;
+    right: 10px !important;
+    min-height: 40px !important;
+    padding: 7px 13px !important;
     font-size: 13px !important;
   }
+  body[data-menu-standalone] .public-menu-review-link { left: 9px !important; }
 }
