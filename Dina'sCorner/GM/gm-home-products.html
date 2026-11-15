@@ -5,18 +5,20 @@
 <link rel="manifest" href="../manifest.webmanifest"><title>Dina's Corner — Best Sellers</title>
 <link rel="stylesheet" href="../assets/style.css?v=20261028-home-bestsellers-final-v2">
 <style>
+.gm-home-top-link{min-height:40px;padding:9px 14px;border-radius:11px;text-decoration:none;font-size:12px;white-space:nowrap}
+
 .gm-best-main{padding-bottom:32px}.gm-best-head{margin:16px 0 18px}.gm-best-form{display:grid;gap:12px}.gm-best-upload{display:block;width:100%;min-height:44px;padding:9px;border:1px solid var(--line);border-radius:12px;background:#fffaf6}.gm-best-help{font-size:11px;line-height:1.5;color:var(--muted)}.gm-best-actions{display:flex;gap:8px;flex-wrap:wrap}.gm-best-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.gm-best-item{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:#fffaf6}.gm-best-item img{display:block;width:100%;height:130px;object-fit:cover;background:#f8e9e4}.gm-best-item__name{padding:8px 9px 0;font-size:10px;line-height:1.35;color:var(--muted);overflow-wrap:anywhere}.gm-best-item__controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:8px}.gm-best-item__controls .btn{min-width:0;padding:8px 2px;font-size:10px}.gm-best-empty{padding:20px 12px;border:1px dashed var(--line);border-radius:14px;text-align:center;color:var(--muted);font-size:12px}.gm-best-msg{white-space:pre-wrap;line-height:1.55;margin-top:10px}.gm-best-dashboard-link{display:inline-flex;align-items:center;justify-content:center;margin-top:12px;text-decoration:none}@media(min-width:640px){.gm-best-list{grid-template-columns:repeat(4,minmax(0,1fr))}.gm-best-item img{height:160px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="../assets/tenant-config.js?v=20261028-home-bestsellers-final-v2"></script><script src="../assets/tenant-branding.js?v=20261028-home-bestsellers-final-v2"></script>
 </head>
 <body data-page="gm-home-products">
-<header class="topbar"><a class="brand brand-image" href="gm-dashboard.html"><img class="brand-logo" src="../assets/dina-corner-icon.png" alt="DINA'S CORNER"></a><button class="icon" onclick="logout()" type="button" title="Sign out" aria-label="Sign out">↪</button></header>
+<header class="topbar"><a class="btn soft gm-home-top-link" href="gm-dashboard.html" aria-label="Home"><span aria-hidden="true">⌂</span> Home</a><button class="icon" onclick="logout()" type="button" title="Sign out" aria-label="Sign out">↪</button></header>
 <main class="container gm-best-main">
   <header class="gm-best-head"><p class="eyebrow">GM MANAGEMENT</p><h1 class="title">Best Sellers Photos</h1><p class="sub">Upload the product photos you want customers to see at the top of the home page. Images appear as a swipeable photo strip without product names.</p></header>
   <section class="card"><h2 style="margin:0 0 8px">Add product photos</h2><div class="gm-best-form"><div class="field"><label for="bestSellerImages">Choose product photos</label><input id="bestSellerImages" class="gm-best-upload" type="file" accept="image/*" multiple><small class="gm-best-help">Select multiple pictures at once (up to 30 MB each). Images are resized and compressed before upload.</small></div><button id="uploadBestSellerImages" class="btn primary" type="button">UPLOAD PHOTOS</button></div><div id="bestSellerMsg" class="note gm-best-msg" role="status" aria-live="polite"></div><a href="gm-dashboard.html" class="btn soft gm-best-dashboard-link">← Back to dashboard</a></section>
   <section class="card" style="margin-top:14px"><div class="row" style="align-items:center;justify-content:space-between;gap:10px"><h2 style="margin:0">Home page photos</h2><button id="refreshBestSellers" class="btn soft" type="button">Refresh</button></div><p class="gm-best-help" style="margin:8px 0 0">Use the arrows to change the order shown to customers.</p><div id="bestSellerList" class="gm-best-list"><div class="gm-best-empty">Loading photos…</div></div></section>
 </main>
-<script src="../assets/config.js?v=20261028-home-bestsellers-final-v2"></script><script src="../assets/app.js?v=20261028-home-bestsellers-final-v2"></script>
+<script src="../assets/config.js?v=20261028-home-bestsellers-final-v2"></script><script src="../assets/app.js?v=20261115-gm-no-staff-home-nav"></script>
 <script>
 (function(){
   const $=id=>document.getElementById(id),BUCKET='poac-home-featured-products',TABLE='home_featured_products';
