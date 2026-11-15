@@ -1,0 +1,16 @@
+إصلاح صفحة المنيو المستقل — Dina-s-Corner
+
+ارفع الملفات التالية إلى نفس المسارات في جذر مستودع Dina-s-Corner على GitHub، مع الموافقة على استبدال الملفات الموجودة فقط:
+
+1) menu.html
+2) login.html
+3) GM/gm-login.html
+4) assets/gm-login.css
+
+لا ترفعها داخل مجلد جديد، ولا تحذف مجلد GM أو assets. بقية ملفات assets الخاصة بالمنيو موجودة بالفعل في المستودع الحالي.
+
+بعد Commit Changes افتح:
+https://poacustomers.github.io/Dina-s-Corner/menu.html
+
+رابط دخول GM:
+https://poacustomers.github.io/Dina-s-Corner/login.html
