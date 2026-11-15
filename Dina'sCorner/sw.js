@@ -1,10 +1,10 @@
-const CACHE = "dinas-corner-gm-v1";
+const CACHE = "dinas-corner-gm-v4";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./GM/index.html", "./GM/gm-login.html", "./GM/gm-dashboard.html",
   "./GM/gm-menu.html", "./GM/gm-categories.html", "./GM/gm-home-products.html",
-  "./GM/gm-locations.html", "./GM/gm-settings.html",
-  "./assets/style.css", "./assets/app.js", "./assets/config.js",
+  "./GM/gm-locations.html",
+  "./assets/style.css", "./assets/gm-login.css", "./assets/app.js", "./assets/config.js",
   "./assets/tenant-config.js", "./assets/tenant-branding.js",
   "./assets/dina-corner-logo.png", "./assets/dina-corner-icon.png",
   "./assets/dina-corner-icon-192.png", "./assets/dina-corner-icon-512.png",
