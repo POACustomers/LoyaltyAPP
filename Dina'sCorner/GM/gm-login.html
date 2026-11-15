@@ -4,27 +4,73 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#C65F78">
+<meta name="description" content="Dina's Corner GM management sign in">
 <link rel="manifest" href="../manifest.webmanifest">
-<title>GM Login</title>
-<link rel="stylesheet" href="../assets/style.css?v=20261024-presale-candidate">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="https://unpkg.com/html5-qrcode"></script>
-<script src="../assets/tenant-config.js?v=20261024-presale-candidate"></script><script src="../assets/tenant-branding.js?v=20261024-presale-candidate"></script>
+<title>GM Login — Dina's Corner</title>
+<link rel="stylesheet" href="../assets/style.css?v=20261115-gm-login-refresh">
+<link rel="stylesheet" href="../assets/gm-login.css?v=20261115-gm-login-refresh">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="../assets/tenant-config.js?v=20261115-gm-login-refresh"></script>
+<script src="../assets/tenant-branding.js?v=20261115-gm-login-refresh"></script>
 </head>
 <body data-page="gm-login" data-loginScope="tenant">
+<main class="gm-auth-shell">
+  <div class="gm-auth-floral gm-auth-floral--top" aria-hidden="true"></div>
+  <div class="gm-auth-floral gm-auth-floral--bottom" aria-hidden="true"></div>
 
-<div class="auth"><div class="authbox">
-<div class="logo"><img class="official-logo" src="../assets/dina-corner-logo.png?v=20261024-presale-candidate" alt="DINA'S CORNER"></div>
-<h2>GM Portal</h2><p class="sub">Management operations. System Admin is a separate portal.</p>
-<div class="field"><label>Email</label><input id="email" class="input" type="email" autocomplete="email" placeholder="gm@yourcompany.com"></div>
-<div class="field"><label>Password</label><input id="password" class="input" type="password" autocomplete="current-password" placeholder="Password"></div>
-<button id="loginBtn" class="btn gold block">GM Sign In →</button>
-<div id="msg" class="note"></div>
-</div></div>
+  <section class="gm-auth-card" aria-labelledby="gm-login-title">
+    <div class="gm-auth-brand">
+      <div class="gm-auth-logo-frame">
+        <img class="official-logo gm-auth-logo" src="../assets/dina-corner-logo.png" alt="Dina's Corner"
+             onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+        <div class="gm-auth-logo-fallback" hidden>Dina's Corner</div>
+      </div>
+      <span class="gm-auth-overline">DINA'S CORNER · MANAGEMENT</span>
+    </div>
 
-<script src="../assets/config.js?v=20261024-presale-candidate"></script>
-<script src="../assets/app.js?v=20261024-presale-candidate"></script>
+    <header class="gm-auth-heading">
+      <span class="gm-auth-heading-mark" aria-hidden="true"><i></i> MANAGEMENT PORTAL</span>
+      <h1 id="gm-login-title">GM Portal</h1>
+      <p>Sign in to manage your menu.</p>
+    </header>
 
+    <div class="gm-auth-form">
+      <div class="gm-auth-field">
+        <label for="email">Email</label>
+        <div class="gm-auth-input-wrap">
+          <span class="gm-auth-field-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"></rect><path d="m4.5 7 7.5 6 7.5-6"></path></svg>
+          </span>
+          <input id="email" class="input" type="email" autocomplete="username" placeholder="gm@yourcompany.com">
+        </div>
+      </div>
 
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("../sw.js").catch(()=>{}));}</script>
+      <div class="gm-auth-field">
+        <label for="password">Password</label>
+        <div class="gm-auth-input-wrap">
+          <span class="gm-auth-field-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="4.5" y="10" width="15" height="10" rx="2.2"></rect><path d="M8 10V7.5a4 4 0 0 1 8 0V10M12 14v2.5"></path></svg>
+          </span>
+          <input id="password" class="input" type="password" autocomplete="current-password" placeholder="Password">
+        </div>
+      </div>
+
+      <button id="loginBtn" class="btn block gm-auth-submit" type="button">GM Sign In →</button>
+      <div id="msg" class="gm-auth-message" role="status" aria-live="polite"></div>
+    </div>
+
+    <div class="gm-auth-footer"><span></span> DINA'S CORNER <span></span></div>
+  </section>
+</main>
+
+<script src="../assets/config.js?v=20261115-gm-login-refresh"></script>
+<script src="../assets/app.js?v=20261115-gm-no-staff-home-nav"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("../sw.js").catch(() => {}));
+}
+</script>
 </body>
 </html>
